@@ -57,7 +57,7 @@ let events = [];
 const programColorCache = {};
 
 function getProgramColor(program) {
-    if (!program) return "#dbe4ee";
+    if (!program) return "#eef2f7";
     if (programColorCache[program]) return programColorCache[program];
 
     let hash = 0;
@@ -65,7 +65,7 @@ function getProgramColor(program) {
         hash = program.charCodeAt(i) + ((hash << 5) - hash);
     }
     const hue = Math.abs(hash) % 360;
-    const color = `hsl(${hue}, 80%, 78%)`;
+    const color = `hsl(${hue}, 70%, 88%)`;
     programColorCache[program] = color;
     return color;
 }
@@ -189,9 +189,11 @@ function render() {
 
             if (cellEvents.length) {
                 const entries = cellEvents.map(e => {
-                    const bg = getProgramColor(e.program);
+                    let cls = "lecture";
+                    if (e.type.toLowerCase().includes("веж")) cls = "exercise";
+                    if (e.type.toLowerCase().includes("терен")) cls = "field";
 
-                    return `<div style="margin:2px 0; padding:4px; border-radius:4px; background:${bg}; border-left:4px solid rgba(0,0,0,0.25);">
+                    return `<div class="${cls}" style="margin:2px 0; padding:4px; border-radius:4px;">
                         <b>${e.subject}</b><br>
                         ${e.professor || ""}<br>
                         ${e.program}${e.semester ? ` • Семестар ${e.semester}` : ""}
@@ -201,8 +203,7 @@ function render() {
                 row += `<td>${entries}</td>`;
             } else {
                 row += `<td class="empty"></td>`;
-            }
-        });
+            }        });
 
         row += "</tr>";
         tbody.innerHTML += row;
