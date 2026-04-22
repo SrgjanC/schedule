@@ -91,8 +91,8 @@ function loadData() {
         fetch("events.csv").then(r => r.text())
     ]).then(([slotsText, eventsText]) => {
 
-        slots = Papa.parse(slotsText, {header: true}).data.map(normalize);
-        events = Papa.parse(eventsText, {header: true}).data.map(normalize);
+        slots = Papa.parse(slotsText, {header: true, delimiter: ";"}).data.map(normalize);
+        events = Papa.parse(eventsText, {header: true, delimiter: ";"}).data.map(normalize);
 
         initFilters();
         render();
