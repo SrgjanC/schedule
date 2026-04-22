@@ -142,9 +142,11 @@ function render() {
     thead.innerHTML = "<th>Час</th>" + rooms.map(r => `<th>${r}</th>`).join("");
     tbody.innerHTML = "";
 
+    // 🔥 FIXED event matching
     const eventMap = {};
     events.forEach(e => {
         if (programFilter && e.program !== programFilter) return;
+
         const key = `${e.day}_${e.time}_${e.room}`;
         eventMap[key] = e;
     });
@@ -153,7 +155,10 @@ function render() {
         let row = `<tr><td>${time}</td>`;
 
         rooms.forEach(room => {
-            const key = `${dayFilter}_${time}_${room}`;
+            // 🔥 FIXED KEY (this is the important part)
+            const slot = filteredSlots.find(s => s.time === time && s.room === room);
+            const key = slot ? `${slot.day}_${slot.time}_${slot.room}` : "";
+
             const e = eventMap[key];
 
             if (e) {
