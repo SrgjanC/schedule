@@ -189,9 +189,11 @@ function render() {
 
             if (cellEvents.length) {
                 const entries = cellEvents.map(e => {
-                    const bg = getProgramColor(e.program);
+                    let cls = "lecture";
+                    if (e.type.toLowerCase().includes("веж")) cls = "exercise";
+                    if (e.type.toLowerCase().includes("терен")) cls = "field";
 
-                    return `<div style="margin:2px 0; padding:4px; border-radius:4px; background:${bg};">
+                    return `<div class="${cls}" style="margin:2px 0; padding:4px; border-radius:4px;">
                         <b>${e.subject}</b><br>
                         ${e.professor || ""}<br>
                         ${e.program}${e.semester ? ` • Семестар ${e.semester}` : ""}
@@ -201,8 +203,7 @@ function render() {
                 row += `<td>${entries}</td>`;
             } else {
                 row += `<td class="empty"></td>`;
-            }
-        });
+            }        });
 
         row += "</tr>";
         tbody.innerHTML += row;
