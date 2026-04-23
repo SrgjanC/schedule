@@ -1,402 +1,407 @@
-<!DOCTYPE html>
-<html lang="mk">
-<head>
-<meta charset="UTF-8">
-<title>Распоред</title>
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-<style>
-body { font-family: Arial; padding: 20px; }
-h2 { margin-bottom: 10px; }
-.controls { margin-bottom: 15px; }
-select { padding: 5px; margin-right: 10px; }
-
-table { border-collapse: collapse; width: 100%; }
-th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
-    text-align: center;
-    font-size: 13px;
-}
-th { background: #f2f2f2; }
-
-.empty { background: #fafafa; }
-.lecture { background: #d0e7ff; }
-.exercise { background: #d4ffd4; }
-.field { background: #ffe0b3; }
-</style>
-body { font-family: Arial; padding: 20px; }
-h2 { margin-bottom: 10px; }
-.controls { margin-bottom: 15px; }
-select { padding: 5px; margin-right: 10px; }
-
-table { border-collapse: collapse; width: 100%; }
-th, td {
-    border: 1px solid #222;
-    padding: 4px 6px;
-    text-align: left;
-    font-size: 13px;
-}
-th { background: #3f69b1; color: #fff; }
-
-.empty { background: #fafafa; }
-</style>
-</head>
-
-<body>
-
-<h2>Академски Распоред</h2>
-
-<div class="controls">
-    <label>Ден:</label>
-    <select id="dayFilter"></select>
-
-    <label>Програма:</label>
-    <select id="programFilter"></select>
-
-    <label>Просторија:</label>
-    <select id="roomFilter"></select>
-</div>
-
-<table id="schedule">
-    <thead>
-        <tr>
-            <th>Час</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-</table>
-<div class="controls">
-    <label>Преглед:</label>
-    <select id="viewMode">
-        <option value="day">Day</option>
-        <option value="week">Week</option>
-        <option value="month">Month</option>
-        <option value="year">Year</option>
-    </select>
-
-    <label>Датум:</label>
-    <select id="dateFilter"></select>
-
-    <label>Програма:</label>
-    <select id="programFilter"></select>
-
-    <label>Семестар:</label>
-    <select id="semesterFilter"></select>
-
-    <label>Просторија:</label>
-    <select id="roomFilter"></select>
-</div>
-<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
-
-<table id="schedule">
-    <thead>
-        <tr>
-            <th>Недела</th>
-            <th>Ден</th>
-            <th>Датум</th>
-            <th>Час</th>
-            <th>Просторија</th>
-            <th>Студиска програма</th>
-            <th>Семестар</th>
-            <th>Предмет</th>
-            <th>Тип на настава</th>
-            <th>Проф/асс</th>
-            <th>Групи</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-</table>
-
-<script>
-
-let slots = [];
-let events = [];
-let slots = [];
-let events = [];
-const roomColorCache = {};
-
-function getRoomColor(room) {
-    if (!room) return "#ffffff";
-    if (roomColorCache[room]) return roomColorCache[room];
-
-    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
-    let hash = 0;
-    for (let i = 0; i < room.length; i++) hash = room.charCodeAt(i) + ((hash << 5) - hash);
-    const color = palette[Math.abs(hash) % palette.length];
-    roomColorCache[room] = color;
-    return color;
-}
-
-function formatDate(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return dateStr;
-    const months = ["Јан", "Фев", "Мар", "Апр", "Мај", "Јун", "Јул", "Авг", "Сеп", "Окт", "Ное", "Дек"];
-    return `${d.getDate()}-${months[d.getMonth()]}`;
-}
-
-function isInSelectedRange(item, selectedDate, viewMode) {
-    if (!selectedDate) return true;
-    if (!item?.date) return false;
-
-    if (viewMode === "day") return item.date === selectedDate;
-
-    const selected = new Date(selectedDate);
-    const current = new Date(item.date);
-    if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
-
-    if (viewMode === "week") {
-        return (item.week || "") === (slots.find(s => s.date === selectedDate)?.week || "");
-    }
-    if (viewMode === "month") {
-        return selected.getFullYear() === current.getFullYear() &&
-               selected.getMonth() === current.getMonth();
-    }
-    if (viewMode === "year") {
-        return selected.getFullYear() === current.getFullYear();
-    }
-    return item.date === selectedDate;
-}
-
-function normalize(e) {
-    const dayMap = {
-        "Monday": "понеделник",
-        "Tuesday": "вторник",
-        "Wednesday": "среда",
-        "Thursday": "четврток",
-        "Friday": "петок"
-    };
-
-    let day = e["Ден"] || e["Day"];
-    if (dayMap[day]) day = dayMap[day];
-
-    let time = (e["Час"] || e["Time"] || "").toString().trim();
-    if (time.length === 4) time = "0" + time; // 9:00 → 09:00
-
-    return {
-        week: e["Недела"] || e["Week"],
-        day: day,
-        date: e["Датум"] || e["Date"],
-        time: time,
-        room: (e["Просторија"] || "").trim(),
-        program: e["Студиска програма"] || "",
-        subject: e["предмет"] || "",
-        type: e["тип на настава"] || "",
-        professor: e["проф/асс"] || ""
-    };
-}
-        room: (e["Просторија"] || "").trim(),
-        program: e["Студиска програма"] || "",
-        semester: e["Семестар"] || "",
-        subject: e["предмет"] || "",
-        type: e["тип на настава"] || "",
-        professor: e["проф/асс"] || "",
-        groups: e["Групи"] || ""
-    };
-}
-
-function loadData() {
-    Promise.all([
-        fetch("slots.csv").then(r => r.text()),
-        fetch("events.csv").then(r => r.text())
-    ]).then(([slotsText, eventsText]) => {
-
-        slots = Papa.parse(slotsText, {header: true, delimiter: ";"}).data.map(normalize);
-        events = Papa.parse(eventsText, {header: true, delimiter: ";"}).data.map(normalize);
-
-        initFilters();
-        render();
-    });
-}
-
-function initFilters() {
-    const days = [...new Set(slots.map(s => s.day))];
-    const programs = [...new Set(events.map(e => e.program))];
-    const rooms = [...new Set(slots.map(s => s.room))];
-
-    fillSelect("dayFilter", days);
-    fillSelect("programFilter", programs);
-    fillSelect("roomFilter", rooms);
-
-    document.querySelectorAll("select").forEach(s =>
-        s.addEventListener("change", render)
-function initFilters() {
-    const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
-    const programs = [...new Set(events.map(e => e.program))];
-    const semesters = [...new Set(events.map(e => e.semester).filter(Boolean))];
-    const rooms = [...new Set(slots.map(s => s.room))];
-
-    fillSelect("dateFilter", dates, { includeAll: false, labelFormatter: d => {
-        const slot = slots.find(s => s.date === d);
-        const dayText = slot?.day ? `${slot.day}, ` : "";
-        return `${dayText}${d}`;
-    }});
-    fillSelect("programFilter", programs);
-    fillSelect("semesterFilter", semesters);
-    fillSelect("roomFilter", rooms);
-
-    const dateFilter = document.getElementById("dateFilter");
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayIso = `${yyyy}-${mm}-${dd}`;
-    if (dates.includes(todayIso)) {
-        dateFilter.value = todayIso;
-    }
-
-    document.querySelectorAll("select").forEach(s =>
-        s.addEventListener("change", render)
-    );
-}
-
-function fillSelect(id, values) {
-    const select = document.getElementById(id);
-    select.innerHTML = "<option value=''>Сите</option>";
-    values.forEach(v => {
-        if (v) select.innerHTML += `<option>${v}</option>`;
-    });
-}
-
-function render() {
-
-    const dayFilter = document.getElementById("dayFilter").value;
-    const programFilter = document.getElementById("programFilter").value;
-    const roomFilter = document.getElementById("roomFilter").value;
-
-    const filteredSlots = slots.filter(s =>
-        (!dayFilter || s.day === dayFilter) &&
-        (!roomFilter || s.room === roomFilter)
-    );
-
-    const times = [...new Set(filteredSlots.map(s => s.time))].sort();
-    const rooms = [...new Set(filteredSlots.map(s => s.room))];
-
-    const table = document.getElementById("schedule");
-    const thead = table.querySelector("thead tr");
-    const tbody = table.querySelector("tbody");
-
-    thead.innerHTML = "<th>Час</th>" + rooms.map(r => `<th>${r}</th>`).join("");
-    tbody.innerHTML = "";
-
-    // 🔥 FIXED event matching
-    const eventMap = {};
-    events.forEach(e => {
-        if (programFilter && e.program !== programFilter) return;
-
-        const key = `${e.day}_${e.time}_${e.room}`;
-        eventMap[key] = e;
-    });
-
-    times.forEach(time => {
-        let row = `<tr><td>${time}</td>`;
-
-        rooms.forEach(room => {
-            // 🔥 FIXED KEY (this is the important part)
-            const slot = filteredSlots.find(s => s.time === time && s.room === room);
-            const key = slot ? `${slot.day}_${slot.time}_${slot.room}` : "";
-
-            const e = eventMap[key];
-
-            if (e) {
-                let cls = "lecture";
-                if (e.type.toLowerCase().includes("веж")) cls = "exercise";
-                if (e.type.toLowerCase().includes("терен")) cls = "field";
-
-                row += `<td class="${cls}">
-                    <b>${e.subject}</b><br>
-                    ${e.professor}<br>
-                    ${e.program}
-                </td>`;
-            } else {
-                row += `<td class="empty"></td>`;
-            }
-        });
-
-        row += "</tr>";
-        tbody.innerHTML += row;
-    });
-}
-function fillSelect(id, values, options = {}) {
-    const { includeAll = true, labelFormatter = v => v } = options;
-    const select = document.getElementById(id);
-    select.innerHTML = includeAll ? "<option value=''>Сите</option>" : "";
-    values.forEach(v => {
-        if (v) select.innerHTML += `<option value="${v}">${labelFormatter(v)}</option>`;
-    });
-}
-
-function render() {
-
-    const viewMode = document.getElementById("viewMode").value;
-    const dateFilter = document.getElementById("dateFilter").value;
-    const programFilter = document.getElementById("programFilter").value;
-    const semesterFilter = document.getElementById("semesterFilter").value;
-    const roomFilter = document.getElementById("roomFilter").value;
-
-    const filteredSlots = slots.filter(s =>
-        isInSelectedRange(s, dateFilter, viewMode) &&
-        (!roomFilter || s.room === roomFilter)
-    );
-
-    const table = document.getElementById("schedule");
-    const tbody = table.querySelector("tbody");
-    tbody.innerHTML = "";
-
-    const selectedDateSlot = slots.find(s => s.date === dateFilter);
-    document.getElementById("viewInfo").textContent = dateFilter
-        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
-        : "Приказ за сите датуми (комбинирано).";
-
-    // Keep all events per slot so overlapping groups/programs are not lost.
-    const eventMap = {};
-    events.forEach(e => {
-        if (programFilter && e.program !== programFilter) return;
-        if (semesterFilter && e.semester !== semesterFilter) return;
-        if (!isInSelectedRange(e, dateFilter, viewMode)) return;
-
-        const key = `${e.date}_${e.time}_${e.room}`;
-        if (!eventMap[key]) eventMap[key] = [];
-        eventMap[key].push(e);
-    });
-
-    const sortedSlots = [...filteredSlots].sort((a, b) =>
-        a.week - b.week ||
-        a.day.localeCompare(b.day, "mk") ||
-        a.date.localeCompare(b.date) ||
-        a.room.localeCompare(b.room, "mk") ||
-        a.time.localeCompare(b.time)
-    );
-
-    sortedSlots.forEach(slot => {
-        const key = `${slot.date}_${slot.time}_${slot.room}`;
-        const cellEvents = eventMap[key] || [null];
-        const rowColor = getRoomColor(slot.room);
-
-        cellEvents.forEach(e => {
-            const row = `<tr style="background:${rowColor};">
-                <td>${slot.week || ""}</td>
-                <td>${slot.day || ""}</td>
-                <td>${formatDate(slot.date)}</td>
-                <td>${slot.time || ""}</td>
-                <td>${slot.room || ""}</td>
-                <td>${e?.program || ""}</td>
-                <td>${e?.semester || ""}</td>
-                <td>${e?.subject || ""}</td>
-                <td>${e?.type || ""}</td>
-                <td>${e?.professor || ""}</td>
-                <td>${e?.groups || ""}</td>
-            </tr>`;
-            tbody.innerHTML += row;
-        });
-    });
-}
-
-loadData();
-
-</script>
-
-</body>
-</html>
+diff --git a/index.html b/index.html
+index 82364365156c59f23eb6ae2c833dcd95f6fb5f12..ec5961ae051cc569102492c90382f50bcec233c8 100644
+--- a/index.html
++++ b/index.html
+@@ -1,189 +1,277 @@
+ <!DOCTYPE html>
+ <html lang="mk">
+ <head>
+ <meta charset="UTF-8">
+ <title>Распоред</title>
+ 
+ <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+ 
+ <style>
+-body { font-family: Arial; padding: 20px; }
+-h2 { margin-bottom: 10px; }
+-.controls { margin-bottom: 15px; }
+-select { padding: 5px; margin-right: 10px; }
+-
+-table { border-collapse: collapse; width: 100%; }
+-th, td {
+-    border: 1px solid #ccc;
+-    padding: 6px;
+-    text-align: center;
+-    font-size: 13px;
+-}
+-th { background: #f2f2f2; }
+-
+-.empty { background: #fafafa; }
+-.lecture { background: #d0e7ff; }
+-.exercise { background: #d4ffd4; }
+-.field { background: #ffe0b3; }
+-</style>
++body { font-family: Arial; padding: 20px; }
++h2 { margin-bottom: 10px; }
++.controls { margin-bottom: 15px; }
++select { padding: 5px; margin-right: 10px; }
++
++table { border-collapse: collapse; width: 100%; }
++th, td {
++    border: 1px solid #222;
++    padding: 4px 6px;
++    text-align: left;
++    font-size: 13px;
++}
++th { background: #3f69b1; color: #fff; }
++
++.empty { background: #fafafa; }
++</style>
+ </head>
+ 
+ <body>
+ 
+ <h2>Академски Распоред</h2>
+ 
+-<div class="controls">
+-    <label>Ден:</label>
+-    <select id="dayFilter"></select>
+-
+-    <label>Програма:</label>
+-    <select id="programFilter"></select>
+-
+-    <label>Просторија:</label>
+-    <select id="roomFilter"></select>
+-</div>
+-
+-<table id="schedule">
+-    <thead>
+-        <tr>
+-            <th>Час</th>
+-        </tr>
+-    </thead>
+-    <tbody></tbody>
+-</table>
++<div class="controls">
++    <label>Преглед:</label>
++    <select id="viewMode">
++        <option value="day">Day</option>
++        <option value="week">Week</option>
++        <option value="month">Month</option>
++        <option value="year">Year</option>
++    </select>
++
++    <label>Датум:</label>
++    <select id="dateFilter"></select>
++
++    <label>Програма:</label>
++    <select id="programFilter"></select>
++
++    <label>Семестар:</label>
++    <select id="semesterFilter"></select>
++
++    <label>Просторија:</label>
++    <select id="roomFilter"></select>
++</div>
++<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
++
++<table id="schedule">
++    <thead>
++        <tr>
++            <th>Недела</th>
++            <th>Ден</th>
++            <th>Датум</th>
++            <th>Час</th>
++            <th>Просторија</th>
++            <th>Студиска програма</th>
++            <th>Семестар</th>
++            <th>Предмет</th>
++            <th>Тип на настава</th>
++            <th>Проф/асс</th>
++            <th>Групи</th>
++        </tr>
++    </thead>
++    <tbody></tbody>
++</table>
+ 
+ <script>
+ 
+-let slots = [];
+-let events = [];
++let slots = [];
++let events = [];
++const roomColorCache = {};
++
++function getRoomColor(room) {
++    if (!room) return "#ffffff";
++    if (roomColorCache[room]) return roomColorCache[room];
++
++    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
++    let hash = 0;
++    for (let i = 0; i < room.length; i++) hash = room.charCodeAt(i) + ((hash << 5) - hash);
++    const color = palette[Math.abs(hash) % palette.length];
++    roomColorCache[room] = color;
++    return color;
++}
++
++function formatDate(dateStr) {
++    if (!dateStr) return "";
++    const d = new Date(dateStr);
++    if (Number.isNaN(d.getTime())) return dateStr;
++    const months = ["Јан", "Фев", "Мар", "Апр", "Мај", "Јун", "Јул", "Авг", "Сеп", "Окт", "Ное", "Дек"];
++    return `${d.getDate()}-${months[d.getMonth()]}`;
++}
++
++function isInSelectedRange(item, selectedDate, viewMode) {
++    if (!selectedDate) return true;
++    if (!item?.date) return false;
++
++    if (viewMode === "day") return item.date === selectedDate;
++
++    const selected = new Date(selectedDate);
++    const current = new Date(item.date);
++    if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
++
++    if (viewMode === "week") {
++        return (item.week || "") === (slots.find(s => s.date === selectedDate)?.week || "");
++    }
++    if (viewMode === "month") {
++        return selected.getFullYear() === current.getFullYear() &&
++               selected.getMonth() === current.getMonth();
++    }
++    if (viewMode === "year") {
++        return selected.getFullYear() === current.getFullYear();
++    }
++    return item.date === selectedDate;
++}
+ 
+ function normalize(e) {
+     const dayMap = {
+         "Monday": "понеделник",
+         "Tuesday": "вторник",
+         "Wednesday": "среда",
+         "Thursday": "четврток",
+         "Friday": "петок"
+     };
+ 
+     let day = e["Ден"] || e["Day"];
+     if (dayMap[day]) day = dayMap[day];
+ 
+     let time = (e["Час"] || e["Time"] || "").toString().trim();
+     if (time.length === 4) time = "0" + time; // 9:00 → 09:00
+ 
+     return {
+         week: e["Недела"] || e["Week"],
+         day: day,
+         date: e["Датум"] || e["Date"],
+         time: time,
+-        room: (e["Просторија"] || "").trim(),
+-        program: e["Студиска програма"] || "",
+-        subject: e["предмет"] || "",
+-        type: e["тип на настава"] || "",
+-        professor: e["проф/асс"] || ""
+-    };
+-}
++        room: (e["Просторија"] || "").trim(),
++        program: e["Студиска програма"] || "",
++        semester: e["Семестар"] || "",
++        subject: e["предмет"] || "",
++        type: e["тип на настава"] || "",
++        professor: e["проф/асс"] || "",
++        groups: e["Групи"] || ""
++    };
++}
+ 
+ function loadData() {
+     Promise.all([
+         fetch("slots.csv").then(r => r.text()),
+         fetch("events.csv").then(r => r.text())
+     ]).then(([slotsText, eventsText]) => {
+ 
+         slots = Papa.parse(slotsText, {header: true, delimiter: ";"}).data.map(normalize);
+         events = Papa.parse(eventsText, {header: true, delimiter: ";"}).data.map(normalize);
+ 
+         initFilters();
+         render();
+     });
+ }
+ 
+-function initFilters() {
+-    const days = [...new Set(slots.map(s => s.day))];
+-    const programs = [...new Set(events.map(e => e.program))];
+-    const rooms = [...new Set(slots.map(s => s.room))];
+-
+-    fillSelect("dayFilter", days);
+-    fillSelect("programFilter", programs);
+-    fillSelect("roomFilter", rooms);
+-
+-    document.querySelectorAll("select").forEach(s =>
+-        s.addEventListener("change", render)
++function initFilters() {
++    const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
++    const programs = [...new Set(events.map(e => e.program))];
++    const semesters = [...new Set(events.map(e => e.semester).filter(Boolean))];
++    const rooms = [...new Set(slots.map(s => s.room))];
++
++    fillSelect("dateFilter", dates, { includeAll: false, labelFormatter: d => {
++        const slot = slots.find(s => s.date === d);
++        const dayText = slot?.day ? `${slot.day}, ` : "";
++        return `${dayText}${d}`;
++    }});
++    fillSelect("programFilter", programs);
++    fillSelect("semesterFilter", semesters);
++    fillSelect("roomFilter", rooms);
++
++    const dateFilter = document.getElementById("dateFilter");
++    const today = new Date();
++    const yyyy = today.getFullYear();
++    const mm = String(today.getMonth() + 1).padStart(2, "0");
++    const dd = String(today.getDate()).padStart(2, "0");
++    const todayIso = `${yyyy}-${mm}-${dd}`;
++    if (dates.includes(todayIso)) {
++        dateFilter.value = todayIso;
++    }
++
++    document.querySelectorAll("select").forEach(s =>
++        s.addEventListener("change", render)
+     );
+ }
+ 
+-function fillSelect(id, values) {
+-    const select = document.getElementById(id);
+-    select.innerHTML = "<option value=''>Сите</option>";
+-    values.forEach(v => {
+-        if (v) select.innerHTML += `<option>${v}</option>`;
+-    });
+-}
+-
+-function render() {
+-
+-    const dayFilter = document.getElementById("dayFilter").value;
+-    const programFilter = document.getElementById("programFilter").value;
+-    const roomFilter = document.getElementById("roomFilter").value;
+-
+-    const filteredSlots = slots.filter(s =>
+-        (!dayFilter || s.day === dayFilter) &&
+-        (!roomFilter || s.room === roomFilter)
+-    );
+-
+-    const times = [...new Set(filteredSlots.map(s => s.time))].sort();
+-    const rooms = [...new Set(filteredSlots.map(s => s.room))];
+-
+-    const table = document.getElementById("schedule");
+-    const thead = table.querySelector("thead tr");
+-    const tbody = table.querySelector("tbody");
+-
+-    thead.innerHTML = "<th>Час</th>" + rooms.map(r => `<th>${r}</th>`).join("");
+-    tbody.innerHTML = "";
+-
+-    // 🔥 FIXED event matching
+-    const eventMap = {};
+-    events.forEach(e => {
+-        if (programFilter && e.program !== programFilter) return;
+-
+-        const key = `${e.day}_${e.time}_${e.room}`;
+-        eventMap[key] = e;
+-    });
+-
+-    times.forEach(time => {
+-        let row = `<tr><td>${time}</td>`;
+-
+-        rooms.forEach(room => {
+-            // 🔥 FIXED KEY (this is the important part)
+-            const slot = filteredSlots.find(s => s.time === time && s.room === room);
+-            const key = slot ? `${slot.day}_${slot.time}_${slot.room}` : "";
+-
+-            const e = eventMap[key];
+-
+-            if (e) {
+-                let cls = "lecture";
+-                if (e.type.toLowerCase().includes("веж")) cls = "exercise";
+-                if (e.type.toLowerCase().includes("терен")) cls = "field";
+-
+-                row += `<td class="${cls}">
+-                    <b>${e.subject}</b><br>
+-                    ${e.professor}<br>
+-                    ${e.program}
+-                </td>`;
+-            } else {
+-                row += `<td class="empty"></td>`;
+-            }
+-        });
+-
+-        row += "</tr>";
+-        tbody.innerHTML += row;
+-    });
+-}
++function fillSelect(id, values, options = {}) {
++    const { includeAll = true, labelFormatter = v => v } = options;
++    const select = document.getElementById(id);
++    select.innerHTML = includeAll ? "<option value=''>Сите</option>" : "";
++    values.forEach(v => {
++        if (v) select.innerHTML += `<option value="${v}">${labelFormatter(v)}</option>`;
++    });
++}
++
++function render() {
++
++    const viewMode = document.getElementById("viewMode").value;
++    const dateFilter = document.getElementById("dateFilter").value;
++    const programFilter = document.getElementById("programFilter").value;
++    const semesterFilter = document.getElementById("semesterFilter").value;
++    const roomFilter = document.getElementById("roomFilter").value;
++
++    const filteredSlots = slots.filter(s =>
++        isInSelectedRange(s, dateFilter, viewMode) &&
++        (!roomFilter || s.room === roomFilter)
++    );
++
++    const table = document.getElementById("schedule");
++    const tbody = table.querySelector("tbody");
++    tbody.innerHTML = "";
++
++    const selectedDateSlot = slots.find(s => s.date === dateFilter);
++    document.getElementById("viewInfo").textContent = dateFilter
++        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
++        : "Приказ за сите датуми (комбинирано).";
++
++    // Keep all events per slot so overlapping groups/programs are not lost.
++    const eventMap = {};
++    events.forEach(e => {
++        if (programFilter && e.program !== programFilter) return;
++        if (semesterFilter && e.semester !== semesterFilter) return;
++        if (!isInSelectedRange(e, dateFilter, viewMode)) return;
++
++        const key = `${e.date}_${e.time}_${e.room}`;
++        if (!eventMap[key]) eventMap[key] = [];
++        eventMap[key].push(e);
++    });
++
++    const sortedSlots = [...filteredSlots].sort((a, b) =>
++        a.week - b.week ||
++        a.day.localeCompare(b.day, "mk") ||
++        a.date.localeCompare(b.date) ||
++        a.room.localeCompare(b.room, "mk") ||
++        a.time.localeCompare(b.time)
++    );
++
++    sortedSlots.forEach(slot => {
++        const key = `${slot.date}_${slot.time}_${slot.room}`;
++        const cellEvents = eventMap[key] || [null];
++        const rowColor = getRoomColor(slot.room);
++
++        cellEvents.forEach(e => {
++            const row = `<tr style="background:${rowColor};">
++                <td>${slot.week || ""}</td>
++                <td>${slot.day || ""}</td>
++                <td>${formatDate(slot.date)}</td>
++                <td>${slot.time || ""}</td>
++                <td>${slot.room || ""}</td>
++                <td>${e?.program || ""}</td>
++                <td>${e?.semester || ""}</td>
++                <td>${e?.subject || ""}</td>
++                <td>${e?.type || ""}</td>
++                <td>${e?.professor || ""}</td>
++                <td>${e?.groups || ""}</td>
++            </tr>`;
++            tbody.innerHTML += row;
++        });
++    });
++}
+ 
+ loadData();
+ 
+ </script>
+ 
+ </body>
+ </html>
