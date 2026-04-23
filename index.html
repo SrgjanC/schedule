@@ -14,12 +14,12 @@ select { padding: 5px; margin-right: 10px; }
 
 table { border-collapse: collapse; width: 100%; }
 th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
-    text-align: center;
+    border: 1px solid #222;
+    padding: 4px 6px;
+    text-align: left;
     font-size: 13px;
 }
-th { background: #f2f2f2; }
+th { background: #3f69b1; color: #fff; }
 
 .empty { background: #fafafa; }
 </style>
@@ -44,7 +44,17 @@ th { background: #f2f2f2; }
 <table id="schedule">
     <thead>
         <tr>
+            <th>Недела</th>
+            <th>Ден</th>
+            <th>Датум</th>
             <th>Час</th>
+            <th>Просторија</th>
+            <th>Студиска програма</th>
+            <th>Семестар</th>
+            <th>Предмет</th>
+            <th>Тип на настава</th>
+            <th>Проф/асс</th>
+            <th>Групи</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -54,7 +64,27 @@ th { background: #f2f2f2; }
 
 let slots = [];
 let events = [];
-const programColorCache = {};
+const roomColorCache = {};
+
+function getRoomColor(room) {
+    if (!room) return "#ffffff";
+    if (roomColorCache[room]) return roomColorCache[room];
+
+    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
+    let hash = 0;
+    for (let i = 0; i < room.length; i++) hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    const color = palette[Math.abs(hash) % palette.length];
+    roomColorCache[room] = color;
+    return color;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    const months = ["Јан", "Фев", "Мар", "Апр", "Мај", "Јун", "Јул", "Авг", "Сеп", "Окт", "Ное", "Дек"];
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
 
 function getProgramColor(program) {
     if (!program) return "#eef2f7";
@@ -95,7 +125,8 @@ function normalize(e) {
         semester: e["Семестар"] || "",
         subject: e["предмет"] || "",
         type: e["тип на настава"] || "",
-        professor: e["проф/асс"] || ""
+        professor: e["проф/асс"] || "",
+        groups: e["Групи"] || ""
     };
 }
 
@@ -151,14 +182,8 @@ function render() {
         (!roomFilter || s.room === roomFilter)
     );
 
-    const times = [...new Set(filteredSlots.map(s => s.time))].sort();
-    const rooms = [...new Set(filteredSlots.map(s => s.room))];
-
     const table = document.getElementById("schedule");
-    const thead = table.querySelector("thead tr");
     const tbody = table.querySelector("tbody");
-
-    thead.innerHTML = "<th>Час</th>" + rooms.map(r => `<th>${r}</th>`).join("");
     tbody.innerHTML = "";
 
     const selectedDateSlot = slots.find(s => s.date === dateFilter);
@@ -177,40 +202,39 @@ function render() {
         eventMap[key].push(e);
     });
 
-    times.forEach(time => {
-        let row = `<tr><td>${time}</td>`;
+    const sortedSlots = [...filteredSlots].sort((a, b) =>
+        a.week - b.week ||
+        a.day.localeCompare(b.day, "mk") ||
+        a.date.localeCompare(b.date) ||
+        a.room.localeCompare(b.room, "mk") ||
+        a.time.localeCompare(b.time)
+    );
 
-        rooms.forEach(room => {
-            // 🔥 FIXED KEY (this is the important part)
-            const slot = filteredSlots.find(s => s.time === time && s.room === room);
-            const key = slot ? `${slot.date}_${slot.time}_${slot.room}` : "";
+    sortedSlots.forEach(slot => {
+        const key = `${slot.date}_${slot.time}_${slot.room}`;
+        const cellEvents = eventMap[key] || [null];
+        const rowColor = getRoomColor(slot.room);
 
-            const cellEvents = eventMap[key] || [];
-
-            if (cellEvents.length) {
-                const entries = cellEvents.map(e => {
-                    let cls = "lecture";
-                    if (e.type.toLowerCase().includes("веж")) cls = "exercise";
-                    if (e.type.toLowerCase().includes("терен")) cls = "field";
-
-                    return `<div class="${cls}" style="margin:2px 0; padding:4px; border-radius:4px;">
-                        <b>${e.subject}</b><br>
-                        ${e.professor || ""}<br>
-                        ${e.program}${e.semester ? ` • Семестар ${e.semester}` : ""}
-                    </div>`;
-                }).join("");
-
-                row += `<td>${entries}</td>`;
-            } else {
-                row += `<td class="empty"></td>`;
-            }        });
-
-        row += "</tr>";
-        tbody.innerHTML += row;
+        cellEvents.forEach(e => {
+            const row = `<tr style="background:${rowColor};">
+                <td>${slot.week || ""}</td>
+                <td>${slot.day || ""}</td>
+                <td>${formatDate(slot.date)}</td>
+                <td>${slot.time || ""}</td>
+                <td>${slot.room || ""}</td>
+                <td>${e?.program || ""}</td>
+                <td>${e?.semester || ""}</td>
+                <td>${e?.subject || ""}</td>
+                <td>${e?.type || ""}</td>
+                <td>${e?.professor || ""}</td>
+                <td>${e?.groups || ""}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
     });
 }
 
-loadData();
+    loadData();
 
 </script>
 
