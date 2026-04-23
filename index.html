@@ -30,22 +30,11 @@ th { background: #3f69b1; color: #fff; }
 <h2>Академски Распоред</h2>
 
 <div class="controls">
-    <label>Преглед:</label>
-    <select id="viewMode">
-        <option value="day">Day</option>
-        <option value="week">Week</option>
-        <option value="month">Month</option>
-        <option value="year">Year</option>
-    </select>
-
     <label>Датум:</label>
     <select id="dateFilter"></select>
 
     <label>Програма:</label>
     <select id="programFilter"></select>
-
-    <label>Семестар:</label>
-    <select id="semesterFilter"></select>
 
     <label>Просторија:</label>
     <select id="roomFilter"></select>
@@ -97,27 +86,18 @@ function formatDate(dateStr) {
     return `${d.getDate()}-${months[d.getMonth()]}`;
 }
 
-function isInSelectedRange(item, selectedDate, viewMode) {
-    if (!selectedDate) return true;
-    if (!item?.date) return false;
+function getProgramColor(program) {
+    if (!program) return "#eef2f7";
+    if (programColorCache[program]) return programColorCache[program];
 
-    if (viewMode === "day") return item.date === selectedDate;
-
-    const selected = new Date(selectedDate);
-    const current = new Date(item.date);
-    if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
-
-    if (viewMode === "week") {
-        return (item.week || "") === (slots.find(s => s.date === selectedDate)?.week || "");
+    let hash = 0;
+    for (let i = 0; i < program.length; i++) {
+        hash = program.charCodeAt(i) + ((hash << 5) - hash);
     }
-    if (viewMode === "month") {
-        return selected.getFullYear() === current.getFullYear() &&
-               selected.getMonth() === current.getMonth();
-    }
-    if (viewMode === "year") {
-        return selected.getFullYear() === current.getFullYear();
-    }
-    return item.date === selectedDate;
+    const hue = Math.abs(hash) % 360;
+    const color = `hsl(${hue}, 70%, 88%)`;
+    programColorCache[program] = color;
+    return color;
 }
 
 function normalize(e) {
@@ -167,7 +147,6 @@ function loadData() {
 function initFilters() {
     const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
     const programs = [...new Set(events.map(e => e.program))];
-    const semesters = [...new Set(events.map(e => e.semester).filter(Boolean))];
     const rooms = [...new Set(slots.map(s => s.room))];
 
     fillSelect("dateFilter", dates, { includeAll: false, labelFormatter: d => {
@@ -176,18 +155,7 @@ function initFilters() {
         return `${dayText}${d}`;
     }});
     fillSelect("programFilter", programs);
-    fillSelect("semesterFilter", semesters);
     fillSelect("roomFilter", rooms);
-
-    const dateFilter = document.getElementById("dateFilter");
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayIso = `${yyyy}-${mm}-${dd}`;
-    if (dates.includes(todayIso)) {
-        dateFilter.value = todayIso;
-    }
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
@@ -205,14 +173,12 @@ function fillSelect(id, values, options = {}) {
 
 function render() {
 
-    const viewMode = document.getElementById("viewMode").value;
     const dateFilter = document.getElementById("dateFilter").value;
     const programFilter = document.getElementById("programFilter").value;
-    const semesterFilter = document.getElementById("semesterFilter").value;
     const roomFilter = document.getElementById("roomFilter").value;
 
     const filteredSlots = slots.filter(s =>
-        isInSelectedRange(s, dateFilter, viewMode) &&
+        (!dateFilter || s.date === dateFilter) &&
         (!roomFilter || s.room === roomFilter)
     );
 
@@ -222,15 +188,14 @@ function render() {
 
     const selectedDateSlot = slots.find(s => s.date === dateFilter);
     document.getElementById("viewInfo").textContent = dateFilter
-        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
+        ? `Приказ за: ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
         : "Приказ за сите датуми (комбинирано).";
 
     // Keep all events per slot so overlapping groups/programs are not lost.
     const eventMap = {};
     events.forEach(e => {
         if (programFilter && e.program !== programFilter) return;
-        if (semesterFilter && e.semester !== semesterFilter) return;
-        if (!isInSelectedRange(e, dateFilter, viewMode)) return;
+        if (dateFilter && e.date !== dateFilter) return;
 
         const key = `${e.date}_${e.time}_${e.room}`;
         if (!eventMap[key]) eventMap[key] = [];
@@ -269,7 +234,7 @@ function render() {
     });
 }
 
-loadData();
+    loadData();
 
 </script>
 
