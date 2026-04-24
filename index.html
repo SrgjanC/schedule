@@ -14,17 +14,14 @@ select { padding: 5px; margin-right: 10px; }
 
 table { border-collapse: collapse; width: 100%; }
 th, td {
-    border: 1px solid #ccc;
-    padding: 6px;
-    text-align: center;
+    border: 1px solid #222;
+    padding: 4px 6px;
+    text-align: left;
     font-size: 13px;
 }
-th { background: #f2f2f2; }
+th { background: #3f69b1; color: #fff; }
 
 .empty { background: #fafafa; }
-.lecture { background: #d0e7ff; }
-.exercise { background: #d4ffd4; }
-.field { background: #ffe0b3; }
 </style>
 </head>
 
@@ -33,20 +30,42 @@ th { background: #f2f2f2; }
 <h2>Академски Распоред</h2>
 
 <div class="controls">
-    <label>Ден:</label>
-    <select id="dayFilter"></select>
+    <label>Преглед:</label>
+    <select id="viewMode">
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="year">Year</option>
+    </select>
+
+    <label>Датум:</label>
+    <select id="dateFilter"></select>
 
     <label>Програма:</label>
     <select id="programFilter"></select>
 
+    <label>Семестар:</label>
+    <select id="semesterFilter"></select>
+
     <label>Просторија:</label>
     <select id="roomFilter"></select>
 </div>
+<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
 
 <table id="schedule">
     <thead>
         <tr>
+            <th>Недела</th>
+            <th>Ден</th>
+            <th>Датум</th>
             <th>Час</th>
+            <th>Просторија</th>
+            <th>Студиска програма</th>
+            <th>Семестар</th>
+            <th>Предмет</th>
+            <th>Тип на настава</th>
+            <th>Проф/асс</th>
+            <th>Групи</th>
         </tr>
     </thead>
     <tbody></tbody>
@@ -56,6 +75,50 @@ th { background: #f2f2f2; }
 
 let slots = [];
 let events = [];
+const roomColorCache = {};
+
+function getRoomColor(room) {
+    if (!room) return "#ffffff";
+    if (roomColorCache[room]) return roomColorCache[room];
+
+    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
+    let hash = 0;
+    for (let i = 0; i < room.length; i++) hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    const color = palette[Math.abs(hash) % palette.length];
+    roomColorCache[room] = color;
+    return color;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    const months = ["Јан", "Фев", "Мар", "Апр", "Мај", "Јун", "Јул", "Авг", "Сеп", "Окт", "Ное", "Дек"];
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
+
+function isInSelectedRange(item, selectedDate, viewMode) {
+    if (!selectedDate) return true;
+    if (!item?.date) return false;
+
+    if (viewMode === "day") return item.date === selectedDate;
+
+    const selected = new Date(selectedDate);
+    const current = new Date(item.date);
+    if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
+
+    if (viewMode === "week") {
+        return (item.week || "") === (slots.find(s => s.date === selectedDate)?.week || "");
+    }
+    if (viewMode === "month") {
+        return selected.getFullYear() === current.getFullYear() &&
+               selected.getMonth() === current.getMonth();
+    }
+    if (viewMode === "year") {
+        return selected.getFullYear() === current.getFullYear();
+    }
+    return item.date === selectedDate;
+}
 
 function normalize(e) {
     const dayMap = {
@@ -79,9 +142,11 @@ function normalize(e) {
         time: time,
         room: (e["Просторија"] || "").trim(),
         program: e["Студиска програма"] || "",
+        semester: e["Семестар"] || "",
         subject: e["предмет"] || "",
         type: e["тип на настава"] || "",
-        professor: e["проф/асс"] || ""
+        professor: e["проф/асс"] || "",
+        groups: e["Групи"] || ""
     };
 }
 
@@ -100,84 +165,115 @@ function loadData() {
 }
 
 function initFilters() {
-    const days = [...new Set(slots.map(s => s.day))];
+    const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
     const programs = [...new Set(events.map(e => e.program))];
+    const semesters = [...new Set(events.map(e => e.semester).filter(Boolean))];
     const rooms = [...new Set(slots.map(s => s.room))];
 
-    fillSelect("dayFilter", days);
+    fillSelect("dateFilter", dates, { includeAll: false, labelFormatter: d => {
+        const slot = slots.find(s => s.date === d);
+        const dayText = slot?.day ? `${slot.day}, ` : "";
+        return `${dayText}${d}`;
+    }});
     fillSelect("programFilter", programs);
+    fillSelect("semesterFilter", semesters);
     fillSelect("roomFilter", rooms);
+
+    const dateFilter = document.getElementById("dateFilter");
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const todayIso = `${yyyy}-${mm}-${dd}`;
+    if (dates.includes(todayIso)) {
+        dateFilter.value = todayIso;
+    }
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
     );
 }
 
-function fillSelect(id, values) {
+function fillSelect(id, values, options = {}) {
+    const { includeAll = true, labelFormatter = v => v } = options;
     const select = document.getElementById(id);
-    select.innerHTML = "<option value=''>Сите</option>";
+    select.innerHTML = includeAll ? "<option value=''>Сите</option>" : "";
     values.forEach(v => {
-        if (v) select.innerHTML += `<option>${v}</option>`;
+        if (v) select.innerHTML += `<option value="${v}">${labelFormatter(v)}</option>`;
     });
 }
 
 function render() {
 
-    const dayFilter = document.getElementById("dayFilter").value;
+    const viewMode = document.getElementById("viewMode").value;
+    const dateFilter = document.getElementById("dateFilter").value;
     const programFilter = document.getElementById("programFilter").value;
+    const semesterFilter = document.getElementById("semesterFilter").value;
     const roomFilter = document.getElementById("roomFilter").value;
 
     const filteredSlots = slots.filter(s =>
-        (!dayFilter || s.day === dayFilter) &&
+        isInSelectedRange(s, dateFilter, viewMode) &&
         (!roomFilter || s.room === roomFilter)
     );
 
-    const times = [...new Set(filteredSlots.map(s => s.time))].sort();
-    const rooms = [...new Set(filteredSlots.map(s => s.room))];
-
     const table = document.getElementById("schedule");
-    const thead = table.querySelector("thead tr");
     const tbody = table.querySelector("tbody");
-
-    thead.innerHTML = "<th>Час</th>" + rooms.map(r => `<th>${r}</th>`).join("");
     tbody.innerHTML = "";
 
-    // 🔥 FIXED event matching
+    const selectedDateSlot = slots.find(s => s.date === dateFilter);
+    document.getElementById("viewInfo").textContent = dateFilter
+        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
+        : "Приказ за сите датуми (комбинирано).";
+
+    // Keep all events per slot so overlapping groups/programs are not lost.
     const eventMap = {};
     events.forEach(e => {
         if (programFilter && e.program !== programFilter) return;
+        if (semesterFilter && e.semester !== semesterFilter) return;
+        if (!isInSelectedRange(e, dateFilter, viewMode)) return;
 
-        const key = `${e.day}_${e.time}_${e.room}`;
-        eventMap[key] = e;
+        const key = `${e.date}_${e.time}_${e.room}`;
+        if (!eventMap[key]) eventMap[key] = [];
+        eventMap[key].push(e);
     });
 
-    times.forEach(time => {
-        let row = `<tr><td>${time}</td>`;
+    const slotsToRender = filteredSlots.filter(slot => {
+        if (viewMode === "week" || viewMode === "month" || viewMode === "year") {
+            const key = `${slot.date}_${slot.time}_${slot.room}`;
+            return Boolean(eventMap[key]?.length);
+        }
+        return true;
+    });
 
-        rooms.forEach(room => {
-            // 🔥 FIXED KEY (this is the important part)
-            const slot = filteredSlots.find(s => s.time === time && s.room === room);
-            const key = slot ? `${slot.day}_${slot.time}_${slot.room}` : "";
+    const sortedSlots = [...slotsToRender].sort((a, b) =>
+        a.week - b.week ||
+        a.day.localeCompare(b.day, "mk") ||
+        a.date.localeCompare(b.date) ||
+        a.room.localeCompare(b.room, "mk") ||
+        a.time.localeCompare(b.time)
+    );
 
-            const e = eventMap[key];
+    sortedSlots.forEach(slot => {
+        const key = `${slot.date}_${slot.time}_${slot.room}`;
+        const cellEvents = eventMap[key] || [null];
+        const rowColor = getRoomColor(slot.room);
 
-            if (e) {
-                let cls = "lecture";
-                if (e.type.toLowerCase().includes("веж")) cls = "exercise";
-                if (e.type.toLowerCase().includes("терен")) cls = "field";
-
-                row += `<td class="${cls}">
-                    <b>${e.subject}</b><br>
-                    ${e.professor}<br>
-                    ${e.program}
-                </td>`;
-            } else {
-                row += `<td class="empty"></td>`;
-            }
+        cellEvents.forEach(e => {
+            const row = `<tr style="background:${rowColor};">
+                <td>${slot.week || ""}</td>
+                <td>${slot.day || ""}</td>
+                <td>${formatDate(slot.date)}</td>
+                <td>${slot.time || ""}</td>
+                <td>${slot.room || ""}</td>
+                <td>${e?.program || ""}</td>
+                <td>${e?.semester || ""}</td>
+                <td>${e?.subject || ""}</td>
+                <td>${e?.type || ""}</td>
+                <td>${e?.professor || ""}</td>
+                <td>${e?.groups || ""}</td>
+            </tr>`;
+            tbody.innerHTML += row;
         });
-
-        row += "</tr>";
-        tbody.innerHTML += row;
     });
 }
 
