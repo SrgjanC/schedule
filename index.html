@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="mk">
-<head>
-<meta charset="UTF-8">
-<title>Распоред</title>
+ <html lang="mk">
+ <head>
+ <meta charset="UTF-8">
+ <title>Распоред</title>
+ 
+ <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+ 
+ <style>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-<style>
 body { font-family: Arial; padding: 20px; }
 h2 { margin-bottom: 10px; }
 .controls { margin-bottom: 15px; }
@@ -23,11 +24,12 @@ th { background: #3f69b1; color: #fff; }
 
 .empty { background: #fafafa; }
 </style>
-</head>
-
-<body>
-
-<h2>Академски Распоред</h2>
+ </head>
+ 
+ <body>
+ 
+ <h2>Академски Распоред</h2>
+ 
 
 <div class="controls">
     <label>Преглед:</label>
@@ -70,8 +72,9 @@ th { background: #3f69b1; color: #fff; }
     </thead>
     <tbody></tbody>
 </table>
-
-<script>
+ 
+ <script>
+ 
 
 let slots = [];
 let events = [];
@@ -119,27 +122,28 @@ function isInSelectedRange(item, selectedDate, viewMode) {
     }
     return item.date === selectedDate;
 }
+ 
+ function normalize(e) {
+     const dayMap = {
+         "Monday": "понеделник",
+         "Tuesday": "вторник",
+         "Wednesday": "среда",
+         "Thursday": "четврток",
+         "Friday": "петок"
+     };
+ 
+     let day = e["Ден"] || e["Day"];
+     if (dayMap[day]) day = dayMap[day];
+ 
+     let time = (e["Час"] || e["Time"] || "").toString().trim();
+     if (time.length === 4) time = "0" + time; // 9:00 → 09:00
+ 
+     return {
+         week: e["Недела"] || e["Week"],
+         day: day,
+         date: e["Датум"] || e["Date"],
+         time: time,
 
-function normalize(e) {
-    const dayMap = {
-        "Monday": "понеделник",
-        "Tuesday": "вторник",
-        "Wednesday": "среда",
-        "Thursday": "четврток",
-        "Friday": "петок"
-    };
-
-    let day = e["Ден"] || e["Day"];
-    if (dayMap[day]) day = dayMap[day];
-
-    let time = (e["Час"] || e["Time"] || "").toString().trim();
-    if (time.length === 4) time = "0" + time; // 9:00 → 09:00
-
-    return {
-        week: e["Недела"] || e["Week"],
-        day: day,
-        date: e["Датум"] || e["Date"],
-        time: time,
         room: (e["Просторија"] || "").trim(),
         program: e["Студиска програма"] || "",
         semester: e["Семестар"] || "",
@@ -149,20 +153,21 @@ function normalize(e) {
         groups: e["Групи"] || ""
     };
 }
-
-function loadData() {
-    Promise.all([
-        fetch("slots.csv").then(r => r.text()),
-        fetch("events.csv").then(r => r.text())
-    ]).then(([slotsText, eventsText]) => {
-
-        slots = Papa.parse(slotsText, {header: true, delimiter: ";"}).data.map(normalize);
-        events = Papa.parse(eventsText, {header: true, delimiter: ";"}).data.map(normalize);
-
-        initFilters();
-        render();
-    });
-}
+ 
+ function loadData() {
+     Promise.all([
+         fetch("slots.csv").then(r => r.text()),
+         fetch("events.csv").then(r => r.text())
+     ]).then(([slotsText, eventsText]) => {
+ 
+         slots = Papa.parse(slotsText, {header: true, delimiter: ";"}).data.map(normalize);
+         events = Papa.parse(eventsText, {header: true, delimiter: ";"}).data.map(normalize);
+ 
+         initFilters();
+         render();
+     });
+ }
+ 
 
 function initFilters() {
     const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
@@ -191,8 +196,9 @@ function initFilters() {
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
-    );
-}
+     );
+ }
+ 
 
 function fillSelect(id, values, options = {}) {
     const { includeAll = true, labelFormatter = v => v } = options;
@@ -237,15 +243,7 @@ function render() {
         eventMap[key].push(e);
     });
 
-    const slotsToRender = filteredSlots.filter(slot => {
-        if (viewMode === "week" || viewMode === "month" || viewMode === "year") {
-            const key = `${slot.date}_${slot.time}_${slot.room}`;
-            return Boolean(eventMap[key]?.length);
-        }
-        return true;
-    });
-
-    const sortedSlots = [...slotsToRender].sort((a, b) =>
+    const sortedSlots = [...filteredSlots].sort((a, b) =>
         a.week - b.week ||
         a.day.localeCompare(b.day, "mk") ||
         a.date.localeCompare(b.date) ||
@@ -276,10 +274,10 @@ function render() {
         });
     });
 }
-
-loadData();
-
-</script>
-
-</body>
-</html>
+ 
+ loadData();
+ 
+ </script>
+ 
+ </body>
+ </html>
