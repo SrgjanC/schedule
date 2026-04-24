@@ -243,7 +243,15 @@ function render() {
         eventMap[key].push(e);
     });
 
-    const sortedSlots = [...filteredSlots].sort((a, b) =>
+    const slotsToRender = filteredSlots.filter(slot => {
+        if (viewMode === "week" || viewMode === "month" || viewMode === "year") {
+            const key = `${slot.date}_${slot.time}_${slot.room}`;
+            return Boolean(eventMap[key]?.length);
+        }
+        return true;
+    });
+
+    const sortedSlots = [...slotsToRender].sort((a, b) =>
         a.week - b.week ||
         a.day.localeCompare(b.day, "mk") ||
         a.date.localeCompare(b.date) ||
