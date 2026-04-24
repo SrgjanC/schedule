@@ -1,26 +1,79 @@
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+input { display: block; margin: 5px 0; padding: 6px; width: 250px; }
+button { padding: 8px 12px; margin-top: 10px; cursor: pointer; }
+li { margin: 5px 0; }
+</style>
+</head>
+
+<body>
+
+<h2>Admin - Распоред</h2>
+
+<input id="day" placeholder="Ден (среда)">
+<input id="time" placeholder="Час (09:00)">
+<input id="room" placeholder="Просторија (01 пред.)">
+<input id="subject" placeholder="Предмет">
+<input id="prof" placeholder="Професор">
+<input id="program" placeholder="Програма">
+
+<button onclick="add()">Додади</button>
+
+<h3>Записи:</h3>
+<ul id="list"></ul>
 
 <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyDGJ52Zvt46flmso4UEkh2k9_g5L_neRYk",
-    authDomain: "schedule-a6667.firebaseapp.com",
-    projectId: "schedule-a6667",
-    storageBucket: "schedule-a6667.firebasestorage.app",
-    messagingSenderId: "108962717396",
-    appId: "1:108962717396:web:f0eba3d1c1594456e7e541",
-    measurementId: "G-YW92J2L1MT"
+const firebaseConfig = {
+  apiKey: "AIzaSyDGJ52Zvt46flmso4UEkh2k9_g5L_neRYk",
+  authDomain: "schedule-a6667.firebaseapp.com",
+  projectId: "schedule-a6667",
+  storageBucket: "schedule-a6667.firebasestorage.app",
+  messagingSenderId: "108962717396",
+  appId: "1:108962717396:web:f0eba3d1c1594456e7e541"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Add new record
+window.add = async function () {
+  const data = {
+    day: document.getElementById("day").value.trim(),
+    time: document.getElementById("time").value.trim(),
+    room: document.getElementById("room").value.trim(),
+    subject: document.getElementById("subject").value.trim(),
+    professor: document.getElementById("prof").value.trim(),
+    program: document.getElementById("program").value.trim()
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  if (!data.day || !data.time || !data.room) {
+    alert("Пополнете барем ден, час и просторија");
+    return;
+  }
+
+  await addDoc(collection(db, "events"), data);
+};
+
+// Live update list
+onSnapshot(collection(db, "events"), (snapshot) => {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    list.innerHTML += `<li>${d.day} ${d.time} | ${d.room} | ${d.subject}</li>`;
+  });
+});
 </script>
+
+</body>
+</html>
