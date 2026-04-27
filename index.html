@@ -182,7 +182,6 @@ function isInSelectedRange(item, selectedDate, viewMode) {
     if (!item?.date) return false;
 
     if (viewMode === "day") return item.date === selectedDate;
-
     const selected = new Date(selectedDate);
     const current = new Date(item.date);
     if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
@@ -265,8 +264,7 @@ function initFilters() {
         if (selectedDate) currentAnchorDate = selectedDate;
         render();
     });
- }
- 
+ } 
 
 function fillSelect(id, values, options = {}) {
     const { includeAll = true, labelFormatter = v => v } = options;
@@ -296,10 +294,10 @@ function render() {
     const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
 
-    const selectedDateSlot = slots.find(s => s.date === dateFilter);
-    document.getElementById("viewInfo").textContent = dateFilter
-        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()
-        : "Приказ за сите датуми (комбинирано).";
+    const selectedDateSlot = slots.find(s => s.date === dateFilter);␊
+    document.getElementById("viewInfo").textContent = dateFilter␊
+        ? `Приказ (${viewMode}): ${selectedDateSlot?.day || ""} ${dateFilter}`.trim()␊
+        : "Приказ за сите датуми (комбинирано).";␊
 
     // Keep all events per slot so overlapping groups/programs are not lost.
     const eventMap = {};
