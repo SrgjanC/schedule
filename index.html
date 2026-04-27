@@ -251,13 +251,15 @@ function render() {
         return true;
     });
 
-    const sortedSlots = [...slotsToRender].sort((a, b) =>
-        a.week - b.week ||
-        a.day.localeCompare(b.day, "mk") ||
-        a.date.localeCompare(b.date) ||
-        a.room.localeCompare(b.room, "mk") ||
-        a.time.localeCompare(b.time)
-    );
+    const sortedSlots = [...slotsToRender].sort((a, b) => {
+        if (viewMode === "day") {
+            return a.room.localeCompare(b.room, "mk") ||
+                a.time.localeCompare(b.time);
+        }
+        return a.date.localeCompare(b.date) ||
+            a.room.localeCompare(b.room, "mk") ||
+            a.time.localeCompare(b.time);
+    });
 
     sortedSlots.forEach(slot => {
         const key = `${slot.date}_${slot.time}_${slot.room}`;
