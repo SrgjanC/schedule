@@ -4,22 +4,13 @@
 <meta charset="UTF-8">
 <title>Распоред</title>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
 <style>
 body { font-family: Arial; padding: 20px; }
-h2 { margin-bottom: 10px; }
-.controls { margin-bottom: 15px; }
-select { padding: 5px; margin-right: 10px; }
-
+select { margin: 5px; padding: 5px; }
 table { border-collapse: collapse; width: 100%; }
-th, td {
-    border: 1px solid #222;
-    padding: 4px 6px;
-    text-align: left;
-    font-size: 13px;
-}
-th { background: #3f69b1; color: #fff; }
+th, td { border: 1px solid #333; padding: 5px; font-size: 13px; }
+th { background: #3f69b1; color: white; }
+.empty { background: #f5f5f5; }
 </style>
 </head>
 
@@ -27,79 +18,58 @@ th { background: #3f69b1; color: #fff; }
 
 <h2>Академски Распоред</h2>
 
-<div class="controls">
-<select id="viewMode">
-<option value="day">Day</option>
-<option value="week">Week</option>
-<option value="month">Month</option>
-<option value="year">Year</option>
-</select>
-
 <select id="dateFilter"></select>
-<select id="programFilter"></select>
-<select id="semesterFilter"></select>
 <select id="roomFilter"></select>
-</div>
-
-<div id="viewInfo"></div>
+<select id="programFilter"></select>
 
 <table id="schedule">
 <thead>
 <tr>
-<th>Недела</th>
-<th>Ден</th>
 <th>Датум</th>
 <th>Час</th>
 <th>Просторија</th>
-<th>Програма</th>
-<th>Семестар</th>
 <th>Предмет</th>
-<th>Тип</th>
-<th>Проф</th>
+<th>Професор</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
 
-<!-- MAIN SCRIPT -->
+<!-- MAIN LOGIC -->
 <script>
-let slots = [];
 let events = [];
 
-// normalize CSV
-function normalize(e) {
-    let time = (e["Час"] || "").toString().padStart(5, "0");
+// 🔧 SETTINGS (you control these)
+const rooms = ["01 пред.", "02 пред.", "03 пред."];
+const startHour = 8;
+const endHour = 19;
 
-    return {
-        week: e["Недела"],
-        day: e["Ден"],
-        date: e["Датум"],
-        time: time,
-        room: e["Просторија"],
-        program: e["Студиска програма"] || "",
-        semester: e["Семестар"] || "",
-        subject: e["предмет"] || "",
-        type: e["тип на настава"] || "",
-        professor: e["проф/асс"] || ""
-    };
-}
+// 🧠 Generate time slots
+function generateSlots(dates) {
+    let slots = [];
 
-// load slots only
-function loadData() {
-    fetch("slots.csv")
-    .then(r => r.text())
-    .then(text => {
-        slots = Papa.parse(text, {header:true, delimiter:";"}).data.map(normalize);
-        initFilters();
-        render();
+    dates.forEach(date => {
+        rooms.forEach(room => {
+            for (let h = startHour; h <= endHour; h++) {
+                let time = String(h).padStart(2, "0") + ":00";
+
+                slots.push({
+                    date,
+                    time,
+                    room
+                });
+            }
+        });
     });
+
+    return slots;
 }
 
-function initFilters() {
-    fill("dateFilter", [...new Set(slots.map(s=>s.date))]);
-    fill("roomFilter", [...new Set(slots.map(s=>s.room))]);
-    fill("programFilter", [...new Set(events.map(e=>e.program))]);
-    fill("semesterFilter", [...new Set(events.map(e=>e.semester))]);
+// 🎛 filters
+function initFilters(dates) {
+    fill("dateFilter", dates);
+    fill("roomFilter", rooms);
+    fill("programFilter", [...new Set(events.map(e => e.program))]);
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
@@ -109,53 +79,46 @@ function initFilters() {
 function fill(id, arr) {
     const el = document.getElementById(id);
     el.innerHTML = "<option value=''>Сите</option>";
-    arr.forEach(v => { if(v) el.innerHTML += `<option>${v}</option>` });
+    arr.forEach(v => el.innerHTML += `<option>${v}</option>`);
 }
 
+// 🎨 render
 function render() {
     const date = document.getElementById("dateFilter").value;
-    const room = document.getElementById("roomFilter").value;
+    const roomFilter = document.getElementById("roomFilter").value;
     const program = document.getElementById("programFilter").value;
-    const semester = document.getElementById("semesterFilter").value;
 
     const tbody = document.querySelector("#schedule tbody");
     tbody.innerHTML = "";
 
+    const dates = [...new Set(events.map(e => e.date))];
+    const slots = generateSlots(dates);
+
     const map = {};
-
-    events.forEach(e=>{
-        if(program && e.program !== program) return;
-        if(semester && e.semester !== semester) return;
-
+    events.forEach(e => {
+        if (program && e.program !== program) return;
         const key = `${e.date}_${e.time}_${e.room}`;
         map[key] = e;
     });
 
-    slots.forEach(s=>{
-        if(date && s.date !== date) return;
-        if(room && s.room !== room) return;
+    slots.forEach(s => {
+        if (date && s.date !== date) return;
+        if (roomFilter && s.room !== roomFilter) return;
 
         const key = `${s.date}_${s.time}_${s.room}`;
         const e = map[key];
 
-        const row = `<tr>
-        <td>${s.week}</td>
-        <td>${s.day}</td>
-        <td>${s.date}</td>
-        <td>${s.time}</td>
-        <td>${s.room}</td>
-        <td>${e?.program || ""}</td>
-        <td>${e?.semester || ""}</td>
-        <td>${e?.subject || ""}</td>
-        <td>${e?.type || ""}</td>
-        <td>${e?.professor || ""}</td>
+        const row = `<tr class="${e ? "" : "empty"}">
+            <td>${s.date}</td>
+            <td>${s.time}</td>
+            <td>${s.room}</td>
+            <td>${e?.subject || ""}</td>
+            <td>${e?.professor || ""}</td>
         </tr>`;
 
         tbody.innerHTML += row;
     });
 }
-
-loadData();
 </script>
 
 <!-- FIREBASE -->
@@ -172,10 +135,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-onSnapshot(collection(db, "events"), (snap)=>{
+// 🔄 live data
+onSnapshot(collection(db, "events"), (snap) => {
     events = [];
     snap.forEach(d => events.push(d.data()));
-    initFilters();
+
+    const dates = [...new Set(events.map(e => e.date))];
+
+    initFilters(dates);
     render();
 });
 </script>
