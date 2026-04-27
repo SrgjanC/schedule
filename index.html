@@ -40,8 +40,8 @@ th { background: #3f69b1; color: #fff; }
         <option value="year">Year</option>
     </select>
 
-    <label>Датум:</label>
-    <select id="dateFilter"></select>
+    <label id="dateFilterLabel" for="dateFilter">Датум:</label>
+    <input id="dateFilter" type="date" />
 
     <label>Програма:</label>
     <select id="programFilter"></select>
@@ -79,6 +79,7 @@ th { background: #3f69b1; color: #fff; }
 let slots = [];
 let events = [];
 const roomColorCache = {};
+let currentAnchorDate = "";
 
 function getRoomColor(room) {
     if (!room) return "#ffffff";
@@ -100,6 +101,82 @@ function formatDate(dateStr) {
     return `${d.getDate()}-${months[d.getMonth()]}`;
 }
 
+function toIsoDate(dateObj) {
+    if (!(dateObj instanceof Date) || Number.isNaN(dateObj.getTime())) return "";
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const dd = String(dateObj.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function getIsoWeekId(dateStr) {
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return "";
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function weekInputToIsoDate(weekValue) {
+    const match = /^(\d{4})-W(\d{2})$/.exec(weekValue || "");
+    if (!match) return "";
+    const year = Number(match[1]);
+    const week = Number(match[2]);
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Day = jan4.getUTCDay() || 7;
+    const monday = new Date(jan4);
+    monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1 + (week - 1) * 7);
+    return toIsoDate(new Date(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate()));
+}
+
+function monthInputToIsoDate(monthValue) {
+    if (!/^\d{4}-\d{2}$/.test(monthValue || "")) return "";
+    return `${monthValue}-01`;
+}
+
+function yearInputToIsoDate(yearValue) {
+    if (!/^\d{4}$/.test(yearValue || "")) return "";
+    return `${yearValue}-01-01`;
+}
+
+function updateDateInputForView(viewMode) {
+    const input = document.getElementById("dateFilter");
+    const label = document.getElementById("dateFilterLabel");
+    const base = currentAnchorDate || toIsoDate(new Date());
+
+    if (viewMode === "day") {
+        input.type = "date";
+        label.textContent = "Датум:";
+        input.value = base;
+    } else if (viewMode === "week") {
+        input.type = "week";
+        label.textContent = "Недела:";
+        input.value = getIsoWeekId(base);
+    } else if (viewMode === "month") {
+        input.type = "month";
+        label.textContent = "Месец:";
+        input.value = base.slice(0, 7);
+    } else {
+        input.type = "number";
+        input.min = "2000";
+        input.max = "2100";
+        label.textContent = "Година:";
+        input.value = base.slice(0, 4);
+    }
+}
+
+function getSelectedDateForFiltering(viewMode) {
+    const value = document.getElementById("dateFilter").value;
+    if (!value) return "";
+    if (viewMode === "week") return weekInputToIsoDate(value);
+    if (viewMode === "month") return monthInputToIsoDate(value);
+    if (viewMode === "year") return yearInputToIsoDate(value);
+    return value;
+}
+
 function isInSelectedRange(item, selectedDate, viewMode) {
     if (!selectedDate) return true;
     if (!item?.date) return false;
@@ -110,9 +187,7 @@ function isInSelectedRange(item, selectedDate, viewMode) {
     const current = new Date(item.date);
     if (Number.isNaN(selected.getTime()) || Number.isNaN(current.getTime())) return false;
 
-    if (viewMode === "week") {
-        return (item.week || "") === (slots.find(s => s.date === selectedDate)?.week || "");
-    }
+    if (viewMode === "week") return getIsoWeekId(item.date) === getIsoWeekId(selectedDate);
     if (viewMode === "month") {
         return selected.getFullYear() === current.getFullYear() &&
                selected.getMonth() === current.getMonth();
@@ -170,33 +245,26 @@ function isInSelectedRange(item, selectedDate, viewMode) {
  
 
 function initFilters() {
-    const dates = [...new Set(slots.map(s => s.date).filter(Boolean))].sort();
     const programs = [...new Set(events.map(e => e.program))];
     const semesters = [...new Set(events.map(e => e.semester).filter(Boolean))];
     const rooms = [...new Set(slots.map(s => s.room))];
 
-    fillSelect("dateFilter", dates, { includeAll: false, labelFormatter: d => {
-        const slot = slots.find(s => s.date === d);
-        const dayText = slot?.day ? `${slot.day}, ` : "";
-        return `${dayText}${d}`;
-    }});
     fillSelect("programFilter", programs);
     fillSelect("semesterFilter", semesters);
     fillSelect("roomFilter", rooms);
 
-    const dateFilter = document.getElementById("dateFilter");
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const todayIso = `${yyyy}-${mm}-${dd}`;
-    if (dates.includes(todayIso)) {
-        dateFilter.value = todayIso;
-    }
+    currentAnchorDate = toIsoDate(new Date());
+    updateDateInputForView(document.getElementById("viewMode").value);
 
-    document.querySelectorAll("select").forEach(s =>
-        s.addEventListener("change", render)
-     );
+    document.querySelectorAll("select").forEach(s => s.addEventListener("change", () => {
+        if (s.id === "viewMode") updateDateInputForView(s.value);
+        render();
+    }));
+    document.getElementById("dateFilter").addEventListener("change", () => {
+        const selectedDate = getSelectedDateForFiltering(document.getElementById("viewMode").value);
+        if (selectedDate) currentAnchorDate = selectedDate;
+        render();
+    });
  }
  
 
@@ -212,10 +280,12 @@ function fillSelect(id, values, options = {}) {
 function render() {
 
     const viewMode = document.getElementById("viewMode").value;
-    const dateFilter = document.getElementById("dateFilter").value;
+    const dateFilter = getSelectedDateForFiltering(viewMode);
     const programFilter = document.getElementById("programFilter").value;
     const semesterFilter = document.getElementById("semesterFilter").value;
     const roomFilter = document.getElementById("roomFilter").value;
+
+    if (dateFilter) currentAnchorDate = dateFilter;
 
     const filteredSlots = slots.filter(s =>
         isInSelectedRange(s, dateFilter, viewMode) &&
@@ -252,8 +322,6 @@ function render() {
     });
 
     const sortedSlots = [...slotsToRender].sort((a, b) =>
-        a.week - b.week ||
-        a.day.localeCompare(b.day, "mk") ||
         a.date.localeCompare(b.date) ||
         a.room.localeCompare(b.room, "mk") ||
         a.time.localeCompare(b.time)
