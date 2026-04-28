@@ -102,35 +102,10 @@ let subjects = [];
 
 // ---------- NORMALIZE ----------
 function normalize(e) {
+  console.log("RAW DOC KEYS:", Object.keys(e));
+  console.log("RAW DOC:", e);
 
-let date = (e["Датум"] || "").trim();
-
-if (date.includes("/")) {
-let [d,m,y] = date.split("/");
-date = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
-}
-
-let time = (e["Час"] || "").toString().trim();
-time = time.replace(".", ":");
-
-let p = time.split(":");
-if (p.length === 2) {
-time = p[0].padStart(2,"0")+":"+p[1].padStart(2,"0");
-}
-
-return {
-week: e["Недела"] || "",
-day: (e["Ден"] || "").toLowerCase(),
-date,
-time,
-room: (e["Просторија"] || "").trim(),
-program: e["Студиска програма"] || "",
-semester: e["Семестар"] || "",
-subject: e["Предмет"] || "",
-type: e["Тип на настава"] || "",
-professor: e["Проф/асс"] || "",
-groups: e["Групи"] || ""
-};
+  return e;
 }
 
 // ---------- LOAD ----------
