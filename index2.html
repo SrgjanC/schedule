@@ -117,6 +117,11 @@ let isLoading = true;
 
 const roomColorCache = {};
 
+const DAY_ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.","НФИЦ"
+];
+
 function getRoomColor(room) {
     if (!room) return "#ffffff";
     if (roomColorCache[room]) return roomColorCache[room];
@@ -165,6 +170,16 @@ function sortSemesters(values) {
         .sort((a,b) => a - b);
 }
 
+function buildTimeSlots() {
+    const slots = [];
+    for (let h = 8; h <= 20; h++) {
+        slots.push(String(h).padStart(2,"0") + ":00");
+    }
+    return slots;
+}
+
+const TIMES = buildTimeSlots();
+
 async function loadData() {
 
     const eventsSnap = await getDocs(collection(db, "events"));
@@ -187,8 +202,8 @@ function initFilters() {
     const semRaw = [...new Set(events.map(e => e.semester))];
     const semSorted = sortSemesters(semRaw);
 
-    const roomSorted = [...new Set(rooms)].sort((a,b) =>
-        a.localeCompare(b, "mk")
+    const roomSorted = [...new Set(rooms)].sort((a,b)=>
+        a.localeCompare(b,"mk")
     );
 
     fillSelect("dateFilter", dates);
@@ -197,8 +212,8 @@ function initFilters() {
     fillSelect("roomFilter", roomSorted);
 
     const today = todayISO();
-    const df = document.getElementById("dateFilter");
-    if (dates.includes(today)) df.value = today;
+    if (dates.includes(today))
+        document.getElementById("dateFilter").value = today;
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
@@ -228,15 +243,61 @@ const progF = document.getElementById("programFilter").value;
 const semF = document.getElementById("semesterFilter").value;
 const roomF = document.getElementById("roomFilter").value;
 
-// SORT: date → room → hour
-const sorted = [...events].sort((a, b) =>
-    (a.date || "").localeCompare(b.date || "") ||
-    (a.room || "").localeCompare(b.room || "mk") ||
-    (a.time || "").localeCompare(b.time || "")
-);
+const view = document.getElementById("viewMode").value;
+
+// INDEX for fast lookup
+const map = {};
+events.forEach(e => {
+    const key = `${e.date}_${e.time}_${e.room}`;
+    map[key] = e;
+});
+
+const selectedDate = dateF || todayISO();
 
 document.getElementById("viewInfo").textContent =
-    dateF ? `Приказ: ${dateF}` : "Приказ за денес / сите датуми";
+    dateF ? `Приказ: ${dateF}` : "Приказ за денес";
+
+// ===================== DAY VIEW (ROOM × TIME GRID) =====================
+if (view === "day") {
+
+    for (const room of DAY_ROOMS) {
+        if (roomF && room !== roomF) continue;
+
+        for (const time of TIMES) {
+
+            const key = `${selectedDate}_${time}_${room}`;
+            const e = map[key];
+
+            // filters
+            if (progF && e && e.program !== progF) continue;
+            if (semF && e && e.semester !== semF) continue;
+
+            tbody.innerHTML += `
+            <tr style="background:${e ? getRoomColor(room) : "#fafafa"}">
+                <td>${e?.week || ""}</td>
+                <td>${e?.day || ""}</td>
+                <td>${formatDate(selectedDate)}</td>
+                <td>${time}</td>
+                <td>${room}</td>
+                <td>${e?.program || ""}</td>
+                <td>${e?.semester || ""}</td>
+                <td>${e?.subject || ""}</td>
+                <td>${e?.type || ""}</td>
+                <td>${e?.professor || ""}</td>
+                <td>${e?.groups || ""}</td>
+            </tr>`;
+        }
+    }
+
+    return;
+}
+
+// ===================== NORMAL VIEW =====================
+const sorted = [...events].sort((a,b)=>
+    (a.date||"").localeCompare(b.date||"") ||
+    (a.room||"").localeCompare(b.room||"") ||
+    (a.time||"").localeCompare(b.time||"")
+);
 
 sorted.forEach(e => {
 
@@ -245,10 +306,8 @@ sorted.forEach(e => {
     if (semF && e.semester !== semF) return;
     if (roomF && e.room !== roomF) return;
 
-    const color = getRoomColor(e.room);
-
     tbody.innerHTML += `
-    <tr style="background:${color};">
+    <tr style="background:${getRoomColor(e.room)}">
         <td>${e.week || ""}</td>
         <td>${e.day || ""}</td>
         <td>${formatDate(e.date)}</td>
