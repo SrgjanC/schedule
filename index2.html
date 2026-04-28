@@ -100,19 +100,13 @@ let rooms = [];
 let programs = [];
 let subjects = [];
 
-// ---------- NORMALIZE ----------
-function normalize(e) {
-  console.log("RAW DOC KEYS:", Object.keys(e));
-  console.log("RAW DOC:", e);
 
-  return e;
-}
 
 // ---------- LOAD ----------
 async function loadData() {
 
 const eventsSnap = await getDocs(collection(db, "events"));
-events = eventsSnap.docs.map(doc => normalize(doc.data()));
+events = eventsSnap.docs.map(doc => doc.data());
 
 const roomsSnap = await getDocs(collection(db, "rooms"));
 rooms = roomsSnap.docs.map(doc => doc.data().name);
