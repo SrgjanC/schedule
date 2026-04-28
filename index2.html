@@ -76,20 +76,23 @@ th { background: #3f69b1; color: #fff; }
 
 <script>
 
+// ---------- GLOBAL DATA ----------
 let events = [];
 let hours = [];
 let rooms = [];
 const roomColorCache = {};
 
-// ---------- helpers ----------
+// ---------- HELPERS ----------
 
 function getRoomColor(room) {
     if (!room) return "#ffffff";
     if (roomColorCache[room]) return roomColorCache[room];
 
-    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
+    const palette = ["#f1dfd3","#dde3ef","#cfe7b4","#f7e6b8","#e3d9f6","#d7eee8"];
     let hash = 0;
-    for (let i = 0; i < room.length; i++) hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < room.length; i++)
+        hash = room.charCodeAt(i) + ((hash << 5) - hash);
+
     const color = palette[Math.abs(hash) % palette.length];
     roomColorCache[room] = color;
     return color;
@@ -98,44 +101,41 @@ function getRoomColor(room) {
 function formatDate(dateStr) {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return dateStr;
+    if (isNaN(d)) return dateStr;
+
     const months = ["Јан","Фев","Мар","Апр","Мај","Јун","Јул","Авг","Сеп","Окт","Ное","Дек"];
     return `${d.getDate()}-${months[d.getMonth()]}`;
 }
 
-function isInSelectedRange(item, selectedDate, viewMode) {
-    if (!selectedDate) return true;
-    if (!item?.date) return false;
-
-    if (viewMode === "day") return item.date === selectedDate;
-
-    const selected = new Date(selectedDate);
-    const current = new Date(item.date);
-
-    if (viewMode === "month")
-        return selected.getFullYear() === current.getFullYear() &&
-               selected.getMonth() === current.getMonth();
-
-    if (viewMode === "year")
-        return selected.getFullYear() === current.getFullYear();
-
-    return true;
-}
-
-// ---------- normalize ----------
+// ---------- NORMALIZE DATA ----------
 
 function normalize(e) {
 
+    // --- DATE FIX ---
+    let date = (e["Датум"] || "").trim();
+
+    if (date.includes("/")) {
+        let [d,m,y] = date.split("/");
+        date = `${y}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
+    }
+
+    // --- TIME FIX ---
     let time = (e["Час"] || "").toString().trim();
     time = time.replace(".", ":");
-    if (time.length === 4) time = "0" + time;
+
+    let parts = time.split(":");
+    if (parts.length === 2) {
+        let h = parts[0].padStart(2,"0");
+        let m = parts[1].padStart(2,"0");
+        time = `${h}:${m}`;
+    }
 
     return {
         week: e["Недела"] || "",
         day: (e["Ден"] || "").toLowerCase(),
-        date: e["Датум"] || "",
+        date: date,
         time: time,
-        room: (e["Просторија"] || "").trim(),
+        room: (e["Просторија"] || "").trim().replace(/\s+/g," "),
         program: e["Студиска програма"] || "",
         semester: e["Семестар"] || "",
         subject: e["предмет"] || "",
@@ -145,7 +145,7 @@ function normalize(e) {
     };
 }
 
-// ---------- load data ----------
+// ---------- LOAD DATA ----------
 
 function loadData() {
     Promise.all([
@@ -158,20 +158,27 @@ function loadData() {
 
         hours = Papa.parse(hoursText, {header:true}).data
             .map(h => h["Час"])
-            .filter(Boolean);
+            .filter(Boolean)
+            .map(t => {
+                let parts = t.split(":");
+                return parts[0].padStart(2,"0")+":"+parts[1].padStart(2,"0");
+            });
 
         rooms = Papa.parse(roomsText, {header:true}).data
             .map(r => r["Просторија"])
-            .filter(Boolean);
+            .filter(Boolean)
+            .map(r => r.trim());
 
-        console.log("Loaded:", events.length, "events");
+        console.log("Events:", events.length);
+        console.log("Hours:", hours.length);
+        console.log("Rooms:", rooms.length);
 
         initFilters();
         render();
     });
 }
 
-// ---------- filters ----------
+// ---------- FILTERS ----------
 
 function fillSelect(id, values) {
     const select = document.getElementById(id);
@@ -197,11 +204,10 @@ function initFilters() {
     );
 }
 
-// ---------- render ----------
+// ---------- RENDER ----------
 
 function render() {
 
-    const viewMode = document.getElementById("viewMode").value;
     const dateFilter = document.getElementById("dateFilter").value;
     const programFilter = document.getElementById("programFilter").value;
     const semesterFilter = document.getElementById("semesterFilter").value;
@@ -213,20 +219,8 @@ function render() {
 
     const dates = [...new Set(events.map(e => e.date).filter(Boolean))];
 
-    const eventMap = {};
-    events.forEach(e => {
-        if (programFilter && e.program !== programFilter) return;
-        if (semesterFilter && e.semester !== semesterFilter) return;
-        if (!isInSelectedRange(e, dateFilter, viewMode)) return;
+    let rows = 0;
 
-        const key = `${e.date}_${e.time}_${e.room}`;
-        if (!eventMap[key]) eventMap[key] = [];
-        eventMap[key].push(e);
-    });
-console.log("SAMPLE EVENT:", events[0]);
-console.log("HOURS:", hours.slice(0,5));
-console.log("ROOMS:", rooms.slice(0,5));
-    
     dates.forEach(date => {
 
         if (dateFilter && date !== dateFilter) return;
@@ -239,32 +233,54 @@ console.log("ROOMS:", rooms.slice(0,5));
 
                 if (hourFilter && time !== hourFilter) return;
 
-                const key = `${date}_${time}_${room}`;
-                const cellEvents = eventMap[key] || [null];
+                const matches = events.filter(e =>
+                    e.date === date &&
+                    e.time === time &&
+                    e.room === room &&
+                    (!programFilter || e.program === programFilter) &&
+                    (!semesterFilter || e.semester === semesterFilter)
+                );
+
                 const rowColor = getRoomColor(room);
 
-                cellEvents.forEach(e => {
-                    const row = `<tr style="background:${rowColor};">
-                        <td>${e?.week || ""}</td>
-                        <td>${e?.day || ""}</td>
+                if (matches.length === 0) {
+                    tbody.innerHTML += `
+                    <tr style="background:${rowColor}">
+                        <td></td><td></td>
                         <td>${formatDate(date)}</td>
                         <td>${time}</td>
                         <td>${room}</td>
-                        <td>${e?.program || ""}</td>
-                        <td>${e?.semester || ""}</td>
-                        <td>${e?.subject || ""}</td>
-                        <td>${e?.type || ""}</td>
-                        <td>${e?.professor || ""}</td>
-                        <td>${e?.groups || ""}</td>
+                        <td colspan="6"></td>
                     </tr>`;
-                    tbody.innerHTML += row;
-                });
+                    rows++;
+                } else {
+                    matches.forEach(e => {
+                        tbody.innerHTML += `
+                        <tr style="background:${rowColor}">
+                            <td>${e.week}</td>
+                            <td>${e.day}</td>
+                            <td>${formatDate(date)}</td>
+                            <td>${time}</td>
+                            <td>${room}</td>
+                            <td>${e.program}</td>
+                            <td>${e.semester}</td>
+                            <td>${e.subject}</td>
+                            <td>${e.type}</td>
+                            <td>${e.professor}</td>
+                            <td>${e.groups}</td>
+                        </tr>`;
+                        rows++;
+                    });
+                }
 
             });
         });
     });
+
+    console.log("Rendered rows:", rows);
 }
 
+// ---------- START ----------
 loadData();
 
 </script>
