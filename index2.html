@@ -91,13 +91,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ---------------- DATA ----------------
 let events = [];
 let programs = [];
 let rooms = [];
 let semesters = [];
 
-// ---------------- ROOM COLORS ----------------
 const roomColorCache = {};
 
 function getRoomColor(room) {
@@ -115,7 +113,6 @@ function getRoomColor(room) {
     return color;
 }
 
-// ---------------- DATE FORMAT ----------------
 function formatDate(dateStr) {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -125,20 +122,78 @@ function formatDate(dateStr) {
     return `${d.getDate()}-${months[d.getMonth()]}`;
 }
 
-// ---------------- LOAD DATA ----------------
+function toDate(d) {
+    const x = new Date(d);
+    return Number.isNaN(x.getTime()) ? null : x;
+}
+
+function startOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0 Sun - 6 Sat
+    const diff = (day === 0 ? -6 : 1 - day); // Monday start
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+}
+
+function endOfWeek(date) {
+    const s = startOfWeek(date);
+    const e = new Date(s);
+    e.setDate(s.getDate() + 4); // Mon-Fri
+    e.setHours(23,59,59,999);
+    return e;
+}
+
+function isInView(e, selectedDate, mode) {
+    if (!e.date) return false;
+
+    const ed = toDate(e.date);
+    if (!ed) return false;
+
+    if (!selectedDate) selectedDate = todayISO();
+
+    const sd = toDate(selectedDate);
+    if (!sd) return false;
+
+    if (mode === "day") {
+        return e.date === selectedDate;
+    }
+
+    if (mode === "week") {
+        const s = startOfWeek(sd);
+        const eW = endOfWeek(sd);
+        return ed >= s && ed <= eW;
+    }
+
+    if (mode === "month") {
+        return ed.getFullYear() === sd.getFullYear() &&
+               ed.getMonth() === sd.getMonth();
+    }
+
+    if (mode === "year") {
+        return ed.getFullYear() === sd.getFullYear();
+    }
+
+    return true;
+}
+
+function todayISO() {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = String(t.getMonth()+1).padStart(2,"0");
+    const d = String(t.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+}
+
 async function loadData() {
 
-    const eventsSnap = await getDocs(collection(db, "events"));
-    events = eventsSnap.docs.map(doc => doc.data());
-
-    console.log("Loaded:", events.length);
-    console.log(events);
+    const snap = await getDocs(collection(db, "events"));
+    events = snap.docs.map(d => d.data());
 
     initFilters();
     render();
 }
 
-// ---------------- FILTER UI ----------------
 function fillSelect(id, values) {
     const el = document.getElementById(id);
     el.innerHTML = "<option value=''>Сите</option>";
@@ -147,25 +202,28 @@ function fillSelect(id, values) {
     });
 }
 
-// ---------------- INIT FILTERS ----------------
 function initFilters() {
 
     const dates = [...new Set(events.map(e => e.date))].sort();
-    const programsSet = [...new Set(events.map(e => e.program))];
-    const semestersSet = [...new Set(events.map(e => e.semester))];
-    const roomsSet = [...new Set(events.map(e => e.room))];
+    const progs = [...new Set(events.map(e => e.program))];
+    const sems = [...new Set(events.map(e => e.semester))];
+    const rms = [...new Set(events.map(e => e.room))];
 
     fillSelect("dateFilter", dates);
-    fillSelect("programFilter", programsSet);
-    fillSelect("semesterFilter", semestersSet);
-    fillSelect("roomFilter", roomsSet);
+    fillSelect("programFilter", progs);
+    fillSelect("semesterFilter", sems);
+    fillSelect("roomFilter", rms);
+
+    // DEFAULT = TODAY
+    const dateFilter = document.getElementById("dateFilter");
+    const t = todayISO();
+    if (dates.includes(t)) dateFilter.value = t;
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
     );
 }
 
-// ---------------- RENDER (CSV STYLE LOGIC) ----------------
 function render() {
 
 const tbody = document.querySelector("#schedule tbody");
@@ -177,19 +235,20 @@ const progF = document.getElementById("programFilter").value;
 const semF = document.getElementById("semesterFilter").value;
 const roomF = document.getElementById("roomFilter").value;
 
-// VIEW INFO
-document.getElementById("viewInfo").textContent =
-    dateF ? `Приказ: ${dateF}` : "Приказ за сите датуми";
+const selectedDate = dateF || todayISO();
 
-const sorted = [...events].sort((a, b) => {
-    return (a.date || "").localeCompare(b.date || "") ||
-           (a.room || "").localeCompare(b.room || "mk") ||
-           (a.time || "").localeCompare(b.time || "");
-});
+document.getElementById("viewInfo").textContent =
+    `${viewMode.toUpperCase()} view`;
+
+const sorted = [...events].sort((a,b) =>
+    (a.date||"").localeCompare(b.date||"") ||
+    (a.time||"").localeCompare(b.time||"") ||
+    (a.room||"").localeCompare(b.room||"")
+);
 
 sorted.forEach(e => {
 
-    if (dateF && e.date !== dateF) return;
+    if (!isInView(e, selectedDate, viewMode)) return;
     if (progF && e.program !== progF) return;
     if (semF && e.semester !== semF) return;
     if (roomF && e.room !== roomF) return;
@@ -214,7 +273,6 @@ sorted.forEach(e => {
 });
 }
 
-// ---------------- START ----------------
 loadData();
 
 </script>
