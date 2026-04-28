@@ -5,29 +5,7 @@
 <title>Распоред</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
-  authDomain: "schedule-app-63c5e.firebaseapp.com",
-  projectId: "schedule-app-63c5e",
-  storageBucket: "schedule-app-63c5e.firebasestorage.app",
-  messagingSenderId: "32553140850",
-  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// make db global for your functions
-window.db = db;
-window.getDocs = getDocs;
-window.collection = collection;
-</script>
-
-    
 <style>
 body { font-family: Arial; padding: 20px; }
 h2 { margin-bottom: 10px; }
@@ -98,8 +76,24 @@ th { background: #3f69b1; color: #fff; }
 <tbody></tbody>
 </table>
 
-<script>
+<script type="module">
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ---------------- DATA ----------------
 let events = [];
 let hours = [];
 let rooms = [];
@@ -132,9 +126,9 @@ time,
 room: (e["Просторија"] || "").trim(),
 program: e["Студиска програма"] || "",
 semester: e["Семестар"] || "",
-subject: e["предмет"] || "",
-type: e["тип на настава"] || "",
-professor: e["проф/асс"] || "",
+subject: e["Предмет"] || "",
+type: e["Тип на настава"] || "",
+professor: e["Проф/асс"] || "",
 groups: e["Групи"] || ""
 };
 }
@@ -142,30 +136,26 @@ groups: e["Групи"] || ""
 // ---------- LOAD ----------
 async function loadData() {
 
-    // EVENTS
-    const eventsSnap = await getDocs(collection(db, "events"));
-    events = eventsSnap.docs.map(doc => normalize(doc.data()));
+const eventsSnap = await getDocs(collection(db, "events"));
+events = eventsSnap.docs.map(doc => normalize(doc.data()));
 
-    // ROOMS
-    const roomsSnap = await getDocs(collection(db, "rooms"));
-    rooms = roomsSnap.docs.map(doc => doc.data().name);
+const roomsSnap = await getDocs(collection(db, "rooms"));
+rooms = roomsSnap.docs.map(doc => doc.data().name);
 
-    // HOURS
-    const hoursSnap = await getDocs(collection(db, "hours"));
-    hours = hoursSnap.docs.map(doc => doc.data().time);
+const hoursSnap = await getDocs(collection(db, "hours"));
+hours = hoursSnap.docs.map(doc => doc.data().time);
 
-    // PROGRAMS
-    const progSnap = await getDocs(collection(db, "programs"));
-    programs = progSnap.docs.map(doc => doc.data().name);
+const progSnap = await getDocs(collection(db, "programs"));
+programs = progSnap.docs.map(doc => doc.data().name);
 
-    // SUBJECTS
-    const subjSnap = await getDocs(collection(db, "subjects"));
-    subjects = subjSnap.docs.map(doc => doc.data());
+const subjSnap = await getDocs(collection(db, "subjects"));
+subjects = subjSnap.docs.map(doc => doc.data());
 
-    console.log("Loaded from Firebase:", events.length);
-console.log("RAW EVENTS:", events);
-    initFilters();
-    render();
+console.log("Loaded:", events.length);
+console.log(events);
+
+initFilters();
+render();
 }
 
 // ---------- FILTER HELPERS ----------
@@ -175,42 +165,6 @@ el.innerHTML="<option value=''>Сите</option>";
 values.forEach(v=>{
 if(v) el.innerHTML+=`<option value="${v}">${v}</option>`;
 });
-}
-
-// ---------- DYNAMIC FILTERS ----------
-function updateSemesterFilter(){
-const program=document.getElementById("programFilter").value;
-
-let sem;
-
-if(program){
-sem = subjects
-.filter(s=>s["Програма"]===program)
-.map(s=>s["Семестар"]);
-}else{
-sem = subjects.map(s=>s["Семестар"]);
-}
-
-fillSelect("semesterFilter",[...new Set(sem)]);
-}
-
-function updateSubjectFilter(){
-const program=document.getElementById("programFilter").value;
-const semester=document.getElementById("semesterFilter").value;
-
-let subs = subjects;
-
-if(program){
-subs = subs.filter(s=>s["Програма"]===program);
-}
-
-if(semester){
-subs = subs.filter(s=>s["Семестар"]===semester);
-}
-
-subs = subs.map(s=>s["Предмет"]);
-
-fillSelect("subjectFilter",[...new Set(subs)]);
 }
 
 // ---------- INIT ----------
@@ -226,20 +180,22 @@ fillSelect("hourFilter",hours);
 updateSemesterFilter();
 updateSubjectFilter();
 
-document.getElementById("programFilter").addEventListener("change",()=>{
-updateSemesterFilter();
-updateSubjectFilter();
-render();
-});
-
-document.getElementById("semesterFilter").addEventListener("change",()=>{
-updateSubjectFilter();
-render();
-});
-
 document.querySelectorAll("select").forEach(s=>{
 s.addEventListener("change",render);
 });
+}
+
+function updateSemesterFilter(){
+const program=document.getElementById("programFilter").value;
+
+let sem = subjects.map(s=>s["Семестар"]);
+
+fillSelect("semesterFilter",[...new Set(sem)]);
+}
+
+function updateSubjectFilter(){
+let subs = subjects.map(s=>s["Предмет"]);
+fillSelect("subjectFilter",[...new Set(subs)]);
 }
 
 // ---------- RENDER ----------
@@ -255,66 +211,35 @@ const hourF=document.getElementById("hourFilter").value;
 const tbody=document.querySelector("#schedule tbody");
 tbody.innerHTML="";
 
-const dates=[...new Set(events.map(e=>e.date))];
+events.forEach(e=>{
 
-dates.forEach(date=>{
+if(dateF && e.date !== dateF) return;
+if(progF && e.program !== progF) return;
+if(semF && e.semester !== semF) return;
+if(subjF && e.subject !== subjF) return;
+if(roomF && e.room !== roomF) return;
+if(hourF && e.time !== hourF) return;
 
-if(dateF && date!==date) return;
-
-rooms.forEach(room=>{
-
-if(roomF && room!==room) return;
-
-hours.forEach(time=>{
-
-if(hourF && time!==time) return;
-
-const matches = events.filter(e=>
-e.date===date &&
-e.time===time &&
-e.room===room &&
-(!progF || e.program===progF) &&
-(!semF || e.semester===semF) &&
-(!subjF || e.subject===subjF)
-);
-
-if(matches.length===0){
-tbody.innerHTML+=`
-<tr>
-<td></td><td></td>
-<td>${date}</td>
-<td>${time}</td>
-<td>${room}</td>
-<td colspan="6"></td>
-</tr>`;
-}else{
-matches.forEach(e=>{
-tbody.innerHTML+=`
+tbody.innerHTML += `
 <tr>
 <td>${e.week}</td>
 <td>${e.day}</td>
-<td>${date}</td>
-<td>${time}</td>
-<td>${room}</td>
+<td>${e.date}</td>
+<td>${e.time}</td>
+<td>${e.room}</td>
 <td>${e.program}</td>
 <td>${e.semester}</td>
 <td>${e.subject}</td>
 <td>${e.type}</td>
 <td>${e.professor}</td>
 <td>${e.groups}</td>
-</tr>`;
+</tr>
+`;
 });
-}
-
-});
-});
-});
-
 }
 
 // ---------- START ----------
 loadData();
-
 
 </script>
 
