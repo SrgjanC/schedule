@@ -316,7 +316,33 @@ tbody.innerHTML+=`
 }
 
 // ---------- START ----------
-loadData();
+async function loadData() {
+
+    // EVENTS
+    const eventsSnap = await getDocs(collection(db, "events"));
+    events = eventsSnap.docs.map(doc => doc.data());
+
+    // ROOMS
+    const roomsSnap = await getDocs(collection(db, "rooms"));
+    rooms = roomsSnap.docs.map(doc => doc.data().name);
+
+    // HOURS
+    const hoursSnap = await getDocs(collection(db, "hours"));
+    hours = hoursSnap.docs.map(doc => doc.data().time);
+
+    // PROGRAMS
+    const progSnap = await getDocs(collection(db, "programs"));
+    programs = progSnap.docs.map(doc => doc.data().name);
+
+    // SUBJECTS
+    const subjSnap = await getDocs(collection(db, "subjects"));
+    subjects = subjSnap.docs.map(doc => doc.data());
+
+    console.log("Loaded from Firebase:", events.length);
+
+    initFilters();
+    render();
+}
 
 </script>
 
