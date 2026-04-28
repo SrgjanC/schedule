@@ -5,7 +5,27 @@
 <title>Распоред</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+    authDomain: "schedule-app-63c5e.firebaseapp.com",
+    projectId: "schedule-app-63c5e",
+    storageBucket: "schedule-app-63c5e.firebasestorage.app",
+    messagingSenderId: "32553140850",
+    appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+</script>
+
+    
 <style>
 body { font-family: Arial; padding: 20px; }
 h2 { margin-bottom: 10px; }
@@ -75,25 +95,7 @@ th { background: #3f69b1; color: #fff; }
 </thead>
 <tbody></tbody>
 </table>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
-    authDomain: "schedule-app-63c5e.firebaseapp.com",
-    projectId: "schedule-app-63c5e",
-    storageBucket: "schedule-app-63c5e.firebasestorage.app",
-    messagingSenderId: "32553140850",
-    appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-</script>
 <script>
 
 let events = [];
