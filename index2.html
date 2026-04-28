@@ -223,7 +223,10 @@ function render() {
         if (!eventMap[key]) eventMap[key] = [];
         eventMap[key].push(e);
     });
-
+console.log("SAMPLE EVENT:", events[0]);
+console.log("HOURS:", hours.slice(0,5));
+console.log("ROOMS:", rooms.slice(0,5));
+    
     dates.forEach(date => {
 
         if (dateFilter && date !== dateFilter) return;
