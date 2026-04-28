@@ -41,6 +41,10 @@ th { background: #3f69b1; color: #fff; }
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+.empty {
+    background: #fafafa;
+}
 </style>
 </head>
 
@@ -55,7 +59,6 @@ th { background: #3f69b1; color: #fff; }
     <option value="day">Day</option>
     <option value="week">Week</option>
     <option value="month">Month</option>
-    <option value="year">Year</option>
 </select>
 
 <label>Датум:</label>
@@ -72,7 +75,7 @@ th { background: #3f69b1; color: #fff; }
 
 </div>
 
-<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
+<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color:#444;"></div>
 
 <table id="schedule">
 <thead>
@@ -90,7 +93,6 @@ th { background: #3f69b1; color: #fff; }
 <th>Групи</th>
 </tr>
 </thead>
-
 <tbody id="tbody"></tbody>
 </table>
 
@@ -112,8 +114,23 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let events = [];
-let rooms = [];
 let isLoading = true;
+
+// FIXED ROOM LIST (for empty rows)
+const dayRooms = [
+"01 пред.",
+"02 пред.",
+"03 пред.",
+"04 пред.",
+"05 online",
+"08 лаб.",
+"09 лаб.",
+"10 лаб.",
+"11 лаб.",
+"12 лаб.",
+"14 лаб.",
+"НФИЦ"
+];
 
 const roomColorCache = {};
 
@@ -121,147 +138,156 @@ function getRoomColor(room) {
     if (!room) return "#ffffff";
     if (roomColorCache[room]) return roomColorCache[room];
 
-    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
+    const palette = ["#f1dfd3","#dde3ef","#cfe7b4","#f7e6b8","#e3d9f6","#d7eee8"];
     let hash = 0;
-    for (let i = 0; i < room.length; i++) {
-        hash = room.charCodeAt(i) + ((hash << 5) - hash);
-    }
+    for (let i=0;i<room.length;i++) hash = room.charCodeAt(i) + ((hash<<5)-hash);
 
     const color = palette[Math.abs(hash) % palette.length];
     roomColorCache[room] = color;
     return color;
 }
 
-function formatDate(dateStr) {
-    if (!dateStr) return "";
+function formatDate(dateStr){
+    if(!dateStr) return "";
     const d = new Date(dateStr);
-    if (Number.isNaN(d.getTime())) return dateStr;
+    if(Number.isNaN(d.getTime())) return dateStr;
 
-    const months = ["Јан","Фев","Мар","Апр","Мај","Јун","Јул","Авг","Сеп","Окт","Ное","Дек"];
-    return `${d.getDate()}-${months[d.getMonth()]}`;
+    const m = ["Јан","Фев","Мар","Апр","Мај","Јун","Јул","Авг","Сеп","Окт","Ное","Дек"];
+    return `${d.getDate()}-${m[d.getMonth()]}`;
 }
 
-function todayISO() {
+function todayISO(){
     const t = new Date();
-    const y = t.getFullYear();
-    const m = String(t.getMonth()+1).padStart(2,"0");
-    const d = String(t.getDate()).padStart(2,"0");
-    return `${y}-${m}-${d}`;
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 }
 
-function fillSelect(id, values) {
-    const el = document.getElementById(id);
-    el.innerHTML = "<option value=''>Сите</option>";
-    values.forEach(v => {
-        if (v !== undefined && v !== null && v !== "")
-            el.innerHTML += `<option value="${v}">${v}</option>`;
+function fillSelect(id, values){
+    const el=document.getElementById(id);
+    el.innerHTML="<option value=''>Сите</option>";
+    values.forEach(v=>{
+        if(v) el.innerHTML+=`<option value="${v}">${v}</option>`;
     });
 }
 
-function sortSemesters(values) {
-    return values
-        .map(v => Number(v))
-        .filter(v => !Number.isNaN(v))
-        .sort((a,b) => a - b);
-}
+async function loadData(){
 
-async function loadData() {
+    const snap = await getDocs(collection(db,"events"));
+    events = snap.docs.map(d=>d.data());
 
-    const eventsSnap = await getDocs(collection(db, "events"));
-    events = eventsSnap.docs.map(d => d.data());
-
-    const roomsSnap = await getDocs(collection(db, "rooms"));
-    rooms = roomsSnap.docs.map(d => d.data().name).filter(Boolean);
-
-    isLoading = false;
+    isLoading=false;
 
     initFilters();
     render();
 }
 
-function initFilters() {
+function initFilters(){
 
-    const dates = [...new Set(events.map(e => e.date))].sort();
-    const progs = [...new Set(events.map(e => e.program))];
+    const dates=[...new Set(events.map(e=>e.date))].sort();
+    const progs=[...new Set(events.map(e=>e.program))];
+    const sems=[...new Set(events.map(e=>Number(e.semester)))].sort((a,b)=>a-b);
 
-    const semRaw = [...new Set(events.map(e => e.semester))];
-    const semSorted = sortSemesters(semRaw);
+    const rooms=[...new Set(events.map(e=>e.room))].sort();
 
-    const roomSorted = [...new Set(rooms)].sort((a,b) =>
-        a.localeCompare(b, "mk")
-    );
+    fillSelect("dateFilter",dates);
+    fillSelect("programFilter",progs);
+    fillSelect("semesterFilter",sems);
+    fillSelect("roomFilter",rooms);
 
-    fillSelect("dateFilter", dates);
-    fillSelect("programFilter", progs);
-    fillSelect("semesterFilter", semSorted);
-    fillSelect("roomFilter", roomSorted);
+    const today=todayISO();
+    if(dates.includes(today)) document.getElementById("dateFilter").value=today;
 
-    const today = todayISO();
-    const df = document.getElementById("dateFilter");
-    if (dates.includes(today)) df.value = today;
-
-    document.querySelectorAll("select").forEach(s =>
-        s.addEventListener("change", render)
-    );
+    document.querySelectorAll("select").forEach(s=>s.addEventListener("change",render));
 }
 
-function render() {
+// helper: build empty rows per room for DAY view
+function buildEmptyRows(selectedDate){
 
-const tbody = document.getElementById("tbody");
+    const tbody=document.getElementById("tbody");
 
-if (isLoading) {
-    tbody.innerHTML = `
+    dayRooms.forEach(room=>{
+
+        const match = events.find(e=>e.date===selectedDate && e.room===room);
+
+        if(!match){
+            tbody.innerHTML+=`
+            <tr class="empty">
+                <td></td>
+                <td></td>
+                <td>${formatDate(selectedDate)}</td>
+                <td></td>
+                <td>${room}</td>
+                <td colspan="6"></td>
+            </tr>`;
+        }
+    });
+}
+
+function render(){
+
+const tbody=document.getElementById("tbody");
+
+if(isLoading){
+    tbody.innerHTML=`
     <tr>
         <td colspan="11">
-            <div class="spinner-wrap">
-                <div class="spinner"></div>
-            </div>
+            <div class="spinner-wrap"><div class="spinner"></div></div>
         </td>
     </tr>`;
     return;
 }
 
-tbody.innerHTML = "";
+tbody.innerHTML="";
 
-const dateF = document.getElementById("dateFilter").value;
-const progF = document.getElementById("programFilter").value;
-const semF = document.getElementById("semesterFilter").value;
-const roomF = document.getElementById("roomFilter").value;
+const view=document.getElementById("viewMode").value;
+const dateF=document.getElementById("dateFilter").value;
+const progF=document.getElementById("programFilter").value;
+const semF=document.getElementById("semesterFilter").value;
+const roomF=document.getElementById("roomFilter").value;
 
-// SORT: date → room → hour
-const sorted = [...events].sort((a, b) =>
-    (a.date || "").localeCompare(b.date || "") ||
-    (a.room || "").localeCompare(b.room || "mk") ||
-    (a.time || "").localeCompare(b.time || "")
+const selectedDate=dateF||todayISO();
+
+document.getElementById("viewInfo").textContent=
+dateF?`Приказ: ${dateF}`:"Приказ: денес";
+
+const sorted=[...events].sort((a,b)=>
+(a.date||"").localeCompare(b.date||"")||
+(a.room||"").localeCompare(b.room||"")||
+(a.time||"").localeCompare(b.time||"")
 );
 
-document.getElementById("viewInfo").textContent =
-    dateF ? `Приказ: ${dateF}` : "Приказ за денес / сите датуми";
+// MAIN ROWS
+sorted.forEach(e=>{
 
-sorted.forEach(e => {
+    if(view==="day" && e.date!==selectedDate) return;
+    if(view==="week" && e.date!==selectedDate) return;
+    if(view==="month" && e.date.substring(0,7)!==selectedDate.substring(0,7)) return;
 
-    if (dateF && e.date !== dateF) return;
-    if (progF && e.program !== progF) return;
-    if (semF && e.semester !== semF) return;
-    if (roomF && e.room !== roomF) return;
+    if(progF && e.program!==progF) return;
+    if(semF && e.semester!==semF) return;
+    if(roomF && e.room!==roomF) return;
 
-    const color = getRoomColor(e.room);
+    const color=getRoomColor(e.room);
 
-    tbody.innerHTML += `
-    <tr style="background:${color};">
-        <td>${e.week || ""}</td>
-        <td>${e.day || ""}</td>
+    tbody.innerHTML+=`
+    <tr style="background:${color}">
+        <td>${e.week||""}</td>
+        <td>${e.day||""}</td>
         <td>${formatDate(e.date)}</td>
-        <td>${e.time || ""}</td>
-        <td>${e.room || ""}</td>
-        <td>${e.program || ""}</td>
-        <td>${e.semester || ""}</td>
-        <td>${e.subject || ""}</td>
-        <td>${e.type || ""}</td>
-        <td>${e.professor || ""}</td>
-        <td>${e.groups || ""}</td>
+        <td>${e.time||""}</td>
+        <td>${e.room||""}</td>
+        <td>${e.program||""}</td>
+        <td>${e.semester||""}</td>
+        <td>${e.subject||""}</td>
+        <td>${e.type||""}</td>
+        <td>${e.professor||""}</td>
+        <td>${e.groups||""}</td>
     </tr>`;
 });
+
+// EMPTY ROWS ONLY FOR DAY VIEW
+if(view==="day"){
+    buildEmptyRows(selectedDate);
+}
 
 }
 
