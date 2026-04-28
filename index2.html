@@ -136,39 +136,32 @@ groups: e["Групи"] || ""
 }
 
 // ---------- LOAD ----------
-function loadData() {
-Promise.all([
-fetch("events.csv").then(r=>r.text()),
-fetch("hours.csv").then(r=>r.text()),
-fetch("rooms.csv").then(r=>r.text()),
-fetch("programs.csv").then(r=>r.text()),
-fetch("subjects.csv").then(r=>r.text())
-]).then(([e,h,r,p,s])=>{
+async function loadData() {
 
-events = Papa.parse(e,{header:true,delimiter:";"}).data.map(normalize);
+    // EVENTS
+    const eventsSnap = await getDocs(collection(db, "events"));
+    events = eventsSnap.docs.map(doc => doc.data());
 
-hours = Papa.parse(h,{header:true}).data
-.map(x=>x["Час"])
-.filter(Boolean)
-.map(t=>{
-let p=t.split(":");
-return p[0].padStart(2,"0")+":"+p[1].padStart(2,"0");
-});
+    // ROOMS
+    const roomsSnap = await getDocs(collection(db, "rooms"));
+    rooms = roomsSnap.docs.map(doc => doc.data().name);
 
-rooms = Papa.parse(r,{header:true}).data
-.map(x=>x[Object.keys(x)[0]])
-.filter(Boolean)
-.map(x=>x.trim());
+    // HOURS
+    const hoursSnap = await getDocs(collection(db, "hours"));
+    hours = hoursSnap.docs.map(doc => doc.data().time);
 
-programs = Papa.parse(p,{header:true}).data
-.map(x=>x["Програма"])
-.filter(Boolean);
+    // PROGRAMS
+    const progSnap = await getDocs(collection(db, "programs"));
+    programs = progSnap.docs.map(doc => doc.data().name);
 
-subjects = Papa.parse(s,{header:true,delimiter:";"}).data;
+    // SUBJECTS
+    const subjSnap = await getDocs(collection(db, "subjects"));
+    subjects = subjSnap.docs.map(doc => doc.data());
 
-initFilters();
-render();
-});
+    console.log("Loaded from Firebase:", events.length);
+
+    initFilters();
+    render();
 }
 
 // ---------- FILTER HELPERS ----------
@@ -316,33 +309,8 @@ tbody.innerHTML+=`
 }
 
 // ---------- START ----------
-async function loadData() {
+loadData() {
 
-    // EVENTS
-    const eventsSnap = await getDocs(collection(db, "events"));
-    events = eventsSnap.docs.map(doc => doc.data());
-
-    // ROOMS
-    const roomsSnap = await getDocs(collection(db, "rooms"));
-    rooms = roomsSnap.docs.map(doc => doc.data().name);
-
-    // HOURS
-    const hoursSnap = await getDocs(collection(db, "hours"));
-    hours = hoursSnap.docs.map(doc => doc.data().time);
-
-    // PROGRAMS
-    const progSnap = await getDocs(collection(db, "programs"));
-    programs = progSnap.docs.map(doc => doc.data().name);
-
-    // SUBJECTS
-    const subjSnap = await getDocs(collection(db, "subjects"));
-    subjects = subjSnap.docs.map(doc => doc.data());
-
-    console.log("Loaded from Firebase:", events.length);
-
-    initFilters();
-    render();
-}
 
 </script>
 
