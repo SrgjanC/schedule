@@ -20,6 +20,8 @@ th, td {
     font-size: 13px;
 }
 th { background: #3f69b1; color: #fff; }
+
+.empty { background: #fafafa; }
 </style>
 </head>
 
@@ -31,10 +33,10 @@ th { background: #3f69b1; color: #fff; }
 
 <label>Преглед:</label>
 <select id="viewMode">
-<option value="day">Day</option>
-<option value="week">Week</option>
-<option value="month">Month</option>
-<option value="year">Year</option>
+    <option value="day">Day</option>
+    <option value="week">Week</option>
+    <option value="month">Month</option>
+    <option value="year">Year</option>
 </select>
 
 <label>Датум:</label>
@@ -46,16 +48,12 @@ th { background: #3f69b1; color: #fff; }
 <label>Семестар:</label>
 <select id="semesterFilter"></select>
 
-<label>Предмет:</label>
-<select id="subjectFilter"></select>
-
 <label>Просторија:</label>
 <select id="roomFilter"></select>
 
-<label>Час:</label>
-<select id="hourFilter"></select>
-
 </div>
+
+<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
 
 <table id="schedule">
 <thead>
@@ -95,119 +93,128 @@ const db = getFirestore(app);
 
 // ---------------- DATA ----------------
 let events = [];
-let hours = [];
-let rooms = [];
 let programs = [];
-let subjects = [];
+let rooms = [];
+let semesters = [];
 
+// ---------------- ROOM COLORS ----------------
+const roomColorCache = {};
 
+function getRoomColor(room) {
+    if (!room) return "#ffffff";
+    if (roomColorCache[room]) return roomColorCache[room];
 
-// ---------- LOAD ----------
+    const palette = ["#f1dfd3", "#dde3ef", "#cfe7b4", "#f7e6b8", "#e3d9f6", "#d7eee8"];
+    let hash = 0;
+    for (let i = 0; i < room.length; i++) {
+        hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const color = palette[Math.abs(hash) % palette.length];
+    roomColorCache[room] = color;
+    return color;
+}
+
+// ---------------- DATE FORMAT ----------------
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+
+    const months = ["Јан","Фев","Мар","Апр","Мај","Јун","Јул","Авг","Сеп","Окт","Ное","Дек"];
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
+
+// ---------------- LOAD DATA ----------------
 async function loadData() {
 
-const eventsSnap = await getDocs(collection(db, "events"));
-events = eventsSnap.docs.map(doc => doc.data());
+    const eventsSnap = await getDocs(collection(db, "events"));
+    events = eventsSnap.docs.map(doc => doc.data());
 
-const roomsSnap = await getDocs(collection(db, "rooms"));
-rooms = roomsSnap.docs.map(doc => doc.data().name);
+    console.log("Loaded:", events.length);
+    console.log(events);
 
-const hoursSnap = await getDocs(collection(db, "hours"));
-hours = hoursSnap.docs.map(doc => doc.data().time);
-
-const progSnap = await getDocs(collection(db, "programs"));
-programs = progSnap.docs.map(doc => doc.data().name);
-
-const subjSnap = await getDocs(collection(db, "subjects"));
-subjects = subjSnap.docs.map(doc => doc.data());
-
-console.log("Loaded:", events.length);
-console.log(events);
-
-initFilters();
-render();
+    initFilters();
+    render();
 }
 
-// ---------- FILTER HELPERS ----------
-function fillSelect(id, values){
-const el=document.getElementById(id);
-el.innerHTML="<option value=''>Сите</option>";
-values.forEach(v=>{
-if(v) el.innerHTML+=`<option value="${v}">${v}</option>`;
+// ---------------- FILTER UI ----------------
+function fillSelect(id, values) {
+    const el = document.getElementById(id);
+    el.innerHTML = "<option value=''>Сите</option>";
+    values.forEach(v => {
+        if (v) el.innerHTML += `<option value="${v}">${v}</option>`;
+    });
+}
+
+// ---------------- INIT FILTERS ----------------
+function initFilters() {
+
+    const dates = [...new Set(events.map(e => e.date))].sort();
+    const programsSet = [...new Set(events.map(e => e.program))];
+    const semestersSet = [...new Set(events.map(e => e.semester))];
+    const roomsSet = [...new Set(events.map(e => e.room))];
+
+    fillSelect("dateFilter", dates);
+    fillSelect("programFilter", programsSet);
+    fillSelect("semesterFilter", semestersSet);
+    fillSelect("roomFilter", roomsSet);
+
+    document.querySelectorAll("select").forEach(s =>
+        s.addEventListener("change", render)
+    );
+}
+
+// ---------------- RENDER (CSV STYLE LOGIC) ----------------
+function render() {
+
+const tbody = document.querySelector("#schedule tbody");
+tbody.innerHTML = "";
+
+const viewMode = document.getElementById("viewMode").value;
+const dateF = document.getElementById("dateFilter").value;
+const progF = document.getElementById("programFilter").value;
+const semF = document.getElementById("semesterFilter").value;
+const roomF = document.getElementById("roomFilter").value;
+
+// VIEW INFO
+document.getElementById("viewInfo").textContent =
+    dateF ? `Приказ: ${dateF}` : "Приказ за сите датуми";
+
+const sorted = [...events].sort((a, b) => {
+    return (a.date || "").localeCompare(b.date || "") ||
+           (a.room || "").localeCompare(b.room || "mk") ||
+           (a.time || "").localeCompare(b.time || "");
+});
+
+sorted.forEach(e => {
+
+    if (dateF && e.date !== dateF) return;
+    if (progF && e.program !== progF) return;
+    if (semF && e.semester !== semF) return;
+    if (roomF && e.room !== roomF) return;
+
+    const color = getRoomColor(e.room);
+
+    tbody.innerHTML += `
+    <tr style="background:${color};">
+        <td>${e.week || ""}</td>
+        <td>${e.day || ""}</td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.time || ""}</td>
+        <td>${e.room || ""}</td>
+        <td>${e.program || ""}</td>
+        <td>${e.semester || ""}</td>
+        <td>${e.subject || ""}</td>
+        <td>${e.type || ""}</td>
+        <td>${e.professor || ""}</td>
+        <td>${e.groups || ""}</td>
+    </tr>
+    `;
 });
 }
 
-// ---------- INIT ----------
-function initFilters(){
-
-const dates=[...new Set(events.map(e=>e.date))].sort();
-
-fillSelect("dateFilter",dates);
-fillSelect("programFilter",programs);
-fillSelect("roomFilter",rooms);
-fillSelect("hourFilter",hours);
-
-updateSemesterFilter();
-updateSubjectFilter();
-
-document.querySelectorAll("select").forEach(s=>{
-s.addEventListener("change",render);
-});
-}
-
-function updateSemesterFilter(){
-const program=document.getElementById("programFilter").value;
-
-let sem = subjects.map(s=>s["Семестар"]);
-
-fillSelect("semesterFilter",[...new Set(sem)]);
-}
-
-function updateSubjectFilter(){
-let subs = subjects.map(s=>s["Предмет"]);
-fillSelect("subjectFilter",[...new Set(subs)]);
-}
-
-// ---------- RENDER ----------
-function render(){
-
-const dateF=document.getElementById("dateFilter").value;
-const progF=document.getElementById("programFilter").value;
-const semF=document.getElementById("semesterFilter").value;
-const subjF=document.getElementById("subjectFilter").value;
-const roomF=document.getElementById("roomFilter").value;
-const hourF=document.getElementById("hourFilter").value;
-
-const tbody=document.querySelector("#schedule tbody");
-tbody.innerHTML="";
-
-events.forEach(e=>{
-
-if(dateF && e.date !== dateF) return;
-if(progF && e.program !== progF) return;
-if(semF && e.semester !== semF) return;
-if(subjF && e.subject !== subjF) return;
-if(roomF && e.room !== roomF) return;
-if(hourF && e.time !== hourF) return;
-
-tbody.innerHTML += `
-<tr>
-<td>${e.week}</td>
-<td>${e.day}</td>
-<td>${e.date}</td>
-<td>${e.time}</td>
-<td>${e.room}</td>
-<td>${e.program}</td>
-<td>${e.semester}</td>
-<td>${e.subject}</td>
-<td>${e.type}</td>
-<td>${e.professor}</td>
-<td>${e.groups}</td>
-</tr>
-`;
-});
-}
-
-// ---------- START ----------
+// ---------------- START ----------------
 loadData();
 
 </script>
