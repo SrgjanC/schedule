@@ -112,6 +112,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let events = [];
+let rooms = [];
 let isLoading = true;
 
 const roomColorCache = {};
@@ -152,14 +153,25 @@ function fillSelect(id, values) {
     const el = document.getElementById(id);
     el.innerHTML = "<option value=''>Сите</option>";
     values.forEach(v => {
-        if (v) el.innerHTML += `<option value="${v}">${v}</option>`;
+        if (v !== undefined && v !== null && v !== "")
+            el.innerHTML += `<option value="${v}">${v}</option>`;
     });
+}
+
+function sortSemesters(values) {
+    return values
+        .map(v => Number(v))
+        .filter(v => !Number.isNaN(v))
+        .sort((a,b) => a - b);
 }
 
 async function loadData() {
 
-    const snap = await getDocs(collection(db, "events"));
-    events = snap.docs.map(d => d.data());
+    const eventsSnap = await getDocs(collection(db, "events"));
+    events = eventsSnap.docs.map(d => d.data());
+
+    const roomsSnap = await getDocs(collection(db, "rooms"));
+    rooms = roomsSnap.docs.map(d => d.data().name).filter(Boolean);
 
     isLoading = false;
 
@@ -171,13 +183,18 @@ function initFilters() {
 
     const dates = [...new Set(events.map(e => e.date))].sort();
     const progs = [...new Set(events.map(e => e.program))];
-    const sems = [...new Set(events.map(e => e.semester))];
-    const rms = [...new Set(events.map(e => e.room))];
+
+    const semRaw = [...new Set(events.map(e => e.semester))];
+    const semSorted = sortSemesters(semRaw);
+
+    const roomSorted = [...new Set(rooms)].sort((a,b) =>
+        a.localeCompare(b, "mk")
+    );
 
     fillSelect("dateFilter", dates);
     fillSelect("programFilter", progs);
-    fillSelect("semesterFilter", sems);
-    fillSelect("roomFilter", rms);
+    fillSelect("semesterFilter", semSorted);
+    fillSelect("roomFilter", roomSorted);
 
     const today = todayISO();
     const df = document.getElementById("dateFilter");
@@ -211,12 +228,12 @@ const progF = document.getElementById("programFilter").value;
 const semF = document.getElementById("semesterFilter").value;
 const roomF = document.getElementById("roomFilter").value;
 
-// ✅ FIXED SORT: date → room → hour
-const sorted = [...events].sort((a, b) => {
-    return (a.date || "").localeCompare(b.date || "") ||
-           (a.room || "").localeCompare(b.room || "mk") ||
-           (a.time || "").localeCompare(b.time || "");
-});
+// SORT: date → room → hour
+const sorted = [...events].sort((a, b) =>
+    (a.date || "").localeCompare(b.date || "") ||
+    (a.room || "").localeCompare(b.room || "mk") ||
+    (a.time || "").localeCompare(b.time || "")
+);
 
 document.getElementById("viewInfo").textContent =
     dateF ? `Приказ: ${dateF}` : "Приказ за денес / сите датуми";
