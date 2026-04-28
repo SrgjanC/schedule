@@ -245,11 +245,9 @@ const roomF = document.getElementById("roomFilter").value;
 
 const view = document.getElementById("viewMode").value;
 
-// INDEX for fast lookup
 const map = {};
 events.forEach(e => {
-    const key = `${e.date}_${e.time}_${e.room}`;
-    map[key] = e;
+    map[`${e.date}_${e.time}_${e.room}`] = e;
 });
 
 const selectedDate = dateF || todayISO();
@@ -257,23 +255,21 @@ const selectedDate = dateF || todayISO();
 document.getElementById("viewInfo").textContent =
     dateF ? `Приказ: ${dateF}` : "Приказ за денес";
 
-// ===================== DAY VIEW (ROOM × TIME GRID) =====================
+// ================= DAY VIEW =================
 if (view === "day") {
 
     for (const room of DAY_ROOMS) {
         if (roomF && room !== roomF) continue;
+
+        const bg = getRoomColor(room); // ✅ COLOR PER ROOM
 
         for (const time of TIMES) {
 
             const key = `${selectedDate}_${time}_${room}`;
             const e = map[key];
 
-            // filters
-            if (progF && e && e.program !== progF) continue;
-            if (semF && e && e.semester !== semF) continue;
-
             tbody.innerHTML += `
-            <tr style="background:${e ? getRoomColor(room) : "#fafafa"}">
+            <tr style="background:${e ? bg : bg}; opacity:${e ? 1 : 0.55}">
                 <td>${e?.week || ""}</td>
                 <td>${e?.day || ""}</td>
                 <td>${formatDate(selectedDate)}</td>
@@ -292,7 +288,7 @@ if (view === "day") {
     return;
 }
 
-// ===================== NORMAL VIEW =====================
+// ================= NORMAL VIEW =================
 const sorted = [...events].sort((a,b)=>
     (a.date||"").localeCompare(b.date||"") ||
     (a.room||"").localeCompare(b.room||"") ||
