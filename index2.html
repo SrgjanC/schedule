@@ -144,7 +144,7 @@ async function loadData() {
 
     // EVENTS
     const eventsSnap = await getDocs(collection(db, "events"));
-    events = eventsSnap.docs.map(doc => doc.data());
+    events = eventsSnap.docs.map(doc => normalize(doc.data()));
 
     // ROOMS
     const roomsSnap = await getDocs(collection(db, "rooms"));
@@ -163,7 +163,7 @@ async function loadData() {
     subjects = subjSnap.docs.map(doc => doc.data());
 
     console.log("Loaded from Firebase:", events.length);
-
+console.log("RAW EVENTS:", events);
     initFilters();
     render();
 }
