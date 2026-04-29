@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Upload subjects_new</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+body{
+    font-family: Arial;
+    padding:40px;
+}
+
+h2{
+    margin-bottom:20px;
+}
+
+input[type=file]{
+    margin-bottom:20px;
+}
+
+button{
+    padding:12px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+#log{
+    margin-top:20px;
+    white-space:pre-wrap;
+    background:#f5f5f5;
+    border:1px solid #ccc;
+    padding:15px;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Upload subjects_new</h2>
+
+<input type="file" id="csvFile" accept=".csv">
+
+<br>
+
+<button id="uploadBtn">Upload Subjects</button>
+
+<div id="log"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+    getFirestore,
+    doc,
+    setDoc,
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const log = document.getElementById("log");
+
+// PROGRAM NAME → PROGRAM ID
+const programMap = {
+
+    "Магистер по фармација 2025": "mr-farm-2025",
+    "Магистер по Фармација 2021": "mr-farm-nova2021",
+    "Магистер по Фармација 2015": "mr-farm-nova2015",
+
+    "Лабораториско биоинженерство 2024": "lab-bio-2024",
+    "Лабораториско биоинженерство 2019": "lab-bio-2019",
+
+    "Диететика и диетотерапија 2024": "ффдд-23",
+    "Диететика и диетотерапија 2018": "ффдд",
+
+"Магистер по здравствен менаџмент и фармакоекономија 2024": "ФФЗМФМ-24",
+"Стручни студии по фармаковигиланца 2024": "ФФФВС-24",
+"Mагистер по лабораториска анализа и инженерство во фармацијата 2024": "ФФЛАИФМ-24",
+"Магистерски студии по диетеика и диетотерапија 2023": "ФФДДМ-23",
+"Специјалистички студии по индутриска фармација 2022": "ФФИФС-22",
+"Фармацевтска регулатива 2021": "ФФФР-21",
+"Специјалистички студии од областа Хомеопатски лекови 2021": "ФФХЛС-21",
+"Фармаковигеланца - специјалистички студии 2020": "ФФФВС-20",
+"Втор циклус магистерски студии по лабораториска анализа и инженерство во фармацијата 2019": "ФФЛАИФМ-19",
+"Диететика и диетотерапија - магистерски студии 2018": "ФФДДМ-18",
+"Специјалистички студии по козметологија 2018": "ФФКС-18",
+"Специјалистички студии по фитотерапија - хербални лекови и додатоци на исхраната 2018": "ФФФС-18"
+
+};
+
+function normalizeText(text){
+
+    return text
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+function makeId(text){
+
+    return text
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll(" ", "-")
+        .replaceAll("/", "-")
+        .replaceAll(",", "")
+        .replaceAll(".", "")
+        .replaceAll("(", "")
+        .replaceAll(")", "");
+}
+
+async function uploadSubjects(){
+
+    const file = document.getElementById("csvFile").files[0];
+
+    if(!file){
+        alert("Select CSV file");
+        return;
+    }
+
+    log.innerHTML = "Loading existing subjects...\n";
+
+    // LOAD EXISTING SUBJECTS
+    const existingSnap = await getDocs(
+        collection(db, "subjects_new")
+    );
+
+    const existingKeys = new Set();
+
+    existingSnap.forEach(docSnap => {
+
+        const d = docSnap.data();
+
+        const key =
+            normalizeText(d.name) +
+            "|" +
+            d.programId +
+            "|" +
+            d.semester;
+
+        existingKeys.add(key);
+    });
+
+    log.innerHTML += `Existing subjects: ${existingKeys.size}\n\n`;
+
+    Papa.parse(file, {
+
+        header: true,
+        delimiter: ";",
+        skipEmptyLines: true,
+
+        complete: async function(results){
+
+            const rows = results.data;
+
+            log.innerHTML += `CSV rows: ${rows.length}\n\n`;
+
+            for(const row of rows){
+
+                const programName =
+                    (row["Насока"] || "").trim();
+
+                const subjectName =
+                    (row["Предмет"] || "").trim();
+
+                if(!programName || !subjectName){
+                    continue;
+                }
+
+                const programId =
+                    programMap[programName];
+
+                if(!programId){
+
+                    log.innerHTML +=
+                        `❌ Missing program: ${programName}\n`;
+
+                    continue;
+                }
+
+                const semester = Number(
+                    (row["Семестар"] || "").trim()
+                );
+
+                const required =
+                    ((row["Задолжителен"] || "").trim() === "Да");
+
+                const credits = parseFloat(
+                    (row["Кредити"] || "0")
+                        .replace(",", ".")
+                        .trim()
+                );
+
+                // DUPLICATE CHECK
+                const duplicateKey =
+                    normalizeText(subjectName) +
+                    "|" +
+                    programId +
+                    "|" +
+                    semester;
+
+                if(existingKeys.has(duplicateKey)){
+
+                    log.innerHTML +=
+                        `⚠ Already exists: ${subjectName} (${programId}, sem ${semester})\n`;
+
+                    continue;
+                }
+
+                // DOCUMENT ID
+                const subjectId =
+                    programId +
+                    "-" +
+                    makeId(subjectName);
+
+                await setDoc(
+                    doc(db, "subjects_new", subjectId),
+                    {
+                        name: subjectName,
+                        programId: programId,
+                        semester: semester,
+                        required: required,
+                        credits: credits
+                    }
+                );
+
+                existingKeys.add(duplicateKey);
+
+                log.innerHTML +=
+                    `✓ Uploaded: ${subjectName}\n`;
+            }
+
+            log.innerHTML += `\nDONE`;
+        }
+    });
+}
+
+document
+    .getElementById("uploadBtn")
+    .addEventListener("click", uploadSubjects);
+
+</script>
+
+</body>
+</html>
