@@ -2,32 +2,47 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>CSV Upload to Firebase</title>
-
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<title>Upload Programs</title>
 
 <style>
-body { font-family: Arial; padding: 20px; }
-button { padding: 10px 15px; margin-top: 10px; }
-input { margin-bottom: 10px; }
+body{
+    font-family: Arial;
+    padding:40px;
+}
+
+button{
+    padding:12px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+#log{
+    margin-top:20px;
+    white-space:pre-wrap;
+    background:#f5f5f5;
+    padding:15px;
+    border:1px solid #ccc;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Upload Events CSV → Firebase</h2>
+<h2>Upload programs_new</h2>
 
-<input type="file" id="csvFile" accept=".csv" />
-<br>
-<button onclick="uploadCSV()">Upload to Firebase</button>
+<button id="uploadBtn">Upload Programs</button>
 
-<p id="status"></p>
+<div id="log"></div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, addDoc } 
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+import {
+    getFirestore,
+    doc,
+    setDoc
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
@@ -41,57 +56,48 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.uploadCSV = function () {
+const programs = [
+    "MR-FARM-2025",
+    "MR-FARM-NOVA2021",
+    "MR-FARM-NOVA2015",
+    "LAB-BIO-2024",
+    "LAB-BIO-2019",
+    "ФФДД-23",
+    "ФФДД"
+];
 
-  const file = document.getElementById("csvFile").files[0];
-  const status = document.getElementById("status");
+const log = document.getElementById("log");
 
-  if (!file) {
-    alert("Select CSV file first!");
-    return;
-  }
+function makeId(name){
+    return name
+        .toLowerCase()
+        .replaceAll(" ", "-")
+        .replaceAll("/", "-");
+}
 
-  status.innerText = "Parsing CSV...";
+async function uploadPrograms(){
 
-  Papa.parse(file, {
-    header: true,
-    delimiter: ";",
-    skipEmptyLines: true,
+    log.innerHTML = "Uploading...\n";
 
-    complete: async function(results) {
+    for(const name of programs){
 
-      const rows = results.data;
+        const id = makeId(name);
 
-      console.log("CSV DATA:", rows);
+        await setDoc(
+            doc(db, "programs_new", id),
+            {
+                name: name
+            }
+        );
 
-      status.innerText = "Uploading to Firebase...";
-
-      let count = 0;
-
-      for (let r of rows) {
-
-        const doc = {
-          date: r["Датум"] || "",
-          time: r["Час"] || "",
-          room: r["Просторија"] || "",
-          program: r["Студиска програма"] || "",
-          semester: r["Семестар"] || "",
-          subject: r["предмет"] || "",
-          type: r["тип на настава"] || "",
-          professor: r["проф/асс"] || "",
-          groups: r["Групи"] || "",
-          week: r["Недела"] || "",
-          day: r["Ден"] || ""
-        };
-
-        await addDoc(collection(db, "events"), doc);
-        count++;
-      }
-
-      status.innerText = `Upload complete! ${count} events added.`;
+        log.innerHTML += `✓ Uploaded: ${name}\n`;
     }
-  });
-};
+
+    log.innerHTML += "\nDONE";
+}
+
+document.getElementById("uploadBtn")
+    .addEventListener("click", uploadPrograms);
 
 </script>
 
