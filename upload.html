@@ -56,7 +56,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/fireba
 import {
     getFirestore,
     doc,
-    setDoc
+    setDoc,
+    collection,
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -73,7 +75,7 @@ const db = getFirestore(app);
 
 const log = document.getElementById("log");
 
-// PROGRAM NAME → PROGRAM ID MAP
+// PROGRAM NAME → PROGRAM ID
 const programMap = {
 
     "Магистер по фармација 2025": "mr-farm-2025",
@@ -86,6 +88,15 @@ const programMap = {
     "Диететика и диетотерапија 2024": "ффдд-23",
     "Диететика и диетотерапија 2018": "ффдд"
 };
+
+function normalizeText(text){
+
+    return text
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
 
 function makeId(text){
 
@@ -110,7 +121,30 @@ async function uploadSubjects(){
         return;
     }
 
-    log.innerHTML = "Reading CSV...\n";
+    log.innerHTML = "Loading existing subjects...\n";
+
+    // LOAD EXISTING SUBJECTS
+    const existingSnap = await getDocs(
+        collection(db, "subjects_new")
+    );
+
+    const existingKeys = new Set();
+
+    existingSnap.forEach(docSnap => {
+
+        const d = docSnap.data();
+
+        const key =
+            normalizeText(d.name) +
+            "|" +
+            d.programId +
+            "|" +
+            d.semester;
+
+        existingKeys.add(key);
+    });
+
+    log.innerHTML += `Existing subjects: ${existingKeys.size}\n\n`;
 
     Papa.parse(file, {
 
@@ -122,22 +156,28 @@ async function uploadSubjects(){
 
             const rows = results.data;
 
-            log.innerHTML += `Rows: ${rows.length}\n\n`;
+            log.innerHTML += `CSV rows: ${rows.length}\n\n`;
 
             for(const row of rows){
 
-                const programName = (row["Насока"] || "").trim();
-                const subjectName = (row["Предмет"] || "").trim();
+                const programName =
+                    (row["Насока"] || "").trim();
+
+                const subjectName =
+                    (row["Предмет"] || "").trim();
 
                 if(!programName || !subjectName){
                     continue;
                 }
 
-                const programId = programMap[programName];
+                const programId =
+                    programMap[programName];
 
                 if(!programId){
 
-                    log.innerHTML += `❌ Missing program: ${programName}\n`;
+                    log.innerHTML +=
+                        `❌ Missing program: ${programName}\n`;
+
                     continue;
                 }
 
@@ -154,9 +194,27 @@ async function uploadSubjects(){
                         .trim()
                 );
 
-                // UNIQUE SUBJECT ID
+                // DUPLICATE CHECK
+                const duplicateKey =
+                    normalizeText(subjectName) +
+                    "|" +
+                    programId +
+                    "|" +
+                    semester;
+
+                if(existingKeys.has(duplicateKey)){
+
+                    log.innerHTML +=
+                        `⚠ Already exists: ${subjectName} (${programId}, sem ${semester})\n`;
+
+                    continue;
+                }
+
+                // DOCUMENT ID
                 const subjectId =
-                    programId + "-" + makeId(subjectName);
+                    programId +
+                    "-" +
+                    makeId(subjectName);
 
                 await setDoc(
                     doc(db, "subjects_new", subjectId),
@@ -169,7 +227,10 @@ async function uploadSubjects(){
                     }
                 );
 
-                log.innerHTML += `✓ ${subjectName}\n`;
+                existingKeys.add(duplicateKey);
+
+                log.innerHTML +=
+                    `✓ Uploaded: ${subjectName}\n`;
             }
 
             log.innerHTML += `\nDONE`;
