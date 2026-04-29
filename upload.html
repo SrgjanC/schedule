@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Upload subjects_new + events_new</title>
+<title>Upload events_new</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -91,7 +91,7 @@ const db = getFirestore(app);
 const log = document.getElementById("log");
 
 // ===========================
-// PROGRAM FAMILY PRIORITY
+// PROGRAM PRIORITY
 // ===========================
 
 const programPriority = {
@@ -154,8 +154,8 @@ function findBestSubject(subjectName, semester, family, subjects){
     const priorityPrograms =
         programPriority[family] || [];
 
-    // FIRST PASS:
-    // exact semester + newest program
+    // PASS 1
+    // same semester + newest
 
     for(const programId of priorityPrograms){
 
@@ -170,8 +170,8 @@ function findBestSubject(subjectName, semester, family, subjects){
             return found;
     }
 
-    // SECOND PASS:
-    // same subject any semester
+    // PASS 2
+    // any semester
 
     for(const programId of priorityPrograms){
 
@@ -186,6 +186,23 @@ function findBestSubject(subjectName, semester, family, subjects){
     }
 
     return null;
+}
+
+// ===========================
+// DUPLICATE KEY
+// ===========================
+
+function makeEventKey(event){
+
+    return [
+
+        normalizeText(event.date),
+        normalizeText(event.time),
+        normalizeText(event.room),
+        normalizeText(event.subjectId),
+        normalizeText(event.type)
+
+    ].join("|");
 }
 
 // ===========================
@@ -215,7 +232,28 @@ async function uploadEvents(){
         }));
 
     log.innerHTML +=
-        `Subjects loaded: ${subjects.length}\n\n`;
+        `Subjects loaded: ${subjects.length}\n`;
+
+    // LOAD EXISTING EVENTS
+    log.innerHTML +=
+        `Loading existing events_new...\n`;
+
+    const eventsSnap =
+        await getDocs(collection(db, "events_new"));
+
+    const existingKeys = new Set();
+
+    eventsSnap.forEach(docSnap => {
+
+        const d = docSnap.data();
+
+        const key = makeEventKey(d);
+
+        existingKeys.add(key);
+    });
+
+    log.innerHTML +=
+        `Existing events: ${existingKeys.size}\n\n`;
 
     Papa.parse(file, {
 
@@ -232,6 +270,7 @@ async function uploadEvents(){
 
             let uploaded = 0;
             let skipped = 0;
+            let duplicates = 0;
 
             for(const row of rows){
 
@@ -274,43 +313,60 @@ async function uploadEvents(){
                     continue;
                 }
 
-                // CREATE EVENT
+                // EVENT DATA
+                const eventData = {
+
+                    week:
+                        (row["Недела"] || "").trim(),
+
+                    day:
+                        (row["Ден"] || "").trim(),
+
+                    date:
+                        (row["Датум"] || "").trim(),
+
+                    time:
+                        (row["Час"] || "").trim(),
+
+                    room:
+                        (row["Просторија"] || "").trim(),
+
+                    type:
+                        (row["тип на настава"] || "").trim(),
+
+                    professor:
+                        (row["проф/асс"] || "").trim(),
+
+                    groups:
+                        (row["Групи"] || "").trim(),
+
+                    subjectId:
+                        subject.id,
+
+                    programId:
+                        subject.programId
+                };
+
+                // DUPLICATE CHECK
+                const eventKey =
+                    makeEventKey(eventData);
+
+                if(existingKeys.has(eventKey)){
+
+                    log.innerHTML +=
+                        `⚠ Duplicate skipped: ${subjectName} ${eventData.date} ${eventData.time}\n`;
+
+                    duplicates++;
+                    continue;
+                }
+
+                // SAVE
                 await addDoc(
                     collection(db, "events_new"),
-                    {
-
-                        week:
-                            (row["Недела"] || "").trim(),
-
-                        day:
-                            (row["Ден"] || "").trim(),
-
-                        date:
-                            (row["Датум"] || "").trim(),
-
-                        time:
-                            (row["Час"] || "").trim(),
-
-                        room:
-                            (row["Просторија"] || "").trim(),
-
-                        type:
-                            (row["тип на настава"] || "").trim(),
-
-                        professor:
-                            (row["проф/асс"] || "").trim(),
-
-                        groups:
-                            (row["Групи"] || "").trim(),
-
-                        // CONNECTIONS
-                        subjectId:
-                            subject.id,
-
-                        programId:
-                            subject.programId
-                    }
+                    eventData
                 );
+
+                existingKeys.add(eventKey);
 
                 uploaded++;
 
@@ -319,7 +375,13 @@ async function uploadEvents(){
             }
 
             log.innerHTML +=
-                `\nDONE\nUploaded: ${uploaded}\nSkipped: ${skipped}`;
+`
+DONE
+
+Uploaded: ${uploaded}
+Duplicates: ${duplicates}
+Skipped: ${skipped}
+`;
         }
     });
 }
