@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Upload subjects_new</title>
+<title>Upload subjects_new + events_new</title>
 
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -14,6 +14,12 @@ body{
 
 h2{
     margin-bottom:20px;
+}
+
+.section{
+    margin-bottom:40px;
+    padding:20px;
+    border:1px solid #ccc;
 }
 
 input[type=file]{
@@ -33,19 +39,29 @@ button{
     border:1px solid #ccc;
     padding:15px;
     font-size:14px;
+    max-height:600px;
+    overflow:auto;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Upload subjects_new</h2>
+<h2>Firebase Upload Tool</h2>
 
-<input type="file" id="csvFile" accept=".csv">
+<div class="section">
+
+<h3>Upload events_new</h3>
+
+<input type="file" id="eventsFile" accept=".csv">
 
 <br>
 
-<button id="uploadBtn">Upload Subjects</button>
+<button id="uploadEventsBtn">
+Upload Events
+</button>
+
+</div>
 
 <div id="log"></div>
 
@@ -55,10 +71,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/fireba
 
 import {
     getFirestore,
-    doc,
-    setDoc,
     collection,
-    getDocs
+    getDocs,
+    addDoc
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -75,19 +90,32 @@ const db = getFirestore(app);
 
 const log = document.getElementById("log");
 
-// PROGRAM NAME → PROGRAM ID
-const programMap = {
+// ===========================
+// PROGRAM FAMILY PRIORITY
+// ===========================
 
-    "Магистер по фармација 2025": "mr-farm-2025",
-    "Магистер по Фармација 2021": "mr-farm-nova2021",
-    "Магистер по Фармација 2015": "mr-farm-nova2015",
+const programPriority = {
 
-    "Лабораториско биоинженерство 2024": "lab-bio-2024",
-    "Лабораториско биоинженерство 2019": "lab-bio-2019",
+    "Магистер": [
+        "mr-farm-2025",
+        "mr-farm-nova2021",
+        "mr-farm-nova2015"
+    ],
 
-    "Диететика и диетотерапија 2024": "ффдд-23",
-    "Диететика и диетотерапија 2018": "ффдд"
+    "Лабораториско": [
+        "lab-bio-2024",
+        "lab-bio-2019"
+    ],
+
+    "Диететика": [
+        "ффдд-23",
+        "ффдд"
+    ]
 };
+
+// ===========================
+// HELPERS
+// ===========================
 
 function normalizeText(text){
 
@@ -98,53 +126,96 @@ function normalizeText(text){
         .replace(/\s+/g, " ");
 }
 
-function makeId(text){
+function detectFamily(programText){
 
-    return text
-        .toString()
-        .trim()
-        .toLowerCase()
-        .replaceAll(" ", "-")
-        .replaceAll("/", "-")
-        .replaceAll(",", "")
-        .replaceAll(".", "")
-        .replaceAll("(", "")
-        .replaceAll(")", "");
+    const p = normalizeText(programText);
+
+    if(p.includes("магист"))
+        return "Магистер";
+
+    if(p.includes("лабо"))
+        return "Лабораториско";
+
+    if(p.includes("диет"))
+        return "Диететика";
+
+    return null;
 }
 
-async function uploadSubjects(){
+// ===========================
+// FIND SUBJECT
+// ===========================
 
-    const file = document.getElementById("csvFile").files[0];
+function findBestSubject(subjectName, semester, family, subjects){
+
+    const normalizedSubject =
+        normalizeText(subjectName);
+
+    const priorityPrograms =
+        programPriority[family] || [];
+
+    // FIRST PASS:
+    // exact semester + newest program
+
+    for(const programId of priorityPrograms){
+
+        const found = subjects.find(s =>
+
+            normalizeText(s.name) === normalizedSubject &&
+            String(s.semester) === String(semester) &&
+            s.programId === programId
+        );
+
+        if(found)
+            return found;
+    }
+
+    // SECOND PASS:
+    // same subject any semester
+
+    for(const programId of priorityPrograms){
+
+        const found = subjects.find(s =>
+
+            normalizeText(s.name) === normalizedSubject &&
+            s.programId === programId
+        );
+
+        if(found)
+            return found;
+    }
+
+    return null;
+}
+
+// ===========================
+// UPLOAD EVENTS
+// ===========================
+
+async function uploadEvents(){
+
+    const file =
+        document.getElementById("eventsFile").files[0];
 
     if(!file){
-        alert("Select CSV file");
+        alert("Select events CSV");
         return;
     }
 
-    log.innerHTML = "Loading existing subjects...\n";
+    log.innerHTML = "Loading subjects_new...\n";
 
-    // LOAD EXISTING SUBJECTS
-    const existingSnap = await getDocs(
-        collection(db, "subjects_new")
-    );
+    // LOAD SUBJECTS
+    const subjectsSnap =
+        await getDocs(collection(db, "subjects_new"));
 
-    const existingKeys = new Set();
+    const subjects =
+        subjectsSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
 
-    existingSnap.forEach(docSnap => {
-
-        const d = docSnap.data();
-
-        const key =
-            normalizeText(d.name) +
-            "|" +
-            d.programId +
-            "|" +
-            d.semester;
-
-        existingKeys.add(key);
-    });
-
-    log.innerHTML += `Existing subjects: ${existingKeys.size}\n\n`;
+    log.innerHTML +=
+        `Subjects loaded: ${subjects.length}\n\n`;
 
     Papa.parse(file, {
 
@@ -156,91 +227,106 @@ async function uploadSubjects(){
 
             const rows = results.data;
 
-            log.innerHTML += `CSV rows: ${rows.length}\n\n`;
+            log.innerHTML +=
+                `CSV rows: ${rows.length}\n\n`;
+
+            let uploaded = 0;
+            let skipped = 0;
 
             for(const row of rows){
 
-                const programName =
-                    (row["Насока"] || "").trim();
-
                 const subjectName =
-                    (row["Предмет"] || "").trim();
+                    (row["предмет"] || "").trim();
 
-                if(!programName || !subjectName){
-                    continue;
-                }
+                const semester =
+                    (row["Семестар"] || "").trim();
 
-                const programId =
-                    programMap[programName];
+                const programText =
+                    (row["Студиска програма"] || "").trim();
 
-                if(!programId){
+                const family =
+                    detectFamily(programText);
 
-                    log.innerHTML +=
-                        `❌ Missing program: ${programName}\n`;
-
-                    continue;
-                }
-
-                const semester = Number(
-                    (row["Семестар"] || "").trim()
-                );
-
-                const required =
-                    ((row["Задолжителен"] || "").trim() === "Да");
-
-                const credits = parseFloat(
-                    (row["Кредити"] || "0")
-                        .replace(",", ".")
-                        .trim()
-                );
-
-                // DUPLICATE CHECK
-                const duplicateKey =
-                    normalizeText(subjectName) +
-                    "|" +
-                    programId +
-                    "|" +
-                    semester;
-
-                if(existingKeys.has(duplicateKey)){
+                if(!family){
 
                     log.innerHTML +=
-                        `⚠ Already exists: ${subjectName} (${programId}, sem ${semester})\n`;
+                        `❌ Unknown family: ${programText}\n`;
 
+                    skipped++;
                     continue;
                 }
 
-                // DOCUMENT ID
-                const subjectId =
-                    programId +
-                    "-" +
-                    makeId(subjectName);
+                // FIND SUBJECT
+                const subject =
+                    findBestSubject(
+                        subjectName,
+                        semester,
+                        family,
+                        subjects
+                    );
 
-                await setDoc(
-                    doc(db, "subjects_new", subjectId),
+                if(!subject){
+
+                    log.innerHTML +=
+                        `❌ Subject not found: ${subjectName}\n`;
+
+                    skipped++;
+                    continue;
+                }
+
+                // CREATE EVENT
+                await addDoc(
+                    collection(db, "events_new"),
                     {
-                        name: subjectName,
-                        programId: programId,
-                        semester: semester,
-                        required: required,
-                        credits: credits
+
+                        week:
+                            (row["Недела"] || "").trim(),
+
+                        day:
+                            (row["Ден"] || "").trim(),
+
+                        date:
+                            (row["Датум"] || "").trim(),
+
+                        time:
+                            (row["Час"] || "").trim(),
+
+                        room:
+                            (row["Просторија"] || "").trim(),
+
+                        type:
+                            (row["тип на настава"] || "").trim(),
+
+                        professor:
+                            (row["проф/асс"] || "").trim(),
+
+                        groups:
+                            (row["Групи"] || "").trim(),
+
+                        // CONNECTIONS
+                        subjectId:
+                            subject.id,
+
+                        programId:
+                            subject.programId
                     }
                 );
 
-                existingKeys.add(duplicateKey);
+                uploaded++;
 
                 log.innerHTML +=
-                    `✓ Uploaded: ${subjectName}\n`;
+                    `✓ ${subjectName} → ${subject.programId}\n`;
             }
 
-            log.innerHTML += `\nDONE`;
+            log.innerHTML +=
+                `\nDONE\nUploaded: ${uploaded}\nSkipped: ${skipped}`;
         }
     });
 }
 
 document
-    .getElementById("uploadBtn")
-    .addEventListener("click", uploadSubjects);
+    .getElementById("uploadEventsBtn")
+    .addEventListener("click", uploadEvents);
 
 </script>
 
