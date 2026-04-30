@@ -2,77 +2,693 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<title>Admin Распоред</title>
 
 <style>
-body { font-family: Arial; padding: 20px; }
-input { display: block; margin: 5px 0; padding: 6px; width: 250px; }
-button { padding: 8px 12px; margin-top: 10px; cursor: pointer; }
-li { margin: 5px 0; }
+
+body{
+    font-family:Arial;
+    padding:20px;
+    margin:0;
+}
+
+h2{
+    margin-bottom:15px;
+}
+
+.controls{
+    margin-bottom:15px;
+}
+
+select,
+button,
+input{
+    padding:6px 8px;
+    margin-right:8px;
+    font-size:14px;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+    table-layout:fixed;
+}
+
+th,td{
+    border:1px solid #333;
+    padding:4px;
+    vertical-align:top;
+    font-size:12px;
+}
+
+th{
+    background:#3f69b1;
+    color:white;
+    text-align:center;
+}
+
+.time-col{
+    width:70px;
+    background:#f5f5f5;
+    font-weight:bold;
+    text-align:center;
+}
+
+.slot{
+    min-height:70px;
+    cursor:pointer;
+    transition:0.15s;
+}
+
+.slot:hover{
+    background:#eef4ff;
+}
+
+.event{
+    background:#d9e8ff;
+    border:1px solid #6f9be8;
+    border-radius:4px;
+    padding:4px;
+    font-size:11px;
+    line-height:1.3;
+}
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.modal-content{
+    background:white;
+    padding:20px;
+    width:420px;
+    border-radius:8px;
+}
+
+.modal-content h3{
+    margin-top:0;
+}
+
+.modal-content label{
+    display:block;
+    margin-top:10px;
+    margin-bottom:4px;
+    font-size:13px;
+}
+
+.modal-content select,
+.modal-content input{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.modal-buttons{
+    margin-top:15px;
+    text-align:right;
+}
+
+.delete-btn{
+    background:#c0392b;
+    color:white;
+    border:none;
+}
+
+.save-btn{
+    background:#2e7d32;
+    color:white;
+    border:none;
+}
+
+.close-btn{
+    background:#777;
+    color:white;
+    border:none;
+}
+
+.info{
+    margin:10px 0;
+    color:#444;
+}
+
 </style>
 </head>
 
 <body>
 
-<h2>Admin - Распоред</h2>
+<h2>Admin Распоред</h2>
 
-<input id="day" placeholder="Ден (среда)">
-<input id="time" placeholder="Час (09:00)">
-<input id="room" placeholder="Просторија (01 пред.)">
-<input id="subject" placeholder="Предмет">
-<input id="prof" placeholder="Професор">
-<input id="program" placeholder="Програма">
+<div class="controls">
 
-<button onclick="add()">Додади</button>
+<label>Датум:</label>
+<input type="date" id="datePicker">
 
-<h3>Записи:</h3>
-<ul id="list"></ul>
+<button id="todayBtn">Денес</button>
+
+</div>
+
+<div class="info" id="info"></div>
+
+<table id="scheduleTable">
+<thead>
+<tr>
+<th class="time-col">Час</th>
+<th>01 пред.</th>
+<th>02 пред.</th>
+<th>03 пред.</th>
+<th>04 пред.</th>
+<th>08 лаб.</th>
+<th>09 лаб.</th>
+<th>10 лаб.</th>
+<th>11 лаб.</th>
+<th>12 лаб.</th>
+<th>14 лаб.</th>
+<th>НФИЦ</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<!-- MODAL -->
+
+<div class="modal" id="modal">
+
+<div class="modal-content">
+
+<h3>Распоред</h3>
+
+<label>Програма</label>
+<select id="programSelect"></select>
+
+<label>Семестар</label>
+<select id="semesterSelect"></select>
+
+<label>Предмет</label>
+<select id="subjectSelect"></select>
+
+<label>Тип</label>
+<select id="typeSelect">
+<option value="Предавање">Предавање</option>
+<option value="Вежби">Вежби</option>
+<option value="Колоквиум">Колоквиум</option>
+<option value="Испит">Испит</option>
+</select>
+
+<label>Професор</label>
+<input type="text" id="professorInput">
+
+<label>Групи</label>
+<input type="text" id="groupsInput">
+
+<div class="modal-buttons">
+
+<button class="delete-btn" id="deleteBtn">Delete</button>
+
+<button class="close-btn" id="closeBtn">Cancel</button>
+
+<button class="save-btn" id="saveBtn">Save</button>
+
+</div>
+
+</div>
+</div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDGJ52Zvt46flmso4UEkh2k9_g5L_neRYk",
-  authDomain: "schedule-a6667.firebaseapp.com",
-  projectId: "schedule-a6667",
-  storageBucket: "schedule-a6667.firebasestorage.app",
-  messagingSenderId: "108962717396",
-  appId: "1:108962717396:web:f0eba3d1c1594456e7e541"
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Add new record
-window.add = async function () {
-  const data = {
-    day: document.getElementById("day").value.trim(),
-    time: document.getElementById("time").value.trim(),
-    room: document.getElementById("room").value.trim(),
-    subject: document.getElementById("subject").value.trim(),
-    professor: document.getElementById("prof").value.trim(),
-    program: document.getElementById("program").value.trim()
-  };
+const ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
+"12 лаб.","14 лаб.","НФИЦ"
+];
 
-  if (!data.day || !data.time || !data.room) {
-    alert("Пополнете барем ден, час и просторија");
-    return;
-  }
+const TIMES = [];
 
-  await addDoc(collection(db, "events"), data);
+for(let h=8; h<=20; h++){
+    TIMES.push(String(h).padStart(2,"0")+":00");
+}
+
+let events = [];
+let programs = [];
+let subjects = [];
+
+let currentDate = "";
+let currentRoom = "";
+let currentTime = "";
+let editingId = null;
+
+// =======================
+
+function todayISO(){
+
+    const t = new Date();
+
+    const y = t.getFullYear();
+    const m = String(t.getMonth()+1).padStart(2,"0");
+    const d = String(t.getDate()).padStart(2,"0");
+
+    return `${y}-${m}-${d}`;
+}
+
+// =======================
+
+async function loadAll(){
+
+    const progSnap =
+        await getDocs(collection(db,"programs_new"));
+
+    programs =
+        progSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    const subjSnap =
+        await getDocs(collection(db,"subjects_new"));
+
+    subjects =
+        subjSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    await loadEvents();
+
+    initFilters();
+
+    render();
+}
+
+// =======================
+
+async function loadEvents(){
+
+    const snap =
+        await getDocs(collection(db,"events_new"));
+
+    events =
+        snap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+}
+
+// =======================
+
+function initFilters(){
+
+    const datePicker =
+        document.getElementById("datePicker");
+
+    datePicker.value = todayISO();
+
+    datePicker.addEventListener("change",()=>{
+
+        render();
+    });
+
+    document.getElementById("todayBtn")
+        .addEventListener("click",()=>{
+
+            datePicker.value = todayISO();
+
+            render();
+        });
+
+    fillPrograms();
+}
+
+// =======================
+
+function fillPrograms(){
+
+    const sel =
+        document.getElementById("programSelect");
+
+    sel.innerHTML = "";
+
+    programs.forEach(p=>{
+
+        sel.innerHTML += `
+        <option value="${p.id}">
+            ${p.name}
+        </option>`;
+    });
+
+    updateSubjects();
+
+    sel.addEventListener("change",updateSubjects);
+}
+
+// =======================
+
+function updateSubjects(){
+
+    const programId =
+        document.getElementById("programSelect").value;
+
+    const semesterSel =
+        document.getElementById("semesterSelect");
+
+    const subjectSel =
+        document.getElementById("subjectSelect");
+
+    const filtered =
+        subjects.filter(s=>s.programId===programId);
+
+    const semesters =
+        [...new Set(filtered.map(s=>s.semester))]
+        .sort((a,b)=>a-b);
+
+    semesterSel.innerHTML = "";
+
+    semesters.forEach(s=>{
+
+        semesterSel.innerHTML += `
+        <option value="${s}">
+            ${s}
+        </option>`;
+    });
+
+    function refreshSubjects(){
+
+        const sem =
+            semesterSel.value;
+
+        const list =
+            filtered.filter(s=>
+                String(s.semester)===String(sem)
+            );
+
+        subjectSel.innerHTML = "";
+
+        list.forEach(s=>{
+
+            subjectSel.innerHTML += `
+            <option value="${s.id}">
+                ${s.name}
+            </option>`;
+        });
+    }
+
+    refreshSubjects();
+
+    semesterSel.onchange = refreshSubjects;
+}
+
+// =======================
+
+function render(){
+
+    const tbody =
+        document.getElementById("tbody");
+
+    tbody.innerHTML = "";
+
+    const selectedDate =
+        document.getElementById("datePicker").value;
+
+    document.getElementById("info").textContent =
+        `Приказ за ${selectedDate}`;
+
+    TIMES.forEach(time=>{
+
+        let row = `
+        <tr>
+            <td class="time-col">${time}</td>
+        `;
+
+        ROOMS.forEach(room=>{
+
+            const event =
+                events.find(e=>
+                    e.date===selectedDate &&
+                    e.time===time &&
+                    e.room===room
+                );
+
+            let content = "";
+
+            if(event){
+
+                const program =
+                    programs.find(p=>p.id===event.programId);
+
+                const subject =
+                    subjects.find(s=>s.id===event.subjectId);
+
+                content = `
+                <div class="event">
+                    <b>${subject?.name || ""}</b><br>
+                    ${program?.name || ""}<br>
+                    ${event.type || ""}<br>
+                    ${event.professor || ""}
+                </div>`;
+            }
+
+            row += `
+            <td class="slot"
+                data-room="${room}"
+                data-time="${time}"
+                onclick="openSlot(this)">
+                ${content}
+            </td>`;
+        });
+
+        row += "</tr>";
+
+        tbody.innerHTML += row;
+    });
+}
+
+// =======================
+
+window.openSlot = function(cell){
+
+    currentRoom =
+        cell.dataset.room;
+
+    currentTime =
+        cell.dataset.time;
+
+    currentDate =
+        document.getElementById("datePicker").value;
+
+    const existing =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.room===currentRoom
+        );
+
+    editingId = existing?.id || null;
+
+    if(existing){
+
+        document.getElementById("programSelect").value =
+            existing.programId;
+
+        updateSubjects();
+
+        document.getElementById("semesterSelect").value =
+            existing.semester;
+
+        updateSubjects();
+
+        document.getElementById("subjectSelect").value =
+            existing.subjectId;
+
+        document.getElementById("typeSelect").value =
+            existing.type || "Предавање";
+
+        document.getElementById("professorInput").value =
+            existing.professor || "";
+
+        document.getElementById("groupsInput").value =
+            existing.groups || "";
+    }
+    else{
+
+        editingId = null;
+
+        document.getElementById("typeSelect").value =
+            "Предавање";
+
+        document.getElementById("professorInput").value =
+            "";
+
+        document.getElementById("groupsInput").value =
+            "";
+    }
+
+    document.getElementById("modal").style.display =
+        "flex";
 };
 
-// Live update list
-onSnapshot(collection(db, "events"), (snapshot) => {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+// =======================
 
-  snapshot.forEach(doc => {
-    const d = doc.data();
-    list.innerHTML += `<li>${d.day} ${d.time} | ${d.room} | ${d.subject}</li>`;
-  });
+document.getElementById("closeBtn")
+.addEventListener("click",()=>{
+
+    document.getElementById("modal").style.display =
+        "none";
 });
+
+// =======================
+
+document.getElementById("saveBtn")
+.addEventListener("click", async ()=>{
+
+    const subjectId =
+        document.getElementById("subjectSelect").value;
+
+    const programId =
+        document.getElementById("programSelect").value;
+
+    const semester =
+        document.getElementById("semesterSelect").value;
+
+    const type =
+        document.getElementById("typeSelect").value;
+
+    const professor =
+        document.getElementById("professorInput").value;
+
+    const groups =
+        document.getElementById("groupsInput").value;
+
+    // ROOM CONFLICT
+
+    const exists =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.room===currentRoom &&
+            e.id!==editingId
+        );
+
+    if(exists){
+
+        alert("Терминот е зафатен.");
+
+        return;
+    }
+
+    // PROFESSOR CONFLICT
+
+    if(professor){
+
+        const profConflict =
+            events.find(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.professor===professor &&
+                e.id!==editingId
+            );
+
+        if(profConflict){
+
+            alert("Професорот веќе има час.");
+
+            return;
+        }
+    }
+
+    const data = {
+
+        date: currentDate,
+        time: currentTime,
+        room: currentRoom,
+
+        programId,
+        subjectId,
+        semester,
+
+        type,
+        professor,
+        groups
+    };
+
+    if(editingId){
+
+        await updateDoc(
+            doc(db,"events_new",editingId),
+            data
+        );
+    }
+    else{
+
+        await addDoc(
+            collection(db,"events_new"),
+            data
+        );
+    }
+
+    await loadEvents();
+
+    render();
+
+    document.getElementById("modal").style.display =
+        "none";
+});
+
+// =======================
+
+document.getElementById("deleteBtn")
+.addEventListener("click", async ()=>{
+
+    if(!editingId) return;
+
+    if(!confirm("Delete event?"))
+        return;
+
+    await deleteDoc(
+        doc(db,"events_new",editingId)
+    );
+
+    await loadEvents();
+
+    render();
+
+    document.getElementById("modal").style.display =
+        "none";
+});
+
+// =======================
+
+loadAll();
+
 </script>
 
 </body>
