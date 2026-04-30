@@ -590,40 +590,138 @@ document.getElementById("saveBtn")
 
     // ROOM CONFLICT
 
-    const exists =
-        events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.room===currentRoom &&
-            e.id!==editingId
+    // ================= ROOM CONFLICT =================
+
+const exists =
+    events.find(e =>
+        e.date === currentDate &&
+        e.time === currentTime &&
+        e.room === currentRoom &&
+        e.id !== editingId
+    );
+
+if (exists) {
+
+    alert("Просторијата е зафатена.");
+
+    return;
+}
+
+// ================= PROFESSOR CONFLICT =================
+
+if (professor) {
+
+    const profConflict =
+        events.find(e =>
+            e.date === currentDate &&
+            e.time === currentTime &&
+            e.professor === professor &&
+            e.id !== editingId
         );
 
-    if(exists){
+    if (profConflict) {
 
-        alert("Терминот е зафатен.");
+        alert("Професорот веќе има час во овој термин.");
 
         return;
     }
+}
 
-    // PROFESSOR CONFLICT
+// ================= PROGRAM + SEMESTER CONFLICT =================
 
-    if(professor){
+const semesterConflict =
+    events.find(e =>
 
-        const profConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.professor===professor &&
-                e.id!==editingId
+        e.date === currentDate &&
+        e.time === currentTime &&
+
+        e.programId === programId &&
+        String(e.semester) === String(semester) &&
+
+        e.id !== editingId
+    );
+
+if (semesterConflict) {
+
+    alert(
+        "Оваа програма и семестар веќе имаат час во истиот термин."
+    );
+
+    return;
+}
+
+// ================= LECTURE CONFLICT =================
+
+if (type === "Предавање") {
+
+    const lectureConflict =
+        events.find(e =>
+
+            e.date === currentDate &&
+            e.time === currentTime &&
+            e.type === "Предавање" &&
+            e.subjectId === subjectId &&
+            e.id !== editingId
+        );
+
+    if (lectureConflict) {
+
+        alert(
+            "Предавањето веќе постои во другa просторија во истиот термин."
+        );
+
+        return;
+    }
+}
+
+// ================= LAB RULE =================
+
+const LAB_ROOMS = [
+    "08 лаб.","09 лаб.","10 лаб.","11 лаб.",
+    "12 лаб.","14 лаб.","НФИЦ"
+];
+
+if (type === "Вежби") {
+
+    const sameExercise =
+        events.filter(e =>
+
+            e.date === currentDate &&
+            e.time === currentTime &&
+            e.subjectId === subjectId &&
+            e.type === "Вежби" &&
+            e.id !== editingId
+        );
+
+    if (sameExercise.length > 0) {
+
+        const invalidRoom =
+            !LAB_ROOMS.includes(currentRoom);
+
+        if (invalidRoom) {
+
+            alert(
+                "Вежби паралелно се дозволени само во лаборатории."
             );
 
-        if(profConflict){
+            return;
+        }
 
-            alert("Професорот веќе има час.");
+        const nonLabConflict =
+            sameExercise.find(e =>
+                !LAB_ROOMS.includes(e.room)
+            );
+
+        if (nonLabConflict) {
+
+            alert(
+                "Постојат вежби во недозволена просторија."
+            );
 
             return;
         }
     }
+}
 
     const data = {
 
