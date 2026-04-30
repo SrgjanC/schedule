@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Распоред</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+h2 { margin-bottom: 10px; }
+.controls { margin-bottom: 15px; }
+select { padding: 5px; margin-right: 10px; }
+
+table { border-collapse: collapse; width: 100%; }
+
+th, td {
+    border: 1px solid #222;
+    padding: 4px 6px;
+    text-align: left;
+    font-size: 13px;
+}
+
+th {
+    background: #3f69b1;
+    color: #fff;
+}
+
+.spinner-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
+}
+
+.spinner {
+    width: 34px;
+    height: 34px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #3f69b1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+
+<h2>Академски Распоред</h2>
+
+<div class="controls">
+
+<label>Преглед:</label>
+<select id="viewMode">
+    <option value="day">Day</option>
+    <option value="week">Week</option>
+    <option value="month">Month</option>
+    <option value="year">Year</option>
+</select>
+
+<label>Датум:</label>
+<select id="dateFilter"></select>
+
+<label>Програма:</label>
+<select id="programFilter"></select>
+
+<label>Семестар:</label>
+<select id="semesterFilter"></select>
+
+<label>Просторија:</label>
+<select id="roomFilter"></select>
+
+</div>
+
+<div id="viewInfo" style="margin:8px 0 14px; font-size:14px; color:#444;"></div>
+
+<table id="schedule">
+
+<thead>
+<tr>
+<th>Недела</th>
+<th>Ден</th>
+<th>Датум</th>
+<th>Час</th>
+<th>Просторија</th>
+<th>Студиска програма</th>
+<th>Семестар</th>
+<th>Предмет</th>
+<th>Тип на настава</th>
+<th>Проф/асс</th>
+<th>Групи</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    getDocs
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+// =======================
+// FIREBASE
+// =======================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// =======================
+// DATA
+// =======================
+
+let events = [];
+let programs = [];
+let subjects = [];
+let rooms = [];
+
+let isLoading = true;
+
+// =======================
+// EMPTY ROOMS
+// =======================
+
+const emptyRooms = [
+    "01 пред.",
+    "02 пред.",
+    "03 пред.",
+    "04 пред.",
+    "08 лаб.",
+    "09 лаб.",
+    "10 лаб.",
+    "11 лаб.",
+    "12 лаб.",
+    "14 лаб.",
+    "НФИЦ"
+];
+
+// =======================
+// COLORS
+// =======================
+
+const roomColorCache = {};
+
+function getRoomColor(room){
+
+    if(!room)
+        return "#ffffff";
+
+    if(roomColorCache[room])
+        return roomColorCache[room];
+
+    const palette = [
+        "#f1dfd3",
+        "#dde3ef",
+        "#cfe7b4",
+        "#f7e6b8",
+        "#e3d9f6",
+        "#d7eee8"
+    ];
+
+    let hash = 0;
+
+    for(let i=0;i<room.length;i++){
+        hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const color =
+        palette[Math.abs(hash) % palette.length];
+
+    roomColorCache[room] = color;
+
+    return color;
+}
+
+// =======================
+// DATE
+// =======================
+
+function todayISO(){
+
+    const t = new Date();
+
+    const y = t.getFullYear();
+    const m = String(t.getMonth()+1).padStart(2,"0");
+    const d = String(t.getDate()).padStart(2,"0");
+
+    return `${y}-${m}-${d}`;
+}
+
+function formatDate(dateStr){
+
+    if(!dateStr)
+        return "";
+
+    const d = new Date(dateStr);
+
+    if(Number.isNaN(d.getTime()))
+        return dateStr;
+
+    const months = [
+        "Јан","Фев","Мар","Апр","Мај","Јун",
+        "Јул","Авг","Сеп","Окт","Ное","Дек"
+    ];
+
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
+
+function getWeekRange(dateStr){
+
+    const d = new Date(dateStr);
+
+    const day = d.getDay();
+
+    const diff =
+        d.getDate() - day + (day === 0 ? -6 : 1);
+
+    const monday = new Date(d);
+    monday.setDate(diff);
+
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+
+    return {
+        start: monday.toISOString().slice(0,10),
+        end: friday.toISOString().slice(0,10)
+    };
+}
+
+// =======================
+// FILTERS
+// =======================
+
+function fillSelect(id, values){
+
+    const el =
+        document.getElementById(id);
+
+    el.innerHTML =
+        "<option value=''>Сите</option>";
+
+    values.forEach(v => {
+
+        if(v !== undefined && v !== null && v !== ""){
+
+            el.innerHTML +=
+                `<option value="${v}">${v}</option>`;
+        }
+    });
+}
+
+function sortSemesters(values){
+
+    return values
+        .map(v => Number(v))
+        .filter(v => !Number.isNaN(v))
+        .sort((a,b) => a-b);
+}
+
+// =======================
+// LOAD
+// =======================
+
+async function loadData(){
+
+    // EVENTS
+    const eventsSnap =
+        await getDocs(collection(db, "events_new"));
+
+    events =
+        eventsSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // PROGRAMS
+    const progSnap =
+        await getDocs(collection(db, "programs_new"));
+
+    programs =
+        progSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // SUBJECTS
+    const subjSnap =
+        await getDocs(collection(db, "subjects_new"));
+
+    subjects =
+        subjSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // ROOMS
+    const roomSnap =
+        await getDocs(collection(db, "rooms"));
+
+    rooms =
+        roomSnap.docs.map(d => d.data().name);
+
+    // CONNECT DATA
+
+    events = events.map(e => {
+
+        const program =
+            programs.find(p => p.id === e.programId);
+
+        const subject =
+            subjects.find(s => s.id === e.subjectId);
+
+        return {
+
+            ...e,
+
+            program:
+                program?.name || "",
+
+            semester:
+                subject?.semester || "",
+
+            subject:
+                subject?.name || ""
+        };
+    });
+
+    isLoading = false;
+
+    initFilters();
+
+    render();
+}
+
+// =======================
+// INIT FILTERS
+// =======================
+
+function initFilters(){
+
+    const dates =
+        [...new Set(events.map(e => e.date))]
+        .filter(Boolean)
+        .sort();
+
+    const progs =
+        [...new Set(events.map(e => e.program))]
+        .filter(Boolean)
+        .sort((a,b)=>a.localeCompare(b,"mk"));
+
+    const semRaw =
+        [...new Set(events.map(e => e.semester))];
+
+    const semSorted =
+        sortSemesters(semRaw);
+
+    fillSelect("dateFilter", dates);
+    fillSelect("programFilter", progs);
+    fillSelect("semesterFilter", semSorted);
+    fillSelect("roomFilter", rooms);
+
+    const today = todayISO();
+
+    if(dates.includes(today)){
+
+        document.getElementById("dateFilter").value =
+            today;
+    }
+
+    document
+        .querySelectorAll("select")
+        .forEach(s =>
+            s.addEventListener("change", render)
+        );
+}
+
+// =======================
+// VIEW FILTER
+// =======================
+
+function isInView(date, selectedDate, viewMode){
+
+    if(!selectedDate)
+        return true;
+
+    if(viewMode === "day"){
+
+        return date === selectedDate;
+    }
+
+    if(viewMode === "week"){
+
+        const range =
+            getWeekRange(selectedDate);
+
+        return date >= range.start &&
+               date <= range.end;
+    }
+
+    if(viewMode === "month"){
+
+        return date.slice(0,7) ===
+               selectedDate.slice(0,7);
+    }
+
+    if(viewMode === "year"){
+
+        return date.slice(0,4) ===
+               selectedDate.slice(0,4);
+    }
+
+    return true;
+}
+
+// =======================
+// EMPTY TIMES
+// =======================
+
+function generateHours(){
+
+    const hours = [];
+
+    for(let h=8; h<=20; h++){
+
+        hours.push(
+            String(h).padStart(2,"0") + ":00"
+        );
+    }
+
+    return hours;
+}
+
+// =======================
+// RENDER
+// =======================
+
+function render(){
+
+const tbody =
+    document.getElementById("tbody");
+
+if(isLoading){
+
+    tbody.innerHTML = `
+    <tr>
+        <td colspan="11">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+        </td>
+    </tr>`;
+
+    return;
+}
+
+tbody.innerHTML = "";
+
+const viewMode =
+    document.getElementById("viewMode").value;
+
+let dateF =
+    document.getElementById("dateFilter").value;
+
+const progF =
+    document.getElementById("programFilter").value;
+
+const semF =
+    document.getElementById("semesterFilter").value;
+
+const roomF =
+    document.getElementById("roomFilter").value;
+
+if(!dateF){
+
+    dateF = todayISO();
+}
+
+document.getElementById("viewInfo").textContent =
+    `Приказ (${viewMode}): ${dateF}`;
+
+let filtered =
+    events.filter(e => {
+
+        if(!isInView(e.date, dateF, viewMode))
+            return false;
+
+        if(progF && e.program !== progF)
+            return false;
+
+        if(semF && String(e.semester) !== String(semF))
+            return false;
+
+        if(roomF && e.room !== roomF)
+            return false;
+
+        return true;
+    });
+
+// SORT
+filtered.sort((a,b)=>
+
+    (a.date || "").localeCompare(b.date || "") ||
+
+    (a.room || "").localeCompare(b.room || "mk") ||
+
+    (a.time || "").localeCompare(b.time || "")
+);
+
+// =======================
+// DAY VIEW EMPTY ROWS
+// =======================
+
+if(viewMode === "day"){
+
+    const hours = generateHours();
+
+    const existingMap = {};
+
+    filtered.forEach(e => {
+
+        const key =
+            `${e.room}_${e.time}`;
+
+        if(!existingMap[key])
+            existingMap[key] = [];
+
+        existingMap[key].push(e);
+    });
+
+    emptyRooms.forEach(room => {
+
+        if(roomF && room !== roomF)
+            return;
+
+        hours.forEach(time => {
+
+            const key =
+                `${room}_${time}`;
+
+            const matches =
+                existingMap[key] || [];
+
+            if(matches.length === 0){
+
+                const color =
+                    getRoomColor(room);
+
+                tbody.innerHTML += `
+                <tr style="background:${color};">
+
+                    <td></td>
+                    <td></td>
+                    <td>${formatDate(dateF)}</td>
+                    <td>${time}</td>
+                    <td>${room}</td>
+
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+
+                </tr>`;
+            }
+            else{
+
+                matches.forEach(e => {
+
+                    const color =
+                        getRoomColor(e.room);
+
+                    tbody.innerHTML += `
+                    <tr style="background:${color};">
+
+                        <td>${e.week || ""}</td>
+                        <td>${e.day || ""}</td>
+                        <td>${formatDate(e.date)}</td>
+                        <td>${e.time || ""}</td>
+                        <td>${e.room || ""}</td>
+
+                        <td>${e.program || ""}</td>
+                        <td>${e.semester || ""}</td>
+                        <td>${e.subject || ""}</td>
+                        <td>${e.type || ""}</td>
+                        <td>${e.professor || ""}</td>
+                        <td>${e.groups || ""}</td>
+
+                    </tr>`;
+                });
+            }
+        });
+    });
+
+    return;
+}
+
+// =======================
+// OTHER VIEWS
+// =======================
+
+filtered.forEach(e => {
+
+    const color =
+        getRoomColor(e.room);
+
+    tbody.innerHTML += `
+    <tr style="background:${color};">
+
+        <td>${e.week || ""}</td>
+        <td>${e.day || ""}</td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.time || ""}</td>
+        <td>${e.room || ""}</td>
+
+        <td>${e.program || ""}</td>
+        <td>${e.semester || ""}</td>
+        <td>${e.subject || ""}</td>
+        <td>${e.type || ""}</td>
+        <td>${e.professor || ""}</td>
+        <td>${e.groups || ""}</td>
+
+    </tr>`;
+});
+
+}
+
+// =======================
+
+loadData();
+
+</script>
+
+</body>
+</html>
