@@ -91,6 +91,21 @@ const db = getFirestore(app);
 const log = document.getElementById("log");
 
 // ===========================
+// LAB ROOMS
+// ===========================
+
+const labRooms = [
+    "07 лаб.",
+    "08 лаб.",
+    "09 лаб.",
+    "10 лаб.",
+    "11 лаб.",
+    "12 лаб.",
+    "14 лаб.",
+    "НФИЦ"
+];
+
+// ===========================
 // PROGRAM PRIORITY
 // ===========================
 
@@ -159,6 +174,11 @@ function detectFamily(programText){
     return null;
 }
 
+function isLabRoom(room){
+
+    return labRooms.includes(room);
+}
+
 // ===========================
 // FIND SUBJECT
 // ===========================
@@ -172,7 +192,7 @@ function findBestSubject(subjectName, semester, family, subjects){
         programPriority[family] || [];
 
     // PASS 1
-    // same semester + newest program
+    // same semester + newest
 
     for(const programId of priorityPrograms){
 
@@ -206,25 +226,30 @@ function findBestSubject(subjectName, semester, family, subjects){
 }
 
 // ===========================
-// DUPLICATE KEY
-// ===========================
-// SAME CLASS only if:
-// same date
-// same time
-// same room
-// same subject
-// same type
+// DUPLICATE RULES
 // ===========================
 
-function makeEventKey(event){
+function makeLectureKey(event){
 
     return [
 
         normalizeText(event.date),
         normalizeTime(event.time),
-        normalizeText(event.room),
         normalizeText(event.subjectId),
         normalizeText(event.type)
+
+    ].join("|");
+}
+
+function makeExerciseKey(event){
+
+    return [
+
+        normalizeText(event.date),
+        normalizeTime(event.time),
+        normalizeText(event.subjectId),
+        normalizeText(event.type),
+        normalizeText(event.room)
 
     ].join("|");
 }
@@ -265,19 +290,43 @@ async function uploadEvents(){
     const eventsSnap =
         await getDocs(collection(db, "events_new"));
 
-    const existingKeys = new Set();
+    const existingLectureKeys = new Set();
+    const existingExerciseKeys = new Set();
 
     eventsSnap.forEach(docSnap => {
 
         const d = docSnap.data();
 
-        const key = makeEventKey(d);
+        const type =
+            normalizeText(d.type);
 
-        existingKeys.add(key);
+        // ПРЕДАВАЊЕ
+        if(type.includes("пред")){
+
+            existingLectureKeys.add(
+                makeLectureKey(d)
+            );
+        }
+
+        // ВЕЖБИ
+        else if(type.includes("веж")){
+
+            existingExerciseKeys.add(
+                makeExerciseKey(d)
+            );
+        }
+
+        // OTHER
+        else{
+
+            existingLectureKeys.add(
+                makeLectureKey(d)
+            );
+        }
     });
 
     log.innerHTML +=
-        `Existing events: ${existingKeys.size}\n\n`;
+        `Existing events loaded\n\n`;
 
     Papa.parse(file, {
 
@@ -373,11 +422,89 @@ async function uploadEvents(){
                         subject.programId
                 };
 
-                // DUPLICATE CHECK
-                const eventKey =
-                    makeEventKey(eventData);
+                const type =
+                    normalizeText(eventData.type);
 
-                if(existingKeys.has(eventKey)){
+                let isDuplicate = false;
+
+                // ===========================
+                // ПРЕДАВАЊЕ
+                // only ONE room allowed
+                // ===========================
+
+                if(type.includes("пред")){
+
+                    const key =
+                        makeLectureKey(eventData);
+
+                    if(existingLectureKeys.has(key)){
+
+                        isDuplicate = true;
+                    }
+                    else{
+
+                        existingLectureKeys.add(key);
+                    }
+                }
+
+                // ===========================
+                // ВЕЖБИ
+                // allowed in multiple LAB rooms
+                // ===========================
+
+                else if(type.includes("веж")){
+
+                    if(isLabRoom(eventData.room)){
+
+                        const key =
+                            makeExerciseKey(eventData);
+
+                        if(existingExerciseKeys.has(key)){
+
+                            isDuplicate = true;
+                        }
+                        else{
+
+                            existingExerciseKeys.add(key);
+                        }
+                    }
+                    else{
+
+                        const key =
+                            makeLectureKey(eventData);
+
+                        if(existingLectureKeys.has(key)){
+
+                            isDuplicate = true;
+                        }
+                        else{
+
+                            existingLectureKeys.add(key);
+                        }
+                    }
+                }
+
+                // ===========================
+                // OTHER TYPES
+                // ===========================
+
+                else{
+
+                    const key =
+                        makeLectureKey(eventData);
+
+                    if(existingLectureKeys.has(key)){
+
+                        isDuplicate = true;
+                    }
+                    else{
+
+                        existingLectureKeys.add(key);
+                    }
+                }
+
+                // DUPLICATE
+                if(isDuplicate){
 
                     log.innerHTML +=
                         `⚠ Duplicate skipped: ${subjectName} | ${eventData.date} ${eventData.time} | ${eventData.room}\n`;
@@ -391,8 +518,6 @@ async function uploadEvents(){
                     collection(db, "events_new"),
                     eventData
                 );
-
-                existingKeys.add(eventKey);
 
                 uploaded++;
 
