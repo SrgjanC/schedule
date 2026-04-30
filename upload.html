@@ -126,6 +126,23 @@ function normalizeText(text){
         .replace(/\s+/g, " ");
 }
 
+function normalizeTime(time){
+
+    let t = (time || "").trim();
+
+    if(t.includes(".")){
+        t = t.replace(".", ":");
+    }
+
+    const p = t.split(":");
+
+    if(p.length === 2){
+        return p[0].padStart(2,"0") + ":" + p[1].padStart(2,"0");
+    }
+
+    return t;
+}
+
 function detectFamily(programText){
 
     const p = normalizeText(programText);
@@ -155,7 +172,7 @@ function findBestSubject(subjectName, semester, family, subjects){
         programPriority[family] || [];
 
     // PASS 1
-    // same semester + newest
+    // same semester + newest program
 
     for(const programId of priorityPrograms){
 
@@ -191,13 +208,20 @@ function findBestSubject(subjectName, semester, family, subjects){
 // ===========================
 // DUPLICATE KEY
 // ===========================
+// SAME CLASS only if:
+// same date
+// same time
+// same room
+// same subject
+// same type
+// ===========================
 
 function makeEventKey(event){
 
     return [
 
         normalizeText(event.date),
-        normalizeText(event.time),
+        normalizeTime(event.time),
         normalizeText(event.room),
         normalizeText(event.subjectId),
         normalizeText(event.type)
@@ -326,7 +350,9 @@ async function uploadEvents(){
                         (row["Датум"] || "").trim(),
 
                     time:
-                        (row["Час"] || "").trim(),
+                        normalizeTime(
+                            row["Час"] || ""
+                        ),
 
                     room:
                         (row["Просторија"] || "").trim(),
@@ -354,7 +380,7 @@ async function uploadEvents(){
                 if(existingKeys.has(eventKey)){
 
                     log.innerHTML +=
-                        `⚠ Duplicate skipped: ${subjectName} ${eventData.date} ${eventData.time}\n`;
+                        `⚠ Duplicate skipped: ${subjectName} | ${eventData.date} ${eventData.time} | ${eventData.room}\n`;
 
                     duplicates++;
                     continue;
@@ -371,7 +397,7 @@ async function uploadEvents(){
                 uploaded++;
 
                 log.innerHTML +=
-                    `✓ ${subjectName} → ${subject.programId}\n`;
+                    `✓ ${subjectName} → ${subject.programId} | ${eventData.date} ${eventData.time}\n`;
             }
 
             log.innerHTML +=
