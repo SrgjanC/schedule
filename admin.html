@@ -627,39 +627,28 @@ document.getElementById("saveBtn")
 
     // ================= PROGRAM + SEMESTER =================
 
-    const semesterConflict =
-    events.find(e=>{
+    // ================= PROGRAM + SEMESTER =================
 
-        const sameDate =
-            String(e.date) === String(currentDate);
-
-        const sameTime =
-            String(e.time) === String(currentTime);
-
-        const sameProgram =
-            String(e.programId) === String(programId);
-
-        const sameSemester =
-            String(e.semester) === String(semester);
-
-        const differentEvent =
-            String(e.id) !== String(editingId);
+const semesterConflict =
+    events.find(e => {
 
         return (
-            sameDate &&
-            sameTime &&
-            sameProgram &&
-            sameSemester &&
-            differentEvent
+            e.date === currentDate &&
+            e.time === currentTime &&
+            String(e.programId).trim() === String(programId).trim() &&
+            String(e.semester).trim() === String(semester).trim() &&
+            e.id !== editingId
         );
     });
 
-    if(semesterConflict){
+if (semesterConflict) {
 
-        alert("Овој семестар веќе има час во истиот термин.");
+    alert(
+        "Овој семестар од истата програма веќе има час во истиот термин."
+    );
 
-        return;
-    }
+    return;
+}
 
     // ================= PROFESSOR =================
 
