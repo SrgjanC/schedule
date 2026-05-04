@@ -5,69 +5,136 @@
 <title>Admin Распоред</title>
 
 <style>
-body {
-    font-family: Arial;
-    padding: 20px;
+
+body{
+    font-family:Arial;
+    padding:20px;
+    margin:0;
 }
 
-h2 {
-    margin-bottom: 10px;
+h2{
+    margin-bottom:15px;
 }
 
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+.controls{
+    margin-bottom:15px;
 }
 
-select, input, button {
-    padding: 6px;
-    font-size: 14px;
+select,
+button,
+input{
+    padding:6px 8px;
+    margin-right:8px;
+    font-size:14px;
 }
 
-table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 10px;
+table{
+    border-collapse:collapse;
+    width:100%;
+    table-layout:fixed;
 }
 
-th, td {
-    border: 1px solid #222;
-    padding: 5px;
-    font-size: 13px;
-    text-align: left;
+th,td{
+    border:1px solid #333;
+    padding:4px;
+    vertical-align:top;
+    font-size:12px;
 }
 
-th {
-    background: #3f69b1;
-    color: white;
+th{
+    background:#3f69b1;
+    color:white;
+    text-align:center;
 }
 
-tr:hover {
-    background: #f0f0f0;
-    cursor: pointer;
+.time-col{
+    width:70px;
+    background:#f5f5f5;
+    font-weight:bold;
+    text-align:center;
 }
 
-#form {
-    margin-top: 20px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    background: #fafafa;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+.slot{
+    min-height:70px;
+    cursor:pointer;
+    transition:0.15s;
 }
 
-#form label {
-    font-size: 12px;
-    font-weight: bold;
+.slot:hover{
+    background:#eef4ff;
 }
 
-#status {
-    margin-top: 10px;
-    font-weight: bold;
+.event{
+    background:#d9e8ff;
+    border:1px solid #6f9be8;
+    border-radius:4px;
+    padding:4px;
+    font-size:11px;
+    line-height:1.3;
 }
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.modal-content{
+    background:white;
+    padding:20px;
+    width:420px;
+    border-radius:8px;
+}
+
+.modal-content h3{
+    margin-top:0;
+}
+
+.modal-content label{
+    display:block;
+    margin-top:10px;
+    margin-bottom:4px;
+    font-size:13px;
+}
+
+.modal-content select,
+.modal-content input{
+    width:100%;
+    box-sizing:border-box;
+}
+
+.modal-buttons{
+    margin-top:15px;
+    text-align:right;
+}
+
+.delete-btn{
+    background:#c0392b;
+    color:white;
+    border:none;
+}
+
+.save-btn{
+    background:#2e7d32;
+    color:white;
+    border:none;
+}
+
+.close-btn{
+    background:#777;
+    color:white;
+    border:none;
+}
+
+.info{
+    margin:10px 0;
+    color:#444;
+}
+
 </style>
 </head>
 
@@ -76,271 +143,632 @@ tr:hover {
 <h2>Admin Распоред</h2>
 
 <div class="controls">
-    <select id="programFilter"></select>
-    <select id="semesterFilter"></select>
-    <select id="subjectFilter"></select>
+
+<label>Датум:</label>
+<input type="date" id="datePicker">
+
+<button id="todayBtn">Денес</button>
+
 </div>
 
-<table>
+<div class="info" id="info"></div>
+
+<table id="scheduleTable">
+
 <thead>
 <tr>
-    <th>Датум</th>
-    <th>Час</th>
-    <th>Просторија</th>
-    <th>Програма</th>
-    <th>Семестар</th>
-    <th>Предмет</th>
-    <th>Тип</th>
-    <th>Професор</th>
-    <th>Групи</th>
+<th class="time-col">Час</th>
+
+<th>01 пред.</th>
+<th>02 пред.</th>
+<th>03 пред.</th>
+<th>04 пред.</th>
+
+<th>08 лаб.</th>
+<th>09 лаб.</th>
+<th>10 лаб.</th>
+<th>11 лаб.</th>
+<th>12 лаб.</th>
+<th>14 лаб.</th>
+
+<th>НФИЦ</th>
+
 </tr>
 </thead>
+
 <tbody id="tbody"></tbody>
+
 </table>
 
-<div id="form">
+<!-- MODAL -->
 
-<div>
-<label>Датум</label>
-<input type="date" id="date">
-</div>
+<div class="modal" id="modal">
 
-<div>
-<label>Час</label>
-<input type="time" id="time">
-</div>
+<div class="modal-content">
 
-<div>
-<label>Просторија</label>
-<input type="text" id="room">
-</div>
+<h3>Распоред</h3>
 
-<div>
 <label>Програма</label>
-<select id="program"></select>
-</div>
+<select id="programSelect"></select>
 
-<div>
 <label>Семестар</label>
-<select id="semester"></select>
-</div>
+<select id="semesterSelect"></select>
 
-<div>
 <label>Предмет</label>
-<select id="subject"></select>
-</div>
+<select id="subjectSelect"></select>
 
-<div>
 <label>Тип</label>
-<select id="type">
-<option>Предавање</option>
-<option>Вежби</option>
-<option>Колоквиум</option>
+<select id="typeSelect">
+<option value="Предавање">Предавање</option>
+<option value="Вежби">Вежби</option>
+<option value="Колоквиум">Колоквиум</option>
+<option value="Испит">Испит</option>
 </select>
-</div>
 
-<div>
 <label>Професор</label>
-<input type="text" id="professor">
-</div>
+<input type="text" id="professorInput">
 
-<div>
 <label>Групи</label>
-<input type="text" id="groups">
-</div>
+<input type="text" id="groupsInput">
+
+<div class="modal-buttons">
+
+<button class="delete-btn" id="deleteBtn">Delete</button>
+
+<button class="close-btn" id="closeBtn">Cancel</button>
+
+<button class="save-btn" id="saveBtn">Save</button>
 
 </div>
 
-<br>
-
-<button id="save">Save</button>
-<button id="delete">Delete</button>
-
-<div id="status"></div>
+</div>
+</div>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
 import {
-getFirestore,
-collection,
-getDocs,
-addDoc,
-deleteDoc,
-doc,
-query,
-where
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+    getFirestore,
+    collection,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    doc
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
-authDomain: "schedule-app-63c5e.firebaseapp.com",
-projectId: "schedule-app-63c5e",
-storageBucket: "schedule-app-63c5e.firebasestorage.app",
-messagingSenderId: "32553140850",
-appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
+"12 лаб.","14 лаб.","НФИЦ"
+];
+
+const LAB_ROOMS = [
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
+"12 лаб.","14 лаб.","НФИЦ"
+];
+
+const TIMES = [];
+
+for(let h=8; h<=20; h++){
+    TIMES.push(String(h).padStart(2,"0")+":00");
+}
+
 let events = [];
 let programs = [];
 let subjects = [];
 
-let selectedId = null;
+let currentDate = "";
+let currentRoom = "";
+let currentTime = "";
+let editingId = null;
 
-function fill(id, arr, label=true){
-const el = document.getElementById(id);
-el.innerHTML = label ? "<option value=''>All</option>" : "";
-arr.forEach(v=>{
-if(v) el.innerHTML += `<option value="${v}">${v}</option>`;
-});
+// =======================
+
+function todayISO(){
+
+    const t = new Date();
+
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 }
 
-async function load(){
+// =======================
 
-const eSnap = await getDocs(collection(db,"events_new"));
-events = eSnap.docs.map(d=>({id:d.id,...d.data()}));
+async function loadAll(){
 
-const pSnap = await getDocs(collection(db,"programs_new"));
-programs = pSnap.docs.map(d=>d.data().name);
+    const progSnap =
+        await getDocs(collection(db,"programs_new"));
 
-const sSnap = await getDocs(collection(db,"subjects_new"));
-subjects = sSnap.docs.map(d=>d.data());
+    programs =
+        progSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
 
-fill("program", programs);
-fill("programFilter", programs);
+    const subjSnap =
+        await getDocs(collection(db,"subjects_new"));
 
-render();
+    subjects =
+        subjSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    await loadEvents();
+
+    initFilters();
+
+    render();
 }
 
-function updateSemesters(){
+// =======================
 
-const p = document.getElementById("program").value;
+async function loadEvents(){
 
-const sem = [...new Set(
-subjects
-.filter(s=>s.Nasoka===p)
-.map(s=>s.Semestar)
-)];
+    const snap =
+        await getDocs(collection(db,"events_new"));
 
-fill("semester", sem);
-fill("semesterFilter", sem);
+    events =
+        snap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
 }
+
+// =======================
+
+function initFilters(){
+
+    const datePicker =
+        document.getElementById("datePicker");
+
+    datePicker.value = todayISO();
+
+    datePicker.addEventListener("change",render);
+
+    document.getElementById("todayBtn")
+        .addEventListener("click",()=>{
+
+            datePicker.value = todayISO();
+
+            render();
+        });
+
+    fillPrograms();
+}
+
+// =======================
+
+function fillPrograms(){
+
+    const sel =
+        document.getElementById("programSelect");
+
+    sel.innerHTML = "";
+
+    programs.forEach(p=>{
+
+        sel.innerHTML += `
+        <option value="${p.id}">
+            ${p.name}
+        </option>`;
+    });
+
+    updateSubjects();
+
+    sel.addEventListener("change",updateSubjects);
+}
+
+// =======================
 
 function updateSubjects(){
 
-const p = document.getElementById("program").value;
-const s = document.getElementById("semester").value;
+    const programId =
+        document.getElementById("programSelect").value;
 
-const sub = subjects
-.filter(x=>x.Nasoka===p && String(x.Semestar)===String(s))
-.map(x=>x.Predmet);
+    const semesterSel =
+        document.getElementById("semesterSelect");
 
-fill("subject", sub);
-fill("subjectFilter", sub);
+    const subjectSel =
+        document.getElementById("subjectSelect");
+
+    const filtered =
+        subjects.filter(s=>s.programId===programId);
+
+    const semesters =
+        [...new Set(filtered.map(s=>s.semester))]
+        .sort((a,b)=>a-b);
+
+    semesterSel.innerHTML = "";
+
+    semesters.forEach(s=>{
+
+        semesterSel.innerHTML += `
+        <option value="${s}">
+            ${s}
+        </option>`;
+    });
+
+    function refreshSubjects(){
+
+        const sem =
+            semesterSel.value;
+
+        const list =
+            filtered.filter(s=>
+                String(s.semester)===String(sem)
+            );
+
+        subjectSel.innerHTML = "";
+
+        list.forEach(s=>{
+
+            subjectSel.innerHTML += `
+            <option value="${s.id}">
+                ${s.name}
+            </option>`;
+        });
+    }
+
+    refreshSubjects();
+
+    semesterSel.onchange = refreshSubjects;
 }
+
+// =======================
 
 function render(){
 
-const tbody = document.getElementById("tbody");
-tbody.innerHTML = "";
+    const tbody =
+        document.getElementById("tbody");
 
-events.forEach(e=>{
+    tbody.innerHTML = "";
 
-tbody.innerHTML += `
-<tr onclick="window.selectRow('${e.id}')">
-<td>${e.date}</td>
-<td>${e.time}</td>
-<td>${e.room}</td>
-<td>${e.program}</td>
-<td>${e.semester}</td>
-<td>${e.subject}</td>
-<td>${e.type}</td>
-<td>${e.professor||""}</td>
-<td>${e.groups||""}</td>
-</tr>`;
+    const selectedDate =
+        document.getElementById("datePicker").value;
+
+    document.getElementById("info").textContent =
+        `Приказ за ${selectedDate}`;
+
+    TIMES.forEach(time=>{
+
+        let row = `
+        <tr>
+            <td class="time-col">${time}</td>
+        `;
+
+        ROOMS.forEach(room=>{
+
+            const event =
+                events.find(e=>
+                    e.date===selectedDate &&
+                    e.time===time &&
+                    e.room===room
+                );
+
+            let content = "";
+
+            if(event){
+
+                const program =
+                    programs.find(p=>p.id===event.programId);
+
+                const subject =
+                    subjects.find(s=>s.id===event.subjectId);
+
+                content = `
+                <div class="event">
+                    <b>${subject?.name || ""}</b><br>
+                    ${program?.name || ""}<br>
+                    Сем. ${event.semester || ""}<br>
+                    ${event.type || ""}<br>
+                    ${event.professor || ""}
+                </div>`;
+            }
+
+            row += `
+            <td class="slot"
+                data-room="${room}"
+                data-time="${time}"
+                onclick="openSlot(this)">
+                ${content}
+            </td>`;
+        });
+
+        row += "</tr>";
+
+        tbody.innerHTML += row;
+    });
+}
+
+// =======================
+
+window.openSlot = function(cell){
+
+    currentRoom =
+        cell.dataset.room;
+
+    currentTime =
+        cell.dataset.time;
+
+    currentDate =
+        document.getElementById("datePicker").value;
+
+    const existing =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.room===currentRoom
+        );
+
+    editingId = existing?.id || null;
+
+    if(existing){
+
+        document.getElementById("programSelect").value =
+            existing.programId;
+
+        updateSubjects();
+
+        document.getElementById("semesterSelect").value =
+            existing.semester;
+
+        updateSubjects();
+
+        document.getElementById("subjectSelect").value =
+            existing.subjectId;
+
+        document.getElementById("typeSelect").value =
+            existing.type || "Предавање";
+
+        document.getElementById("professorInput").value =
+            existing.professor || "";
+
+        document.getElementById("groupsInput").value =
+            existing.groups || "";
+    }
+    else{
+
+        editingId = null;
+
+        document.getElementById("typeSelect").value =
+            "Предавање";
+
+        document.getElementById("professorInput").value =
+            "";
+
+        document.getElementById("groupsInput").value =
+            "";
+    }
+
+    document.getElementById("modal").style.display =
+        "flex";
+};
+
+// =======================
+
+document.getElementById("closeBtn")
+.addEventListener("click",()=>{
+
+    document.getElementById("modal").style.display =
+        "none";
 });
-}
 
-window.selectRow = (id)=>{
+// =======================
 
-const e = events.find(x=>x.id===id);
-selectedId = id;
+document.getElementById("saveBtn")
+.addEventListener("click", async ()=>{
 
-document.getElementById("date").value = e.date;
-document.getElementById("time").value = e.time;
-document.getElementById("room").value = e.room;
+    const subjectId =
+        document.getElementById("subjectSelect").value;
 
-document.getElementById("program").value = e.program;
+    const programId =
+        document.getElementById("programSelect").value;
 
-updateSemesters();
-document.getElementById("semester").value = e.semester;
+    const semester =
+        document.getElementById("semesterSelect").value;
 
-updateSubjects();
-document.getElementById("subject").value = e.subject;
+    const type =
+        document.getElementById("typeSelect").value;
 
-document.getElementById("type").value = e.type;
-document.getElementById("professor").value = e.professor || "";
-document.getElementById("groups").value = e.groups || "";
-};
+    const professor =
+        document.getElementById("professorInput").value.trim();
 
-document.getElementById("program").onchange = ()=>{
-updateSemesters();
-updateSubjects();
-};
+    const groups =
+        document.getElementById("groupsInput").value.trim();
 
-document.getElementById("semester").onchange = updateSubjects;
+    // ================= ROOM CONFLICT =================
 
-document.getElementById("save").onclick = async ()=>{
+    const roomConflict =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.room===currentRoom &&
+            e.id!==editingId
+        );
 
-const data = {
-date: date.value,
-time: time.value,
-room: room.value,
-program: program.value,
-semester: semester.value,
-subject: subject.value,
-type: type.value,
-professor: professor.value,
-groups: groups.value
-};
+    if(roomConflict){
 
-const conflict = events.find(e =>
-e.date===data.date &&
-e.time===data.time &&
-e.room===data.room &&
-e.id !== selectedId
-);
+        alert("Просторијата е зафатена.");
 
-if(conflict){
-alert("Room already taken");
-return;
-}
+        return;
+    }
 
-if(selectedId){
-await deleteDoc(doc(db,"events_new",selectedId));
-}
+    // ================= PROGRAM + SEMESTER =================
 
-await addDoc(collection(db,"events_new"),data);
+    const semesterConflict =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.programId===programId &&
+            String(e.semester)===String(semester) &&
+            e.id!==editingId
+        );
 
-selectedId = null;
-status.textContent = "Saved";
-load();
-};
+    if(semesterConflict){
 
-document.getElementById("delete").onclick = async ()=>{
+        alert("Овој семестар веќе има час во истиот термин.");
 
-if(!selectedId) return;
+        return;
+    }
 
-await deleteDoc(doc(db,"events_new",selectedId));
-selectedId = null;
-status.textContent = "Deleted";
-load();
-};
+    // ================= PROFESSOR =================
 
-load();
+    if(professor){
+
+        const profConflict =
+            events.find(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.professor===professor &&
+                e.id!==editingId
+            );
+
+        if(profConflict){
+
+            alert("Професорот веќе има час.");
+
+            return;
+        }
+    }
+
+    // ================= LECTURE =================
+
+    if(type==="Предавање"){
+
+        const lectureConflict =
+            events.find(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.subjectId===subjectId &&
+                e.type==="Предавање" &&
+                e.id!==editingId
+            );
+
+        if(lectureConflict){
+
+            alert("Предавањето веќе постои во друг термин/просторија.");
+
+            return;
+        }
+    }
+
+    // ================= EXERCISES =================
+
+    if(type==="Вежби"){
+
+        const sameExercise =
+            events.filter(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.subjectId===subjectId &&
+                e.type==="Вежби" &&
+                e.id!==editingId
+            );
+
+        if(sameExercise.length){
+
+            if(!LAB_ROOMS.includes(currentRoom)){
+
+                alert("Паралелни вежби се дозволени само во лаборатории.");
+
+                return;
+            }
+
+            const invalid =
+                sameExercise.find(e=>
+                    !LAB_ROOMS.includes(e.room)
+                );
+
+            if(invalid){
+
+                alert("Постојат вежби во недозволена просторија.");
+
+                return;
+            }
+        }
+    }
+
+    // ================= SAVE =================
+
+    const data = {
+
+        date: currentDate,
+        time: currentTime,
+        room: currentRoom,
+
+        subjectId,
+        programId,
+        semester,
+
+        type,
+        professor,
+        groups
+    };
+
+    if(editingId){
+
+        await updateDoc(
+            doc(db,"events_new",editingId),
+            data
+        );
+    }
+    else{
+
+        await addDoc(
+            collection(db,"events_new"),
+            data
+        );
+    }
+
+    await loadEvents();
+
+    render();
+
+    document.getElementById("modal").style.display =
+        "none";
+});
+
+// =======================
+
+document.getElementById("deleteBtn")
+.addEventListener("click", async ()=>{
+
+    if(!editingId) return;
+
+    if(!confirm("Delete event?"))
+        return;
+
+    await deleteDoc(
+        doc(db,"events_new",editingId)
+    );
+
+    await loadEvents();
+
+    render();
+
+    document.getElementById("modal").style.display =
+        "none";
+});
+
+// =======================
+
+loadAll();
 
 </script>
 
