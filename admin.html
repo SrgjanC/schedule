@@ -627,19 +627,25 @@ document.getElementById("saveBtn")
 
     // ================= PROGRAM + SEMESTER =================
 
-    // ================= PROGRAM + SEMESTER =================
+console.log("CHECKING:", {
+    currentDate,
+    currentTime,
+    programId,
+    semester
+});
 
-const semesterConflict =
-    events.find(e => {
+const semesterConflict = events.find(e => {
 
-        return (
-            e.date === currentDate &&
-            e.time === currentTime &&
-            String(e.programId).trim() === String(programId).trim() &&
-            String(e.semester).trim() === String(semester).trim() &&
-            e.id !== editingId
-        );
-    });
+    console.log("COMPARE WITH:", e);
+
+    return (
+        String(e.date || "").trim() === String(currentDate || "").trim() &&
+        String(e.time || "").trim() === String(currentTime || "").trim() &&
+        String(e.programId || "").trim() === String(programId || "").trim() &&
+        String(e.semester || "").trim() === String(semester || "").trim() &&
+        String(e.id || "") !== String(editingId || "")
+    );
+});
 
 if (semesterConflict) {
 
