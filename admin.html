@@ -628,13 +628,31 @@ document.getElementById("saveBtn")
     // ================= PROGRAM + SEMESTER =================
 
     const semesterConflict =
-        events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.programId===programId &&
-            String(e.semester)===String(semester) &&
-            e.id!==editingId
+    events.find(e=>{
+
+        const sameDate =
+            String(e.date) === String(currentDate);
+
+        const sameTime =
+            String(e.time) === String(currentTime);
+
+        const sameProgram =
+            String(e.programId) === String(programId);
+
+        const sameSemester =
+            String(e.semester) === String(semester);
+
+        const differentEvent =
+            String(e.id) !== String(editingId);
+
+        return (
+            sameDate &&
+            sameTime &&
+            sameProgram &&
+            sameSemester &&
+            differentEvent
         );
+    });
 
     if(semesterConflict){
 
