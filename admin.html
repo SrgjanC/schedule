@@ -464,25 +464,30 @@ function render(){
 
             if(event){
 
-                const program =
-                    programs.find(p=>p.id===event.programId);
+    const program =
+        programs.find(p=>String(p.id) === String(event.programId));
 
-                const subject =
-                    subjects.find(s=>s.id===event.subjectId);
+    const subject =
+        subjects.find(s=>String(s.id) === String(event.subjectId));
 
-                const subjectSemester =
-    subject?.semester || event.semester || "";
+    console.log("EVENT:", event);
+    console.log("SUBJECT:", subject);
 
-content = `
-<div class="event">
-    <b>${subject?.name || ""}</b><br>
-    ${program?.name || ""}<br>
-    Сем. ${subjectSemester}<br>
-    ${event.type || ""}<br>
-    ${event.professor || ""}<br>
-    ${event.groups || ""}
-</div>`;
-            }
+    const semester =
+        event.semester ||
+        subject?.semester ||
+        "";
+
+    content = `
+    <div class="event">
+        <b>${subject?.name || ""}</b><br>
+        ${program?.name || ""}<br>
+        <b>Сем. ${semester}</b><br>
+        ${event.type || ""}<br>
+        ${event.professor || ""}<br>
+        ${event.groups || ""}
+    </div>`;
+}
 
             row += `
             <td class="slot"
