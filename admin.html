@@ -470,15 +470,18 @@ function render(){
                 const subject =
                     subjects.find(s=>s.id===event.subjectId);
 
-                content = `
-                <div class="event">
-                    <b>${subject?.name || ""}</b><br>
-                    ${program?.name || ""}<br>
-                    Сем. ${event.semester || ""}<br>
-                    ${event.type || ""}<br>
-                    ${event.professor || ""}<br>
-                    ${event.groups || ""}
-                </div>`;
+                const subjectSemester =
+    subject?.semester || event.semester || "";
+
+content = `
+<div class="event">
+    <b>${subject?.name || ""}</b><br>
+    ${program?.name || ""}<br>
+    Сем. ${subjectSemester}<br>
+    ${event.type || ""}<br>
+    ${event.professor || ""}<br>
+    ${event.groups || ""}
+</div>`;
             }
 
             row += `
