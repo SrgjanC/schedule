@@ -371,7 +371,7 @@ function fillPrograms(){
 
     updateSubjects();
 
-    sel.addEventListener("change",updateSubjects);
+    sel.onchange = updateSubjects;
 }
 
 // =======================
@@ -391,8 +391,8 @@ function updateSubjects(){
         subjects.filter(s=>s.programId===programId);
 
     const semesters =
-        [...new Set(filtered.map(s=>s.semester))]
-        .sort((a,b)=>a-b);
+        [...new Set(filtered.map(s=>String(s.semester)))]
+        .sort((a,b)=>Number(a)-Number(b));
 
     semesterSel.innerHTML = "";
 
@@ -406,8 +406,7 @@ function updateSubjects(){
 
     function refreshSubjects(){
 
-        const sem =
-            semesterSel.value;
+        const sem = semesterSel.value;
 
         const list =
             filtered.filter(s=>
@@ -477,7 +476,8 @@ function render(){
                     ${program?.name || ""}<br>
                     Сем. ${event.semester || ""}<br>
                     ${event.type || ""}<br>
-                    ${event.professor || ""}
+                    ${event.professor || ""}<br>
+                    ${event.groups || ""}
                 </div>`;
             }
 
@@ -521,17 +521,23 @@ window.openSlot = function(cell){
     if(existing){
 
         document.getElementById("programSelect").value =
-            existing.programId;
+            existing.programId || "";
 
         updateSubjects();
 
-        document.getElementById("semesterSelect").value =
-            existing.semester;
+        setTimeout(()=>{
 
-        updateSubjects();
+            document.getElementById("semesterSelect").value =
+                existing.semester || "";
 
-        document.getElementById("subjectSelect").value =
-            existing.subjectId;
+            document.getElementById("semesterSelect").dispatchEvent(
+                new Event("change")
+            );
+
+            document.getElementById("subjectSelect").value =
+                existing.subjectId || "";
+
+        },10);
 
         document.getElementById("typeSelect").value =
             existing.type || "Предавање";
@@ -545,6 +551,8 @@ window.openSlot = function(cell){
     else{
 
         editingId = null;
+
+        updateSubjects();
 
         document.getElementById("typeSelect").value =
             "Предавање";
@@ -662,7 +670,7 @@ document.getElementById("saveBtn")
 
         if(lectureConflict){
 
-            alert("Предавањето веќе постои во друг термин/просторија.");
+            alert("Предавањето веќе постои.");
 
             return;
         }
