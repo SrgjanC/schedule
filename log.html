@@ -40,22 +40,9 @@ tr:nth-child(even){
     background:#f8f9fc;
 }
 
-.add{
-    background:#e8f7e8;
-}
-
-.update{
-    background:#fff6d9;
-}
-
-.delete{
-    background:#ffe3e3;
-}
-
-.small{
-    color:#666;
-    font-size:12px;
-}
+.add{ background:#e8f7e8; }
+.update{ background:#fff6d9; }
+.delete{ background:#ffe3e3; }
 
 .comment{
     margin-top:4px;
@@ -63,6 +50,12 @@ tr:nth-child(even){
     background:#eef3ff;
     border-left:3px solid #3f69b1;
     font-style:italic;
+    font-size:12px;
+}
+
+.small{
+    color:#666;
+    font-size:12px;
 }
 
 </style>
@@ -73,7 +66,6 @@ tr:nth-child(even){
 <h2>Лог на промени</h2>
 
 <table>
-
 <thead>
 <tr>
 <th>Време</th>
@@ -91,22 +83,18 @@ tr:nth-child(even){
 </thead>
 
 <tbody id="tbody"></tbody>
-
 </table>
 
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import {
     getFirestore,
     collection,
     getDocs,
     query,
     orderBy
-}
-from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
@@ -120,152 +108,61 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let programs = [];
-let subjects = [];
+async function loadLogs(){
 
-async function loadData(){
-
-    // PROGRAMS
-    const progSnap =
-        await getDocs(collection(db,"programs_new"));
-
-    programs =
-        progSnap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-
-    // SUBJECTS
-    const subjSnap =
-        await getDocs(collection(db,"subjects_new"));
-
-    subjects =
-        subjSnap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-
-    // LOGS
-    const q =
-        query(
-            collection(db,"event_logs"),
-            orderBy("createdAt","desc")
-        );
-
-    const snap =
-        await getDocs(q);
-
-    render(
-        snap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }))
+    const q = query(
+        collection(db,"event_logs"),
+        orderBy("createdAt","desc")
     );
+
+    const snap = await getDocs(q);
+
+    const logs = snap.docs.map(d => d.data());
+
+    render(logs);
 }
 
-function getProgramName(programId){
-
-    if(!programId) return "";
-
-    const p =
-        programs.find(x=>x.id===programId);
-
-    return p?.name || "";
-}
-
-function getSubjectName(subjectId){
-
-    if(!subjectId) return "";
-
-    const s =
-        subjects.find(x=>x.id===subjectId);
-
-    return s?.name || "";
-}
-
-function formatTimestamp(ts){
-
+function formatTime(ts){
     if(!ts?.seconds) return "";
-
-    const d =
-        new Date(ts.seconds * 1000);
-
-    return d.toLocaleString("mk-MK");
+    return new Date(ts.seconds * 1000).toLocaleString("mk-MK");
 }
 
 function render(logs){
 
-    const tbody =
-        document.getElementById("tbody");
-
+    const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
-    logs.forEach(log=>{
+    logs.forEach(log => {
 
-        const cls =
-            log.action || "";
+        const e = log.event || {};
 
-        const event =
-            log.event || {};
-
-        const actionText =
-            log.action === "add"
-            ? "Додадено"
-            : log.action === "update"
-            ? "Изменето"
-            : log.action === "delete"
-            ? "Избришано"
-            : log.action;
+        const action =
+            log.action === "add" ? "Додадено" :
+            log.action === "update" ? "Изменето" :
+            log.action === "delete" ? "Избришано" :
+            log.action;
 
         const row = `
-        <tr class="${cls}">
+        <tr class="${log.action || ''}">
+
+            <td>${formatTime(log.createdAt)}</td>
+
+            <td><b>${action}</b></td>
+
+            <td>${e.date || ""}</td>
+            <td>${e.time || ""}</td>
+            <td>${e.room || ""}</td>
+
+            <!-- IMPORTANT: direct stored values -->
+            <td>${e.programName || ""}</td>
+            <td>${e.semester || ""}</td>
+            <td>${e.subjectName || ""}</td>
+
+            <td>${e.type || ""}</td>
+            <td>${e.professor || ""}</td>
 
             <td>
-                ${formatTimestamp(log.createdAt)}
-            </td>
-
-            <td>
-                <b>${actionText}</b>
-            </td>
-
-            <td>
-                ${event.date || ""}
-            </td>
-
-            <td>
-                ${event.time || ""}
-            </td>
-
-            <td>
-                ${event.room || ""}
-            </td>
-
-            <td>
-                ${getProgramName(event.programId)}
-            </td>
-
-            <td>
-                ${event.semester || ""}
-            </td>
-
-            <td>
-                ${getSubjectName(event.subjectId)}
-            </td>
-
-            <td>
-                ${event.type || ""}
-            </td>
-
-            <td>
-                ${event.professor || ""}
-            </td>
-
-            <td>
-                ${
-                    log.comment
-                    ? `<div class="comment">${log.comment}</div>`
-                    : ""
-                }
+                ${log.comment ? `<div class="comment">${log.comment}</div>` : ""}
             </td>
 
         </tr>
@@ -275,7 +172,7 @@ function render(logs){
     });
 }
 
-loadData();
+loadLogs();
 
 </script>
 
