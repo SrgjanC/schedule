@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Schedule Log</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    padding:20px;
+    margin:0;
+}
+
+h2{
+    margin-bottom:15px;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+}
+
+th,td{
+    border:1px solid #333;
+    padding:6px 8px;
+    font-size:13px;
+    text-align:left;
+    vertical-align:top;
+}
+
+th{
+    background:#3f69b1;
+    color:white;
+}
+
+.add{
+    background:#e8f5e9;
+}
+
+.update{
+    background:#fff8e1;
+}
+
+.delete{
+    background:#ffebee;
+}
+
+.controls{
+    margin-bottom:15px;
+}
+
+select{
+    padding:6px;
+    margin-right:10px;
+}
+
+.small{
+    font-size:11px;
+    color:#666;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Лог на промени</h2>
+
+<div class="controls">
+
+<label>Тип:</label>
+<select id="typeFilter">
+    <option value="">Сите</option>
+    <option value="ADD">ADD</option>
+    <option value="UPDATE">UPDATE</option>
+    <option value="DELETE">DELETE</option>
+</select>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+    <th>Време</th>
+    <th>Тип</th>
+    <th>Датум</th>
+    <th>Час</th>
+    <th>Просторија</th>
+    <th>Програма</th>
+    <th>Семестар</th>
+    <th>Предмет</th>
+    <th>Тип настава</th>
+    <th>Професор</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    orderBy
+}
+from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+  authDomain: "schedule-app-63c5e.firebaseapp.com",
+  projectId: "schedule-app-63c5e",
+  storageBucket: "schedule-app-63c5e.firebasestorage.app",
+  messagingSenderId: "32553140850",
+  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let logs = [];
+let programs = [];
+let subjects = [];
+
+// ============================
+
+async function loadData(){
+
+    const progSnap =
+        await getDocs(collection(db,"programs_new"));
+
+    programs =
+        progSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    const subjSnap =
+        await getDocs(collection(db,"subjects_new"));
+
+    subjects =
+        subjSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    const q =
+        query(
+            collection(db,"events_log"),
+            orderBy("createdAt","desc")
+        );
+
+    const logSnap =
+        await getDocs(q);
+
+    logs =
+        logSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    render();
+}
+
+// ============================
+
+function getProgramName(id){
+
+    const p =
+        programs.find(x=>x.id===id);
+
+    return p?.name || "";
+}
+
+// ============================
+
+function getSubjectName(id){
+
+    const s =
+        subjects.find(x=>x.id===id);
+
+    return s?.name || "";
+}
+
+// ============================
+
+function formatDateTime(ts){
+
+    if(!ts) return "";
+
+    let d;
+
+    if(ts.seconds){
+        d = new Date(ts.seconds * 1000);
+    }
+    else{
+        d = new Date(ts);
+    }
+
+    return d.toLocaleString("mk-MK");
+}
+
+// ============================
+
+function render(){
+
+    const tbody =
+        document.getElementById("tbody");
+
+    tbody.innerHTML = "";
+
+    const typeFilter =
+        document.getElementById("typeFilter").value;
+
+    logs.forEach(log=>{
+
+        if(typeFilter && log.action !== typeFilter)
+            return;
+
+        const e = log.data || {};
+
+        const tr =
+            document.createElement("tr");
+
+        tr.className =
+            log.action.toLowerCase();
+
+        tr.innerHTML = `
+        <td>
+            ${formatDateTime(log.createdAt)}
+        </td>
+
+        <td>
+            <b>${log.action || ""}</b>
+        </td>
+
+        <td>${e.date || ""}</td>
+
+        <td>${e.time || ""}</td>
+
+        <td>${e.room || ""}</td>
+
+        <td>
+            ${getProgramName(e.programId)}
+        </td>
+
+        <td>
+            ${e.semester || ""}
+        </td>
+
+        <td>
+            ${getSubjectName(e.subjectId)}
+        </td>
+
+        <td>
+            ${e.type || ""}
+        </td>
+
+        <td>
+            ${e.professor || ""}
+        </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+// ============================
+
+document.getElementById("typeFilter")
+.addEventListener("change",render);
+
+// ============================
+
+loadData();
+
+</script>
+
+</body>
+</html>
