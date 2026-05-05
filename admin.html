@@ -22,8 +22,7 @@ h2{
 
 select,
 button,
-input,
-textarea{
+input{
     padding:6px 8px;
     margin-right:8px;
     font-size:14px;
@@ -58,6 +57,7 @@ th{
 .slot{
     min-height:70px;
     cursor:pointer;
+    transition:0.15s;
 }
 
 .slot:hover{
@@ -88,26 +88,23 @@ th{
     padding:20px;
     width:420px;
     border-radius:8px;
-    max-height:90vh;
-    overflow:auto;
+}
+
+.modal-content h3{
+    margin-top:0;
 }
 
 .modal-content label{
     display:block;
     margin-top:10px;
     margin-bottom:4px;
+    font-size:13px;
 }
 
 .modal-content select,
-.modal-content input,
-.modal-content textarea{
+.modal-content input{
     width:100%;
     box-sizing:border-box;
-}
-
-textarea{
-    min-height:70px;
-    resize:vertical;
 }
 
 .modal-buttons{
@@ -133,6 +130,11 @@ textarea{
     border:none;
 }
 
+.info{
+    margin:10px 0;
+    color:#444;
+}
+
 </style>
 </head>
 
@@ -149,11 +151,12 @@ textarea{
 
 </div>
 
-<table>
+<div class="info" id="info"></div>
+
+<table id="scheduleTable">
 
 <thead>
 <tr>
-
 <th class="time-col">Час</th>
 
 <th>01 пред.</th>
@@ -206,8 +209,8 @@ textarea{
 <label>Групи</label>
 <input type="text" id="groupsInput">
 
-<label>Коментар / Барање</label>
-<textarea id="commentInput"></textarea>
+<label>Коментар</label>
+<input type="text" id="commentInput">
 
 <div class="modal-buttons">
 
@@ -234,8 +237,7 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    doc,
-    serverTimestamp
+    doc
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -253,6 +255,11 @@ const db = getFirestore(app);
 
 const ROOMS = [
 "01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
+"12 лаб.","14 лаб.","НФИЦ"
+];
+
+const LAB_ROOMS = [
 "08 лаб.","09 лаб.","10 лаб.","11 лаб.",
 "12 лаб.","14 лаб.","НФИЦ"
 ];
@@ -320,17 +327,17 @@ async function loadEvents(){
 
 function initFilters(){
 
-    document.getElementById("datePicker").value =
-        todayISO();
+    const datePicker =
+        document.getElementById("datePicker");
 
-    document.getElementById("datePicker")
-        .addEventListener("change",render);
+    datePicker.value = todayISO();
+
+    datePicker.addEventListener("change",render);
 
     document.getElementById("todayBtn")
         .addEventListener("click",()=>{
 
-            document.getElementById("datePicker").value =
-                todayISO();
+            datePicker.value = todayISO();
 
             render();
         });
@@ -422,6 +429,9 @@ function render(){
     const selectedDate =
         document.getElementById("datePicker").value;
 
+    document.getElementById("info").textContent =
+        `Приказ за ${selectedDate}`;
+
     TIMES.forEach(time=>{
 
         let row = `
@@ -452,7 +462,7 @@ function render(){
                 <div class="event">
                     <b>${subject?.name || ""}</b><br>
                     ${program?.name || ""}<br>
-                    Сем. ${event.semester || ""}<br>
+                    Сем. ${event.semester || subject?.semester || ""}<br>
                     ${event.type || ""}<br>
                     ${event.professor || ""}
                 </div>`;
@@ -475,8 +485,11 @@ function render(){
 
 window.openSlot = function(cell){
 
-    currentRoom = cell.dataset.room;
-    currentTime = cell.dataset.time;
+    currentRoom =
+        cell.dataset.room;
+
+    currentTime =
+        cell.dataset.time;
 
     currentDate =
         document.getElementById("datePicker").value;
@@ -493,29 +506,46 @@ window.openSlot = function(cell){
     if(existing){
 
         document.getElementById("programSelect").value =
-            existing.programId;
+            existing.programId || "";
 
         updateSubjects();
 
         document.getElementById("semesterSelect").value =
-            existing.semester;
+            existing.semester || "";
 
         updateSubjects();
 
         document.getElementById("subjectSelect").value =
-            existing.subjectId;
+            existing.subjectId || "";
 
         document.getElementById("typeSelect").value =
-            existing.type || "";
+            existing.type || "Предавање";
 
         document.getElementById("professorInput").value =
             existing.professor || "";
 
         document.getElementById("groupsInput").value =
             existing.groups || "";
-    }
 
-    document.getElementById("commentInput").value = "";
+        document.getElementById("commentInput").value =
+            existing.comment || "";
+    }
+    else{
+
+        editingId = null;
+
+        document.getElementById("typeSelect").value =
+            "Предавање";
+
+        document.getElementById("professorInput").value =
+            "";
+
+        document.getElementById("groupsInput").value =
+            "";
+
+        document.getElementById("commentInput").value =
+            "";
+    }
 
     document.getElementById("modal").style.display =
         "flex";
@@ -531,33 +561,132 @@ document.getElementById("closeBtn")
 document.getElementById("saveBtn")
 .addEventListener("click", async ()=>{
 
+    const subjectId =
+        document.getElementById("subjectSelect").value;
+
+    const programId =
+        document.getElementById("programSelect").value;
+
+    const semester =
+        document.getElementById("semesterSelect").value;
+
+    const type =
+        document.getElementById("typeSelect").value;
+
+    const professor =
+        document.getElementById("professorInput").value.trim();
+
+    const groups =
+        document.getElementById("groupsInput").value.trim();
+
+    const comment =
+        document.getElementById("commentInput").value.trim();
+
+    const roomConflict =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.room===currentRoom &&
+            e.id!==editingId
+        );
+
+    if(roomConflict){
+
+        alert("Просторијата е зафатена.");
+
+        return;
+    }
+
+    const semesterConflict =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.programId===programId &&
+            String(e.semester)===String(semester) &&
+            e.id!==editingId
+        );
+
+    if(semesterConflict){
+
+        alert("Овој семестар веќе има час во истиот термин.");
+
+        return;
+    }
+
+    if(professor){
+
+        const profConflict =
+            events.find(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.professor===professor &&
+                e.id!==editingId
+            );
+
+        if(profConflict){
+
+            alert("Професорот веќе има час.");
+
+            return;
+        }
+    }
+
+    if(type==="Предавање"){
+
+        const lectureConflict =
+            events.find(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.subjectId===subjectId &&
+                e.type==="Предавање" &&
+                e.id!==editingId
+            );
+
+        if(lectureConflict){
+
+            alert("Предавањето веќе постои.");
+
+            return;
+        }
+    }
+
+    if(type==="Вежби"){
+
+        const sameExercise =
+            events.filter(e=>
+                e.date===currentDate &&
+                e.time===currentTime &&
+                e.subjectId===subjectId &&
+                e.type==="Вежби" &&
+                e.id!==editingId
+            );
+
+        if(sameExercise.length){
+
+            if(!LAB_ROOMS.includes(currentRoom)){
+
+                alert("Паралелни вежби се дозволени само во лаборатории.");
+
+                return;
+            }
+        }
+    }
+
     const data = {
 
         date: currentDate,
         time: currentTime,
         room: currentRoom,
 
-        subjectId:
-            document.getElementById("subjectSelect").value,
+        subjectId,
+        programId,
+        semester,
 
-        programId:
-            document.getElementById("programSelect").value,
-
-        semester:
-            document.getElementById("semesterSelect").value,
-
-        type:
-            document.getElementById("typeSelect").value,
-
-        professor:
-            document.getElementById("professorInput").value,
-
-        groups:
-            document.getElementById("groupsInput").value
+        type,
+        professor,
+        groups,
+        comment
     };
-
-    const comment =
-        document.getElementById("commentInput").value.trim();
 
     if(editingId){
 
@@ -567,29 +696,36 @@ document.getElementById("saveBtn")
         );
 
         await addDoc(
-            collection(db,"events_log"),
+            collection(db,"logs"),
             {
                 action:"UPDATE",
-                comment,
-                createdAt: serverTimestamp(),
-                data
+                eventId:editingId,
+                timestamp:new Date().toISOString(),
+                date:currentDate,
+                time:currentTime,
+                room:currentRoom,
+                comment
             }
         );
     }
     else{
 
-        await addDoc(
-            collection(db,"events_new"),
-            data
-        );
+        const newDoc =
+            await addDoc(
+                collection(db,"events_new"),
+                data
+            );
 
         await addDoc(
-            collection(db,"events_log"),
+            collection(db,"logs"),
             {
                 action:"ADD",
-                comment,
-                createdAt: serverTimestamp(),
-                data
+                eventId:newDoc.id,
+                timestamp:new Date().toISOString(),
+                date:currentDate,
+                time:currentTime,
+                room:currentRoom,
+                comment
             }
         );
     }
@@ -607,24 +743,27 @@ document.getElementById("deleteBtn")
 
     if(!editingId) return;
 
+    if(!confirm("Delete event?"))
+        return;
+
     const comment =
         document.getElementById("commentInput").value.trim();
 
-    const deletedEvent =
-        events.find(e=>e.id===editingId);
+    await addDoc(
+        collection(db,"logs"),
+        {
+            action:"DELETE",
+            eventId:editingId,
+            timestamp:new Date().toISOString(),
+            date:currentDate,
+            time:currentTime,
+            room:currentRoom,
+            comment
+        }
+    );
 
     await deleteDoc(
         doc(db,"events_new",editingId)
-    );
-
-    await addDoc(
-        collection(db,"events_log"),
-        {
-            action:"DELETE",
-            comment,
-            createdAt: serverTimestamp(),
-            data: deletedEvent || {}
-        }
     );
 
     await loadEvents();
