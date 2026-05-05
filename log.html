@@ -9,7 +9,6 @@
 body{
     font-family:Arial;
     padding:20px;
-    margin:0;
     background:#f5f7fb;
 }
 
@@ -27,7 +26,6 @@ th,td{
     border:1px solid #ccc;
     padding:8px;
     font-size:13px;
-    text-align:left;
     vertical-align:top;
 }
 
@@ -40,10 +38,6 @@ tr:nth-child(even){
     background:#f8f9fc;
 }
 
-.add{ background:#e8f7e8; }
-.update{ background:#fff6d9; }
-.delete{ background:#ffe3e3; }
-
 .comment{
     margin-top:4px;
     padding:4px 6px;
@@ -53,8 +47,8 @@ tr:nth-child(even){
     font-size:12px;
 }
 
-.small{
-    color:#666;
+.muted{
+    color:#777;
     font-size:12px;
 }
 
@@ -88,13 +82,7 @@ tr:nth-child(even){
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {
-    getFirestore,
-    collection,
-    getDocs,
-    query,
-    orderBy
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
@@ -108,7 +96,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function loadLogs(){
+function formatTime(ts){
+    if(!ts?.seconds) return "";
+    return new Date(ts.seconds * 1000).toLocaleString("mk-MK");
+}
+
+async function load(){
 
     const q = query(
         collection(db,"event_logs"),
@@ -122,9 +115,8 @@ async function loadLogs(){
     render(logs);
 }
 
-function formatTime(ts){
-    if(!ts?.seconds) return "";
-    return new Date(ts.seconds * 1000).toLocaleString("mk-MK");
+function safe(v){
+    return v || "";
 }
 
 function render(logs){
@@ -143,23 +135,21 @@ function render(logs){
             log.action;
 
         const row = `
-        <tr class="${log.action || ''}">
+        <tr>
 
             <td>${formatTime(log.createdAt)}</td>
-
             <td><b>${action}</b></td>
 
-            <td>${e.date || ""}</td>
-            <td>${e.time || ""}</td>
-            <td>${e.room || ""}</td>
+            <td>${safe(e.date)}</td>
+            <td>${safe(e.time)}</td>
+            <td>${safe(e.room)}</td>
 
-            <!-- IMPORTANT: direct stored values -->
-            <td>${e.programName || ""}</td>
-            <td>${e.semester || ""}</td>
-            <td>${e.subjectName || ""}</td>
+            <td>${safe(e.programName || e.programId)}</td>
+            <td>${safe(e.semester)}</td>
+            <td>${safe(e.subjectName || e.subjectId)}</td>
 
-            <td>${e.type || ""}</td>
-            <td>${e.professor || ""}</td>
+            <td>${safe(e.type)}</td>
+            <td>${safe(e.professor)}</td>
 
             <td>
                 ${log.comment ? `<div class="comment">${log.comment}</div>` : ""}
@@ -172,7 +162,7 @@ function render(logs){
     });
 }
 
-loadLogs();
+load();
 
 </script>
 
