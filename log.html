@@ -2,30 +2,27 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Лог на промени</title>
+<title>Event Logs</title>
 
 <style>
-
 body{
     font-family:Arial;
     padding:20px;
-    background:#f5f7fb;
 }
 
 h2{
-    margin-bottom:15px;
+    margin-bottom:10px;
 }
 
 table{
     width:100%;
     border-collapse:collapse;
-    background:white;
 }
 
 th,td{
-    border:1px solid #ccc;
-    padding:8px;
-    font-size:13px;
+    border:1px solid #333;
+    padding:6px;
+    font-size:12px;
     vertical-align:top;
 }
 
@@ -34,44 +31,38 @@ th{
     color:white;
 }
 
-tr:nth-child(even){
-    background:#f8f9fc;
+.small{
+    font-size:11px;
+    color:#666;
 }
 
-.comment{
-    margin-top:4px;
-    padding:4px 6px;
-    background:#eef3ff;
-    border-left:3px solid #3f69b1;
-    font-style:italic;
-    font-size:12px;
+.badge{
+    padding:2px 6px;
+    border-radius:4px;
+    color:white;
+    font-size:11px;
 }
 
-.muted{
-    color:#777;
-    font-size:12px;
-}
-
+.add{background:#2e7d32;}
+.update{background:#f39c12;}
+.delete{background:#c0392b;}
 </style>
 </head>
 
 <body>
 
-<h2>Лог на промени</h2>
+<h2>Log на промени</h2>
 
 <table>
 <thead>
 <tr>
-<th>Време</th>
-<th>Акција</th>
-<th>Датум</th>
-<th>Час</th>
-<th>Просторија</th>
-<th>Програма</th>
-<th>Семестар</th>
-<th>Предмет</th>
 <th>Тип</th>
-<th>Професор</th>
+<th>Време</th>
+<th>Програма</th>
+<th>Предмет</th>
+<th>Семестар</th>
+<th>Соба</th>
+<th>Час</th>
 <th>Коментар</th>
 </tr>
 </thead>
@@ -82,87 +73,63 @@ tr:nth-child(even){
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
-  authDomain: "schedule-app-63c5e.firebaseapp.com",
-  projectId: "schedule-app-63c5e",
-  storageBucket: "schedule-app-63c5e.firebasestorage.app",
-  messagingSenderId: "32553140850",
-  appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
+apiKey: "AIzaSyC0PZyTfo2t3ON7emYUS8NRMPgfMYvTJ2w",
+authDomain: "schedule-app-63c5e.firebaseapp.com",
+projectId: "schedule-app-63c5e",
+storageBucket: "schedule-app-63c5e.firebasestorage.app",
+messagingSenderId: "32553140850",
+appId: "1:32553140850:web:a2449581c3d4ae194c78eb"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-function formatTime(ts){
-    if(!ts?.seconds) return "";
-    return new Date(ts.seconds * 1000).toLocaleString("mk-MK");
+async function loadLogs(){
+
+const snap = await getDocs(collection(db,"event_logs"));
+
+const logs = snap.docs.map(d=>d.data());
+
+// newest first
+logs.sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+
+const tbody = document.getElementById("tbody");
+tbody.innerHTML = "";
+
+logs.forEach(l=>{
+
+const e = l.event || {};
+
+let cls = "update";
+if(l.action==="add") cls="add";
+if(l.action==="delete") cls="delete";
+
+const time = l.createdAt?.toDate
+? l.createdAt.toDate().toLocaleString()
+: "";
+
+tbody.innerHTML += `
+<tr>
+<td><span class="badge ${cls}">${l.action||""}</span></td>
+<td>${time}</td>
+
+<td>${e.programName || e.programId || ""}</td>
+<td>${e.subjectName || e.subjectId || ""}</td>
+<td>${e.semester || ""}</td>
+<td>${e.room || ""}</td>
+<td>${e.time || ""}</td>
+
+<td>${l.comment || ""}</td>
+</tr>
+`;
+});
+
 }
 
-async function load(){
-
-    const q = query(
-        collection(db,"event_logs"),
-        orderBy("createdAt","desc")
-    );
-
-    const snap = await getDocs(q);
-
-    const logs = snap.docs.map(d => d.data());
-
-    render(logs);
-}
-
-function safe(v){
-    return v || "";
-}
-
-function render(logs){
-
-    const tbody = document.getElementById("tbody");
-    tbody.innerHTML = "";
-
-    logs.forEach(log => {
-
-        const e = log.event || {};
-
-        const action =
-            log.action === "add" ? "Додадено" :
-            log.action === "update" ? "Изменето" :
-            log.action === "delete" ? "Избришано" :
-            log.action;
-
-        const row = `
-        <tr>
-
-            <td>${formatTime(log.createdAt)}</td>
-            <td><b>${action}</b></td>
-
-            <td>${safe(e.date)}</td>
-            <td>${safe(e.time)}</td>
-            <td>${safe(e.room)}</td>
-
-            <td>${safe(e.programName || e.programId)}</td>
-            <td>${safe(e.semester)}</td>
-            <td>${safe(e.subjectName || e.subjectId)}</td>
-
-            <td>${safe(e.type)}</td>
-            <td>${safe(e.professor)}</td>
-
-            <td>
-                ${log.comment ? `<div class="comment">${log.comment}</div>` : ""}
-            </td>
-
-        </tr>
-        `;
-
-        tbody.innerHTML += row;
-    });
-}
-
-load();
+loadLogs();
 
 </script>
 
