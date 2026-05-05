@@ -157,6 +157,7 @@ th{
 
 <thead>
 <tr>
+
 <th class="time-col">Час</th>
 
 <th>01 пред.</th>
@@ -179,8 +180,6 @@ th{
 <tbody id="tbody"></tbody>
 
 </table>
-
-<!-- MODAL -->
 
 <div class="modal" id="modal">
 
@@ -236,7 +235,8 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    doc
+    doc,
+    serverTimestamp
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -371,7 +371,7 @@ function fillPrograms(){
 
     updateSubjects();
 
-    sel.onchange = updateSubjects;
+    sel.addEventListener("change",updateSubjects);
 }
 
 // =======================
@@ -406,7 +406,8 @@ function updateSubjects(){
 
     function refreshSubjects(){
 
-        const sem = semesterSel.value;
+        const sem =
+            semesterSel.value;
 
         const list =
             filtered.filter(s=>
@@ -464,30 +465,21 @@ function render(){
 
             if(event){
 
-    const program =
-        programs.find(p=>String(p.id) === String(event.programId));
+                const program =
+                    programs.find(p=>p.id===event.programId);
 
-    const subject =
-        subjects.find(s=>String(s.id) === String(event.subjectId));
+                const subject =
+                    subjects.find(s=>s.id===event.subjectId);
 
-    console.log("EVENT:", event);
-    console.log("SUBJECT:", subject);
-
-    const semester =
-        event.semester ||
-        subject?.semester ||
-        "";
-
-    content = `
-    <div class="event">
-        <b>${subject?.name || ""}</b><br>
-        ${program?.name || ""}<br>
-        <b>Сем. ${semester}</b><br>
-        ${event.type || ""}<br>
-        ${event.professor || ""}<br>
-        ${event.groups || ""}
-    </div>`;
-}
+                content = `
+                <div class="event">
+                    <b>${subject?.name || ""}</b><br>
+                    ${program?.name || ""}<br>
+                    Сем. ${event.semester || subject?.semester || ""}<br>
+                    ${event.type || ""}<br>
+                    ${event.professor || ""}
+                </div>`;
+            }
 
             row += `
             <td class="slot"
@@ -529,23 +521,17 @@ window.openSlot = function(cell){
     if(existing){
 
         document.getElementById("programSelect").value =
-            existing.programId || "";
+            existing.programId;
 
         updateSubjects();
 
-        setTimeout(()=>{
+        document.getElementById("semesterSelect").value =
+            String(existing.semester || "");
 
-            document.getElementById("semesterSelect").value =
-                existing.semester || "";
+        updateSubjects();
 
-            document.getElementById("semesterSelect").dispatchEvent(
-                new Event("change")
-            );
-
-            document.getElementById("subjectSelect").value =
-                existing.subjectId || "";
-
-        },10);
+        document.getElementById("subjectSelect").value =
+            existing.subjectId;
 
         document.getElementById("typeSelect").value =
             existing.type || "Предавање";
@@ -559,8 +545,6 @@ window.openSlot = function(cell){
     else{
 
         editingId = null;
-
-        updateSubjects();
 
         document.getElementById("typeSelect").value =
             "Предавање";
@@ -608,7 +592,7 @@ document.getElementById("saveBtn")
     const groups =
         document.getElementById("groupsInput").value.trim();
 
-    // ================= ROOM CONFLICT =================
+    // ROOM CONFLICT
 
     const roomConflict =
         events.find(e=>
@@ -625,38 +609,29 @@ document.getElementById("saveBtn")
         return;
     }
 
-    // ================= PROGRAM + SEMESTER =================
+    // PROGRAM + SEMESTER CONFLICT
 
-console.log("CHECKING:", {
-    currentDate,
-    currentTime,
-    programId,
-    semester
-});
+    const semesterConflict = events.find(e => {
 
-const semesterConflict = events.find(e => {
+        return (
+            String(e.date || "").trim() === String(currentDate || "").trim() &&
+            String(e.time || "").trim() === String(currentTime || "").trim() &&
+            String(e.programId || "").trim() === String(programId || "").trim() &&
+            String(e.semester || "").trim() === String(semester || "").trim() &&
+            String(e.id || "") !== String(editingId || "")
+        );
+    });
 
-    console.log("COMPARE WITH:", e);
+    if (semesterConflict) {
 
-    return (
-        String(e.date || "").trim() === String(currentDate || "").trim() &&
-        String(e.time || "").trim() === String(currentTime || "").trim() &&
-        String(e.programId || "").trim() === String(programId || "").trim() &&
-        String(e.semester || "").trim() === String(semester || "").trim() &&
-        String(e.id || "") !== String(editingId || "")
-    );
-});
+        alert(
+            "Овој семестар од истата програма веќе има час во истиот термин."
+        );
 
-if (semesterConflict) {
+        return;
+    }
 
-    alert(
-        "Овој семестар од истата програма веќе има час во истиот термин."
-    );
-
-    return;
-}
-
-    // ================= PROFESSOR =================
+    // PROFESSOR CONFLICT
 
     if(professor){
 
@@ -675,65 +650,6 @@ if (semesterConflict) {
             return;
         }
     }
-
-    // ================= LECTURE =================
-
-    if(type==="Предавање"){
-
-        const lectureConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Предавање" &&
-                e.id!==editingId
-            );
-
-        if(lectureConflict){
-
-            alert("Предавањето веќе постои.");
-
-            return;
-        }
-    }
-
-    // ================= EXERCISES =================
-
-    if(type==="Вежби"){
-
-        const sameExercise =
-            events.filter(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Вежби" &&
-                e.id!==editingId
-            );
-
-        if(sameExercise.length){
-
-            if(!LAB_ROOMS.includes(currentRoom)){
-
-                alert("Паралелни вежби се дозволени само во лаборатории.");
-
-                return;
-            }
-
-            const invalid =
-                sameExercise.find(e=>
-                    !LAB_ROOMS.includes(e.room)
-                );
-
-            if(invalid){
-
-                alert("Постојат вежби во недозволена просторија.");
-
-                return;
-            }
-        }
-    }
-
-    // ================= SAVE =================
 
     const data = {
 
@@ -756,12 +672,30 @@ if (semesterConflict) {
             doc(db,"events_new",editingId),
             data
         );
+
+        await addDoc(
+            collection(db,"events_log"),
+            {
+                action:"UPDATE",
+                createdAt: serverTimestamp(),
+                data:data
+            }
+        );
     }
     else{
 
         await addDoc(
             collection(db,"events_new"),
             data
+        );
+
+        await addDoc(
+            collection(db,"events_log"),
+            {
+                action:"ADD",
+                createdAt: serverTimestamp(),
+                data:data
+            }
         );
     }
 
@@ -783,8 +717,20 @@ document.getElementById("deleteBtn")
     if(!confirm("Delete event?"))
         return;
 
+    const deletedEvent =
+        events.find(e=>e.id===editingId);
+
     await deleteDoc(
         doc(db,"events_new",editingId)
+    );
+
+    await addDoc(
+        collection(db,"events_log"),
+        {
+            action:"DELETE",
+            createdAt: serverTimestamp(),
+            data: deletedEvent || {}
+        }
     );
 
     await loadEvents();
