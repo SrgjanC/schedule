@@ -22,7 +22,8 @@ h2{
 
 select,
 button,
-input{
+input,
+textarea{
     padding:6px 8px;
     margin-right:8px;
     font-size:14px;
@@ -57,7 +58,6 @@ th{
 .slot{
     min-height:70px;
     cursor:pointer;
-    transition:0.15s;
 }
 
 .slot:hover{
@@ -88,23 +88,26 @@ th{
     padding:20px;
     width:420px;
     border-radius:8px;
-}
-
-.modal-content h3{
-    margin-top:0;
+    max-height:90vh;
+    overflow:auto;
 }
 
 .modal-content label{
     display:block;
     margin-top:10px;
     margin-bottom:4px;
-    font-size:13px;
 }
 
 .modal-content select,
-.modal-content input{
+.modal-content input,
+.modal-content textarea{
     width:100%;
     box-sizing:border-box;
+}
+
+textarea{
+    min-height:70px;
+    resize:vertical;
 }
 
 .modal-buttons{
@@ -130,11 +133,6 @@ th{
     border:none;
 }
 
-.info{
-    margin:10px 0;
-    color:#444;
-}
-
 </style>
 </head>
 
@@ -151,9 +149,7 @@ th{
 
 </div>
 
-<div class="info" id="info"></div>
-
-<table id="scheduleTable">
+<table>
 
 <thead>
 <tr>
@@ -210,6 +206,9 @@ th{
 <label>Групи</label>
 <input type="text" id="groupsInput">
 
+<label>Коментар / Барање</label>
+<textarea id="commentInput"></textarea>
+
 <div class="modal-buttons">
 
 <button class="delete-btn" id="deleteBtn">Delete</button>
@@ -258,11 +257,6 @@ const ROOMS = [
 "12 лаб.","14 лаб.","НФИЦ"
 ];
 
-const LAB_ROOMS = [
-"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
-"12 лаб.","14 лаб.","НФИЦ"
-];
-
 const TIMES = [];
 
 for(let h=8; h<=20; h++){
@@ -278,16 +272,12 @@ let currentRoom = "";
 let currentTime = "";
 let editingId = null;
 
-// =======================
-
 function todayISO(){
 
     const t = new Date();
 
     return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
 }
-
-// =======================
 
 async function loadAll(){
 
@@ -316,8 +306,6 @@ async function loadAll(){
     render();
 }
 
-// =======================
-
 async function loadEvents(){
 
     const snap =
@@ -330,29 +318,25 @@ async function loadEvents(){
         }));
 }
 
-// =======================
-
 function initFilters(){
 
-    const datePicker =
-        document.getElementById("datePicker");
+    document.getElementById("datePicker").value =
+        todayISO();
 
-    datePicker.value = todayISO();
-
-    datePicker.addEventListener("change",render);
+    document.getElementById("datePicker")
+        .addEventListener("change",render);
 
     document.getElementById("todayBtn")
         .addEventListener("click",()=>{
 
-            datePicker.value = todayISO();
+            document.getElementById("datePicker").value =
+                todayISO();
 
             render();
         });
 
     fillPrograms();
 }
-
-// =======================
 
 function fillPrograms(){
 
@@ -373,8 +357,6 @@ function fillPrograms(){
 
     sel.addEventListener("change",updateSubjects);
 }
-
-// =======================
 
 function updateSubjects(){
 
@@ -430,8 +412,6 @@ function updateSubjects(){
     semesterSel.onchange = refreshSubjects;
 }
 
-// =======================
-
 function render(){
 
     const tbody =
@@ -441,9 +421,6 @@ function render(){
 
     const selectedDate =
         document.getElementById("datePicker").value;
-
-    document.getElementById("info").textContent =
-        `Приказ за ${selectedDate}`;
 
     TIMES.forEach(time=>{
 
@@ -475,7 +452,7 @@ function render(){
                 <div class="event">
                     <b>${subject?.name || ""}</b><br>
                     ${program?.name || ""}<br>
-                    Сем. ${event.semester || subject?.semester || ""}<br>
+                    Сем. ${event.semester || ""}<br>
                     ${event.type || ""}<br>
                     ${event.professor || ""}
                 </div>`;
@@ -496,15 +473,10 @@ function render(){
     });
 }
 
-// =======================
-
 window.openSlot = function(cell){
 
-    currentRoom =
-        cell.dataset.room;
-
-    currentTime =
-        cell.dataset.time;
+    currentRoom = cell.dataset.room;
+    currentTime = cell.dataset.time;
 
     currentDate =
         document.getElementById("datePicker").value;
@@ -526,7 +498,7 @@ window.openSlot = function(cell){
         updateSubjects();
 
         document.getElementById("semesterSelect").value =
-            String(existing.semester || "");
+            existing.semester;
 
         updateSubjects();
 
@@ -534,7 +506,7 @@ window.openSlot = function(cell){
             existing.subjectId;
 
         document.getElementById("typeSelect").value =
-            existing.type || "Предавање";
+            existing.type || "";
 
         document.getElementById("professorInput").value =
             existing.professor || "";
@@ -542,25 +514,12 @@ window.openSlot = function(cell){
         document.getElementById("groupsInput").value =
             existing.groups || "";
     }
-    else{
 
-        editingId = null;
-
-        document.getElementById("typeSelect").value =
-            "Предавање";
-
-        document.getElementById("professorInput").value =
-            "";
-
-        document.getElementById("groupsInput").value =
-            "";
-    }
+    document.getElementById("commentInput").value = "";
 
     document.getElementById("modal").style.display =
         "flex";
 };
-
-// =======================
 
 document.getElementById("closeBtn")
 .addEventListener("click",()=>{
@@ -569,87 +528,8 @@ document.getElementById("closeBtn")
         "none";
 });
 
-// =======================
-
 document.getElementById("saveBtn")
 .addEventListener("click", async ()=>{
-
-    const subjectId =
-        document.getElementById("subjectSelect").value;
-
-    const programId =
-        document.getElementById("programSelect").value;
-
-    const semester =
-        document.getElementById("semesterSelect").value;
-
-    const type =
-        document.getElementById("typeSelect").value;
-
-    const professor =
-        document.getElementById("professorInput").value.trim();
-
-    const groups =
-        document.getElementById("groupsInput").value.trim();
-
-    // ROOM CONFLICT
-
-    const roomConflict =
-        events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.room===currentRoom &&
-            e.id!==editingId
-        );
-
-    if(roomConflict){
-
-        alert("Просторијата е зафатена.");
-
-        return;
-    }
-
-    // PROGRAM + SEMESTER CONFLICT
-
-    const semesterConflict = events.find(e => {
-
-        return (
-            String(e.date || "").trim() === String(currentDate || "").trim() &&
-            String(e.time || "").trim() === String(currentTime || "").trim() &&
-            String(e.programId || "").trim() === String(programId || "").trim() &&
-            String(e.semester || "").trim() === String(semester || "").trim() &&
-            String(e.id || "") !== String(editingId || "")
-        );
-    });
-
-    if (semesterConflict) {
-
-        alert(
-            "Овој семестар од истата програма веќе има час во истиот термин."
-        );
-
-        return;
-    }
-
-    // PROFESSOR CONFLICT
-
-    if(professor){
-
-        const profConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.professor===professor &&
-                e.id!==editingId
-            );
-
-        if(profConflict){
-
-            alert("Професорот веќе има час.");
-
-            return;
-        }
-    }
 
     const data = {
 
@@ -657,14 +537,27 @@ document.getElementById("saveBtn")
         time: currentTime,
         room: currentRoom,
 
-        subjectId,
-        programId,
-        semester,
+        subjectId:
+            document.getElementById("subjectSelect").value,
 
-        type,
-        professor,
-        groups
+        programId:
+            document.getElementById("programSelect").value,
+
+        semester:
+            document.getElementById("semesterSelect").value,
+
+        type:
+            document.getElementById("typeSelect").value,
+
+        professor:
+            document.getElementById("professorInput").value,
+
+        groups:
+            document.getElementById("groupsInput").value
     };
+
+    const comment =
+        document.getElementById("commentInput").value.trim();
 
     if(editingId){
 
@@ -677,8 +570,9 @@ document.getElementById("saveBtn")
             collection(db,"events_log"),
             {
                 action:"UPDATE",
+                comment,
                 createdAt: serverTimestamp(),
-                data:data
+                data
             }
         );
     }
@@ -693,8 +587,9 @@ document.getElementById("saveBtn")
             collection(db,"events_log"),
             {
                 action:"ADD",
+                comment,
                 createdAt: serverTimestamp(),
-                data:data
+                data
             }
         );
     }
@@ -707,15 +602,13 @@ document.getElementById("saveBtn")
         "none";
 });
 
-// =======================
-
 document.getElementById("deleteBtn")
 .addEventListener("click", async ()=>{
 
     if(!editingId) return;
 
-    if(!confirm("Delete event?"))
-        return;
+    const comment =
+        document.getElementById("commentInput").value.trim();
 
     const deletedEvent =
         events.find(e=>e.id===editingId);
@@ -728,6 +621,7 @@ document.getElementById("deleteBtn")
         collection(db,"events_log"),
         {
             action:"DELETE",
+            comment,
             createdAt: serverTimestamp(),
             data: deletedEvent || {}
         }
@@ -740,8 +634,6 @@ document.getElementById("deleteBtn")
     document.getElementById("modal").style.display =
         "none";
 });
-
-// =======================
 
 loadAll();
 
