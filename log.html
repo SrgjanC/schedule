@@ -2,13 +2,18 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Schedule Log</title>
+<title>Log на промени</title>
 
 <style>
 
 body{
     font-family:Arial;
     padding:20px;
+    margin:0;
+}
+
+h2{
+    margin-bottom:15px;
 }
 
 table{
@@ -19,25 +24,31 @@ table{
 th,td{
     border:1px solid #333;
     padding:6px;
-    font-size:13px;
-    text-align:left;
+    font-size:12px;
+    vertical-align:top;
 }
 
 th{
     background:#3f69b1;
     color:white;
+    text-align:left;
 }
 
 .add{
-    background:#e8f5e9;
+    background:#d4edda;
 }
 
 .update{
-    background:#fff8e1;
+    background:#fff3cd;
 }
 
 .delete{
-    background:#ffebee;
+    background:#f8d7da;
+}
+
+.small{
+    font-size:11px;
+    color:#555;
 }
 
 </style>
@@ -45,23 +56,28 @@ th{
 
 <body>
 
-<h2>Лог на промени</h2>
+<h2>Log на промени</h2>
 
 <table>
 
 <thead>
 <tr>
 
+<th>Акција</th>
 <th>Време</th>
-<th>Тип</th>
+
 <th>Датум</th>
 <th>Час</th>
 <th>Просторија</th>
+
 <th>Програма</th>
-<th>Сем.</th>
+<th>Семестар</th>
 <th>Предмет</th>
+
 <th>Тип</th>
 <th>Професор</th>
+<th>Групи</th>
+
 <th>Коментар</th>
 
 </tr>
@@ -79,9 +95,7 @@ from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import {
     getFirestore,
     collection,
-    getDocs,
-    query,
-    orderBy
+    getDocs
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -101,8 +115,9 @@ let logs = [];
 let programs = [];
 let subjects = [];
 
-async function loadData(){
+async function loadAll(){
 
+    // PROGRAMS
     const progSnap =
         await getDocs(collection(db,"programs_new"));
 
@@ -112,6 +127,7 @@ async function loadData(){
             ...d.data()
         }));
 
+    // SUBJECTS
     const subjSnap =
         await getDocs(collection(db,"subjects_new"));
 
@@ -121,40 +137,17 @@ async function loadData(){
             ...d.data()
         }));
 
-    const q =
-        query(
-            collection(db,"events_log"),
-            orderBy("createdAt","desc")
-        );
-
-    const snap =
-        await getDocs(q);
+    // LOGS
+    const logsSnap =
+        await getDocs(collection(db,"logs"));
 
     logs =
-        snap.docs.map(d=>({
+        logsSnap.docs.map(d=>({
             id:d.id,
             ...d.data()
         }));
 
     render();
-}
-
-function getProgramName(id){
-
-    return programs.find(p=>p.id===id)?.name || "";
-}
-
-function getSubjectName(id){
-
-    return subjects.find(s=>s.id===id)?.name || "";
-}
-
-function formatTS(ts){
-
-    if(!ts?.seconds) return "";
-
-    return new Date(ts.seconds*1000)
-        .toLocaleString("mk-MK");
 }
 
 function render(){
@@ -164,35 +157,88 @@ function render(){
 
     tbody.innerHTML = "";
 
+    logs.sort((a,b)=>
+        new Date(b.timestamp) -
+        new Date(a.timestamp)
+    );
+
     logs.forEach(log=>{
 
-        const e = log.data || {};
+        const action =
+            (log.action || "").toUpperCase();
 
-        const tr =
-            document.createElement("tr");
+        let rowClass = "";
 
-        tr.className =
-            log.action.toLowerCase();
+        if(action==="ADD")
+            rowClass = "add";
 
-        tr.innerHTML = `
-        <td>${formatTS(log.createdAt)}</td>
-        <td>${log.action || ""}</td>
-        <td>${e.date || ""}</td>
-        <td>${e.time || ""}</td>
-        <td>${e.room || ""}</td>
-        <td>${getProgramName(e.programId)}</td>
-        <td>${e.semester || ""}</td>
-        <td>${getSubjectName(e.subjectId)}</td>
-        <td>${e.type || ""}</td>
-        <td>${e.professor || ""}</td>
-        <td>${log.comment || ""}</td>
-        `;
+        if(action==="UPDATE")
+            rowClass = "update";
 
-        tbody.appendChild(tr);
+        if(action==="DELETE")
+            rowClass = "delete";
+
+        // find event details
+        const program =
+            programs.find(p=>
+                p.id===log.programId
+            );
+
+        const subject =
+            subjects.find(s=>
+                s.id===log.subjectId
+            );
+
+        tbody.innerHTML += `
+        <tr class="${rowClass}">
+
+            <td>
+                <b>${action}</b>
+            </td>
+
+            <td class="small">
+                ${log.timestamp || ""}
+            </td>
+
+            <td>${log.date || ""}</td>
+            <td>${log.time || ""}</td>
+            <td>${log.room || ""}</td>
+
+            <td>
+                ${log.programName ||
+                  program?.name ||
+                  ""}
+            </td>
+
+            <td>
+                ${log.semester || ""}
+            </td>
+
+            <td>
+                ${log.subjectName ||
+                  subject?.name ||
+                  ""}
+            </td>
+
+            <td>${log.type || ""}</td>
+
+            <td>
+                ${log.professor || ""}
+            </td>
+
+            <td>
+                ${log.groups || ""}
+            </td>
+
+            <td>
+                ${log.comment || ""}
+            </td>
+
+        </tr>`;
     });
 }
 
-loadData();
+loadAll();
 
 </script>
 
