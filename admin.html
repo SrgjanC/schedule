@@ -749,18 +749,40 @@ document.getElementById("deleteBtn")
     const comment =
         document.getElementById("commentInput").value.trim();
 
-    await addDoc(
-        collection(db,"logs"),
-        {
-            action:"DELETE",
-            eventId:editingId,
-            timestamp:new Date().toISOString(),
-            date:currentDate,
-            time:currentTime,
-            room:currentRoom,
-            comment
-        }
-    );
+    const existing =
+    events.find(e=>e.id===editingId);
+
+const program =
+    programs.find(p=>p.id===existing?.programId);
+
+const subject =
+    subjects.find(s=>s.id===existing?.subjectId);
+
+await addDoc(
+    collection(db,"logs"),
+    {
+        action:"DELETE",
+        timestamp:new Date().toISOString(),
+
+        date: existing?.date || "",
+        time: existing?.time || "",
+        room: existing?.room || "",
+
+        programId: existing?.programId || "",
+        programName: program?.name || "",
+
+        semester: existing?.semester || "",
+
+        subjectId: existing?.subjectId || "",
+        subjectName: subject?.name || "",
+
+        type: existing?.type || "",
+        professor: existing?.professor || "",
+        groups: existing?.groups || "",
+
+        comment
+    }
+);
 
     await deleteDoc(
         doc(db,"events_new",editingId)
