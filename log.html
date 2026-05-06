@@ -2,13 +2,18 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>RAW Logs</title>
+<title>Логови</title>
 
 <style>
 
 body{
     font-family:Arial;
     padding:20px;
+    margin:0;
+}
+
+h2{
+    margin-bottom:15px;
 }
 
 table{
@@ -18,10 +23,10 @@ table{
 
 th,td{
     border:1px solid #333;
-    padding:6px;
-    font-size:12px;
-    vertical-align:top;
+    padding:6px 8px;
+    font-size:13px;
     text-align:left;
+    vertical-align:top;
 }
 
 th{
@@ -29,10 +34,16 @@ th{
     color:white;
 }
 
-pre{
-    margin:0;
-    white-space:pre-wrap;
-    word-break:break-word;
+.add{
+    background:#e7f7e7;
+}
+
+.update{
+    background:#fff7d6;
+}
+
+.delete{
+    background:#ffe3e3;
 }
 
 </style>
@@ -40,14 +51,23 @@ pre{
 
 <body>
 
-<h2>RAW Firebase Logs</h2>
+<h2>Логови на промени</h2>
 
 <table>
 
 <thead>
 <tr>
-<th>ID</th>
-<th>DATA</th>
+<th>Време</th>
+<th>Акција</th>
+<th>Датум</th>
+<th>Час</th>
+<th>Просторија</th>
+<th>Програма</th>
+<th>Семестар</th>
+<th>Предмет</th>
+<th>Тип</th>
+<th>Професор</th>
+<th>Коментар</th>
 </tr>
 </thead>
 
@@ -79,27 +99,94 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let logs = [];
+
 async function loadLogs(){
+
+    const snap =
+        await getDocs(collection(db,"logs"));
+
+    logs =
+        snap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    render();
+}
+
+function render(){
 
     const tbody =
         document.getElementById("tbody");
 
     tbody.innerHTML = "";
 
-    const snap =
-        await getDocs(collection(db,"logs"));
+    logs.sort((a,b)=>
+        new Date(b.timestamp || 0) -
+        new Date(a.timestamp || 0)
+    );
 
-    snap.forEach(docSnap=>{
+    logs.forEach(log=>{
 
-        const data =
-            docSnap.data();
+        let cls = "";
+
+        if(log.action==="ADD")
+            cls = "add";
+
+        if(log.action==="UPDATE")
+            cls = "update";
+
+        if(log.action==="DELETE")
+            cls = "delete";
 
         tbody.innerHTML += `
-        <tr>
-            <td>${docSnap.id}</td>
+        <tr class="${cls}">
+
             <td>
-                <pre>${JSON.stringify(data,null,2)}</pre>
+                ${log.timestamp || ""}
             </td>
+
+            <td>
+                ${log.action || ""}
+            </td>
+
+            <td>
+                ${log.date || ""}
+            </td>
+
+            <td>
+                ${log.time || ""}
+            </td>
+
+            <td>
+                ${log.room || ""}
+            </td>
+
+            <td>
+                ${log.programName || ""}
+            </td>
+
+            <td>
+                ${log.semester || ""}
+            </td>
+
+            <td>
+                ${log.subjectName || ""}
+            </td>
+
+            <td>
+                ${log.type || ""}
+            </td>
+
+            <td>
+                ${log.professor || ""}
+            </td>
+
+            <td>
+                ${log.comment || ""}
+            </td>
+
         </tr>
         `;
     });
