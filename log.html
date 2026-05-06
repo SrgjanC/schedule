@@ -39,16 +39,16 @@ th{
 }
 
 .update{
-    background:#fff8d9;
+    background:#fff7d6;
 }
 
 .delete{
-    background:#ffe3e3;
+    background:#ffe1e1;
 }
 
 .small{
-    color:#666;
     font-size:11px;
+    color:#666;
 }
 
 </style>
@@ -108,9 +108,9 @@ let logs = [];
 let programs = [];
 let subjects = [];
 
-async function loadAll(){
+async function loadData(){
 
-    // ================= PROGRAMS =================
+    // PROGRAMS
 
     const progSnap =
         await getDocs(collection(db,"programs_new"));
@@ -121,7 +121,7 @@ async function loadAll(){
             ...d.data()
         }));
 
-    // ================= SUBJECTS =================
+    // SUBJECTS
 
     const subjSnap =
         await getDocs(collection(db,"subjects_new"));
@@ -132,18 +132,50 @@ async function loadAll(){
             ...d.data()
         }));
 
-    // ================= LOGS =================
+    // LOGS
 
-    const logsSnap =
+    const logSnap =
         await getDocs(collection(db,"logs"));
 
     logs =
-        logsSnap.docs.map(d=>({
+        logSnap.docs.map(d=>({
             id:d.id,
             ...d.data()
         }));
 
     render();
+}
+
+function getProgramName(log){
+
+    if(log.programName)
+        return log.programName;
+
+    if(log.programId){
+
+        const p =
+            programs.find(x=>x.id===log.programId);
+
+        if(p) return p.name || "";
+    }
+
+    return "";
+}
+
+function getSubjectName(log){
+
+    if(log.subjectName)
+        return log.subjectName;
+
+    if(log.subjectId){
+
+        const s =
+            subjects.find(x=>x.id===log.subjectId);
+
+        if(s) return s.name || "";
+    }
+
+    return "";
 }
 
 function render(){
@@ -154,52 +186,25 @@ function render(){
     tbody.innerHTML = "";
 
     logs.sort((a,b)=>
-        new Date(b.timestamp) - new Date(a.timestamp)
+        new Date(b.timestamp || 0) -
+        new Date(a.timestamp || 0)
     );
 
     logs.forEach(log=>{
 
-        const cls =
-            log.action === "ADD"
-                ? "add"
-                : log.action === "UPDATE"
-                    ? "update"
-                    : "delete";
+        let rowClass = "";
 
-        // ================= PROGRAM =================
+        if(log.action==="ADD")
+            rowClass = "add";
 
-        let programName = "";
+        if(log.action==="UPDATE")
+            rowClass = "update";
 
-        if(log.programName){
-
-            programName = log.programName;
-        }
-        else if(log.programId){
-
-            const p =
-                programs.find(x=>x.id===log.programId);
-
-            programName = p?.name || "";
-        }
-
-        // ================= SUBJECT =================
-
-        let subjectName = "";
-
-        if(log.subjectName){
-
-            subjectName = log.subjectName;
-        }
-        else if(log.subjectId){
-
-            const s =
-                subjects.find(x=>x.id===log.subjectId);
-
-            subjectName = s?.name || "";
-        }
+        if(log.action==="DELETE")
+            rowClass = "delete";
 
         tbody.innerHTML += `
-        <tr class="${cls}">
+        <tr class="${rowClass}">
 
             <td>
                 ${log.timestamp || ""}
@@ -222,7 +227,7 @@ function render(){
             </td>
 
             <td>
-                ${programName}
+                ${getProgramName(log)}
             </td>
 
             <td>
@@ -230,7 +235,7 @@ function render(){
             </td>
 
             <td>
-                ${subjectName}
+                ${getSubjectName(log)}
             </td>
 
             <td>
@@ -250,7 +255,7 @@ function render(){
     });
 }
 
-loadAll();
+loadData();
 
 </script>
 
