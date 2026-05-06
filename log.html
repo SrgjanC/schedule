@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Log на промени</title>
+<title>Логови</title>
 
 <style>
 
@@ -23,32 +23,32 @@ table{
 
 th,td{
     border:1px solid #333;
-    padding:6px;
-    font-size:12px;
+    padding:6px 8px;
+    font-size:13px;
+    text-align:left;
     vertical-align:top;
 }
 
 th{
     background:#3f69b1;
     color:white;
-    text-align:left;
 }
 
 .add{
-    background:#d4edda;
+    background:#e8f7e8;
 }
 
 .update{
-    background:#fff3cd;
+    background:#fff8d9;
 }
 
 .delete{
-    background:#f8d7da;
+    background:#ffe3e3;
 }
 
 .small{
+    color:#666;
     font-size:11px;
-    color:#555;
 }
 
 </style>
@@ -56,30 +56,23 @@ th{
 
 <body>
 
-<h2>Log на промени</h2>
+<h2>Логови на промени</h2>
 
 <table>
 
 <thead>
 <tr>
-
-<th>Акција</th>
 <th>Време</th>
-
+<th>Акција</th>
 <th>Датум</th>
 <th>Час</th>
 <th>Просторија</th>
-
 <th>Програма</th>
 <th>Семестар</th>
 <th>Предмет</th>
-
 <th>Тип</th>
 <th>Професор</th>
-<th>Групи</th>
-
 <th>Коментар</th>
-
 </tr>
 </thead>
 
@@ -117,7 +110,8 @@ let subjects = [];
 
 async function loadAll(){
 
-    // PROGRAMS
+    // ================= PROGRAMS =================
+
     const progSnap =
         await getDocs(collection(db,"programs_new"));
 
@@ -127,7 +121,8 @@ async function loadAll(){
             ...d.data()
         }));
 
-    // SUBJECTS
+    // ================= SUBJECTS =================
+
     const subjSnap =
         await getDocs(collection(db,"subjects_new"));
 
@@ -137,7 +132,8 @@ async function loadAll(){
             ...d.data()
         }));
 
-    // LOGS
+    // ================= LOGS =================
+
     const logsSnap =
         await getDocs(collection(db,"logs"));
 
@@ -158,56 +154,75 @@ function render(){
     tbody.innerHTML = "";
 
     logs.sort((a,b)=>
-        new Date(b.timestamp) -
-        new Date(a.timestamp)
+        new Date(b.timestamp) - new Date(a.timestamp)
     );
 
     logs.forEach(log=>{
 
-        const action =
-            (log.action || "").toUpperCase();
+        const cls =
+            log.action === "ADD"
+                ? "add"
+                : log.action === "UPDATE"
+                    ? "update"
+                    : "delete";
 
-        let rowClass = "";
+        // ================= PROGRAM =================
 
-        if(action==="ADD")
-            rowClass = "add";
+        let programName = "";
 
-        if(action==="UPDATE")
-            rowClass = "update";
+        if(log.programName){
 
-        if(action==="DELETE")
-            rowClass = "delete";
+            programName = log.programName;
+        }
+        else if(log.programId){
 
-        // find event details
-        const program =
-            programs.find(p=>
-                p.id===log.programId
-            );
+            const p =
+                programs.find(x=>x.id===log.programId);
 
-        const subject =
-            subjects.find(s=>
-                s.id===log.subjectId
-            );
+            programName = p?.name || "";
+        }
+
+        // ================= SUBJECT =================
+
+        let subjectName = "";
+
+        if(log.subjectName){
+
+            subjectName = log.subjectName;
+        }
+        else if(log.subjectId){
+
+            const s =
+                subjects.find(x=>x.id===log.subjectId);
+
+            subjectName = s?.name || "";
+        }
 
         tbody.innerHTML += `
-        <tr class="${rowClass}">
+        <tr class="${cls}">
 
             <td>
-                <b>${action}</b>
-            </td>
-
-            <td class="small">
                 ${log.timestamp || ""}
             </td>
 
-            <td>${log.date || ""}</td>
-            <td>${log.time || ""}</td>
-            <td>${log.room || ""}</td>
+            <td>
+                <b>${log.action || ""}</b>
+            </td>
 
             <td>
-                ${log.programName ||
-                  program?.name ||
-                  ""}
+                ${log.date || ""}
+            </td>
+
+            <td>
+                ${log.time || ""}
+            </td>
+
+            <td>
+                ${log.room || ""}
+            </td>
+
+            <td>
+                ${programName}
             </td>
 
             <td>
@@ -215,26 +230,23 @@ function render(){
             </td>
 
             <td>
-                ${log.subjectName ||
-                  subject?.name ||
-                  ""}
+                ${subjectName}
             </td>
 
-            <td>${log.type || ""}</td>
+            <td>
+                ${log.type || ""}
+            </td>
 
             <td>
                 ${log.professor || ""}
             </td>
 
             <td>
-                ${log.groups || ""}
-            </td>
-
-            <td>
                 ${log.comment || ""}
             </td>
 
-        </tr>`;
+        </tr>
+        `;
     });
 }
 
