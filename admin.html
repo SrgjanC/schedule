@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Admin Распоред 2</title>
+<title>Admin Распоред 2.2</title>
 
 <style>
 
@@ -695,18 +695,37 @@ document.getElementById("saveBtn")
             data
         );
 
-        await addDoc(
-            collection(db,"logs"),
-            {
-                action:"UPDATE",
-                eventId:editingId,
-                timestamp:new Date().toISOString(),
-                date:currentDate,
-                time:currentTime,
-                room:currentRoom,
-                comment
-            }
-        );
+        const program =
+    programs.find(p=>p.id===programId);
+
+const subject =
+    subjects.find(s=>s.id===subjectId);
+
+await addDoc(
+    collection(db,"logs"),
+    {
+        action:"UPDATE",
+        timestamp:new Date().toISOString(),
+
+        date: currentDate,
+        time: currentTime,
+        room: currentRoom,
+
+        programId,
+        programName: program?.name || "",
+
+        semester,
+
+        subjectId,
+        subjectName: subject?.name || "",
+
+        type,
+        professor,
+        groups,
+
+        comment
+    }
+);
     }
     else{
 
@@ -716,18 +735,37 @@ document.getElementById("saveBtn")
                 data
             );
 
-        await addDoc(
-            collection(db,"logs"),
-            {
-                action:"ADD",
-                eventId:newDoc.id,
-                timestamp:new Date().toISOString(),
-                date:currentDate,
-                time:currentTime,
-                room:currentRoom,
-                comment
-            }
-        );
+        const program =
+    programs.find(p=>p.id===programId);
+
+const subject =
+    subjects.find(s=>s.id===subjectId);
+
+await addDoc(
+    collection(db,"logs"),
+    {
+        action:"ADD",
+        timestamp:new Date().toISOString(),
+
+        date: currentDate,
+        time: currentTime,
+        room: currentRoom,
+
+        programId,
+        programName: program?.name || "",
+
+        semester,
+
+        subjectId,
+        subjectName: subject?.name || "",
+
+        type,
+        professor,
+        groups,
+
+        comment
+    }
+);
     }
 
     await loadEvents();
