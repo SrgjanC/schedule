@@ -35,7 +35,7 @@ th{
 }
 
 .add{
-    background:#e8f7e8;
+    background:#e7f7e7;
 }
 
 .update{
@@ -43,12 +43,7 @@ th{
 }
 
 .delete{
-    background:#ffe1e1;
-}
-
-.small{
-    font-size:11px;
-    color:#666;
+    background:#ffe3e3;
 }
 
 </style>
@@ -105,77 +100,19 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let logs = [];
-let programs = [];
-let subjects = [];
 
-async function loadData(){
+async function loadLogs(){
 
-    // PROGRAMS
-
-    const progSnap =
-        await getDocs(collection(db,"programs_new"));
-
-    programs =
-        progSnap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-
-    // SUBJECTS
-
-    const subjSnap =
-        await getDocs(collection(db,"subjects_new"));
-
-    subjects =
-        subjSnap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-
-    // LOGS
-
-    const logSnap =
+    const snap =
         await getDocs(collection(db,"logs"));
 
     logs =
-        logSnap.docs.map(d=>({
+        snap.docs.map(d=>({
             id:d.id,
             ...d.data()
         }));
 
     render();
-}
-
-function getProgramName(log){
-
-    if(log.programName)
-        return log.programName;
-
-    if(log.programId){
-
-        const p =
-            programs.find(x=>x.id===log.programId);
-
-        if(p) return p.name || "";
-    }
-
-    return "";
-}
-
-function getSubjectName(log){
-
-    if(log.subjectName)
-        return log.subjectName;
-
-    if(log.subjectId){
-
-        const s =
-            subjects.find(x=>x.id===log.subjectId);
-
-        if(s) return s.name || "";
-    }
-
-    return "";
 }
 
 function render(){
@@ -192,26 +129,26 @@ function render(){
 
     logs.forEach(log=>{
 
-        let rowClass = "";
+        let cls = "";
 
         if(log.action==="ADD")
-            rowClass = "add";
+            cls = "add";
 
         if(log.action==="UPDATE")
-            rowClass = "update";
+            cls = "update";
 
         if(log.action==="DELETE")
-            rowClass = "delete";
+            cls = "delete";
 
         tbody.innerHTML += `
-        <tr class="${rowClass}">
+        <tr class="${cls}">
 
             <td>
                 ${log.timestamp || ""}
             </td>
 
             <td>
-                <b>${log.action || ""}</b>
+                ${log.action || ""}
             </td>
 
             <td>
@@ -227,7 +164,7 @@ function render(){
             </td>
 
             <td>
-                ${getProgramName(log)}
+                ${log.programName || ""}
             </td>
 
             <td>
@@ -235,7 +172,7 @@ function render(){
             </td>
 
             <td>
-                ${getSubjectName(log)}
+                ${log.subjectName || ""}
             </td>
 
             <td>
@@ -255,7 +192,7 @@ function render(){
     });
 }
 
-loadData();
+loadLogs();
 
 </script>
 
