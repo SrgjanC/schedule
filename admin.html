@@ -660,30 +660,27 @@ document.getElementById("saveBtn")
             data
         );
 
-const program =
-    programs.find(p=>p.id===programId);
-
-const subject =
-    subjects.find(s=>s.id===subjectId);
-
 await addDoc(
     collection(db,"logs"),
     {
         action:"UPDATE",
+        eventId:editingId,
+
         timestamp:new Date().toISOString(),
 
-        date: currentDate,
-        time: currentTime,
-        room: currentRoom,
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
         programId,
-        programName: program?.name || "",
-
-        semester,
+        programName:
+            programs.find(p=>p.id===programId)?.name || "",
 
         subjectId,
-        subjectName: subject?.name || "",
+        subjectName:
+            subjects.find(s=>s.id===subjectId)?.name || "",
 
+        semester,
         type,
         professor,
         groups,
@@ -700,30 +697,27 @@ await addDoc(
                 data
             );
 
-       const program =
-    programs.find(p=>p.id===programId);
-
-const subject =
-    subjects.find(s=>s.id===subjectId);
-
-await addDoc(
+        await addDoc(
     collection(db,"logs"),
     {
         action:"ADD",
+        eventId:newDoc.id,
+
         timestamp:new Date().toISOString(),
 
-        date: currentDate,
-        time: currentTime,
-        room: currentRoom,
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
         programId,
-        programName: program?.name || "",
-
-        semester,
+        programName:
+            programs.find(p=>p.id===programId)?.name || "",
 
         subjectId,
-        subjectName: subject?.name || "",
+        subjectName:
+            subjects.find(s=>s.id===subjectId)?.name || "",
 
+        semester,
         type,
         professor,
         groups,
@@ -764,33 +758,27 @@ document.getElementById("deleteBtn")
     const existing =
     events.find(e=>e.id===editingId);
 
-const existing =
-    events.find(e=>e.id===editingId);
-
-const program =
-    programs.find(p=>p.id===existing?.programId);
-
-const subject =
-    subjects.find(s=>s.id===existing?.subjectId);
-
 await addDoc(
     collection(db,"logs"),
     {
         action:"DELETE",
+        eventId:editingId,
+
         timestamp:new Date().toISOString(),
 
-        date: existing?.date || "",
-        time: existing?.time || "",
-        room: existing?.room || "",
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
         programId: existing?.programId || "",
-        programName: program?.name || "",
-
-        semester: existing?.semester || "",
+        programName:
+            programs.find(p=>p.id===existing?.programId)?.name || "",
 
         subjectId: existing?.subjectId || "",
-        subjectName: subject?.name || "",
+        subjectName:
+            subjects.find(s=>s.id===existing?.subjectId)?.name || "",
 
+        semester: existing?.semester || "",
         type: existing?.type || "",
         professor: existing?.professor || "",
         groups: existing?.groups || "",
