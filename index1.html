@@ -107,7 +107,7 @@ from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import {
     getFirestore,
     collection,
-    onSnapshot
+    getDocs
 }
 from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
@@ -134,78 +134,166 @@ let rooms = [];
 
 let isLoading = true;
 
-// ================= EVERYTHING BELOW STAYS SAME =================
-// (your existing functions: colors, filters, render, etc.)
+// ================= ROOMS =================
 
-// KEEP ALL YOUR FUNCTIONS AS THEY ARE ABOVE THIS LINE
-// (I am not rewriting them because layout must not change)
+const DAY_ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.","НФИЦ"
+];
 
-// ================= LOAD REALTIME =================
+// ================= COLORS =================
 
-function listenData() {
+const roomColorCache = {};
 
-    const eventsRef = collection(db, "events_new");
-    const progRef = collection(db, "programs_new");
-    const subjRef = collection(db, "subjects_new");
-    const roomsRef = collection(db, "rooms");
+function getRoomColor(room) {
 
-    let loaded = 0;
+    if (!room) return "#ffffff";
 
-    function checkReady() {
-        loaded++;
-        if (loaded >= 4) {
-            isLoading = false;
-            initFilters();
-            render();
-        }
+    if (roomColorCache[room])
+        return roomColorCache[room];
+
+    const palette = [
+        "#f1dfd3",
+        "#dde3ef",
+        "#cfe7b4",
+        "#f7e6b8",
+        "#e3d9f6",
+        "#d7eee8"
+    ];
+
+    let hash = 0;
+
+    for (let i = 0; i < room.length; i++) {
+        hash = room.charCodeAt(i) + ((hash << 5) - hash);
     }
 
-    onSnapshot(eventsRef, snap => {
+    const color =
+        palette[Math.abs(hash) % palette.length];
 
-        events = snap.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-        }));
+    roomColorCache[room] = color;
 
-        joinData();
+    return color;
+}
 
-        render();
-    });
+// ================= DATE =================
 
-    onSnapshot(progRef, snap => {
+function formatDate(dateStr) {
 
-        programs = snap.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-        }));
+    if (!dateStr) return "";
 
-        checkReady();
-    });
+    const d = new Date(dateStr);
 
-    onSnapshot(subjRef, snap => {
+    if (Number.isNaN(d.getTime()))
+        return dateStr;
 
-        subjects = snap.docs.map(d => ({
-            id: d.id,
-            ...d.data()
-        }));
+    const months = [
+        "Јан","Фев","Мар","Апр","Мај","Јун",
+        "Јул","Авг","Сеп","Окт","Ное","Дек"
+    ];
 
-        checkReady();
-    });
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
 
-    onSnapshot(roomsRef, snap => {
+function todayISO() {
 
-        rooms = snap.docs
-            .map(d => d.data().name)
-            .filter(Boolean);
+    const t = new Date();
 
-        checkReady();
+    const y = t.getFullYear();
+    const m = String(t.getMonth()+1).padStart(2,"0");
+    const d = String(t.getDate()).padStart(2,"0");
+
+    return `${y}-${m}-${d}`;
+}
+
+function buildTimeSlots() {
+
+    const slots = [];
+
+    for (let h = 8; h <= 20; h++) {
+
+        slots.push(
+            String(h).padStart(2,"0") + ":00"
+        );
+    }
+
+    return slots;
+}
+
+const TIMES = buildTimeSlots();
+
+// ================= FILTERS =================
+
+function fillSelect(id, values) {
+
+    const el = document.getElementById(id);
+
+    el.innerHTML =
+        "<option value=''>Сите</option>";
+
+    values.forEach(v => {
+
+        if (v !== undefined &&
+            v !== null &&
+            v !== "") {
+
+            el.innerHTML +=
+                `<option value="${v}">${v}</option>`;
+        }
     });
 }
 
-// ================= JOIN FUNCTION =================
+function sortSemesters(values) {
 
-function joinData() {
+    return values
+        .map(v => Number(v))
+        .filter(v => !Number.isNaN(v))
+        .sort((a,b) => a - b);
+}
 
+// ================= LOAD =================
+
+async function loadData() {
+
+    // EVENTS
+    const eventsSnap =
+        await getDocs(collection(db, "events_new"));
+
+    events =
+        eventsSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // PROGRAMS
+    const progSnap =
+        await getDocs(collection(db, "programs_new"));
+
+    programs =
+        progSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // SUBJECTS
+    const subjSnap =
+        await getDocs(collection(db, "subjects_new"));
+
+    subjects =
+        subjSnap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+
+    // ROOMS
+    const roomsSnap =
+        await getDocs(collection(db, "rooms"));
+
+    rooms =
+        roomsSnap.docs
+            .map(d => d.data().name)
+            .filter(Boolean);
+
+    // CONNECT
     events = events.map(e => {
 
         const program =
@@ -228,11 +316,197 @@ function joinData() {
                 subject?.name || ""
         };
     });
+
+    isLoading = false;
+
+    initFilters();
+
+    render();
 }
 
-// ================= START =================
+// ================= FILTER INIT =================
 
-listenData();
+function initFilters() {
+
+    const dates =
+        [...new Set(events.map(e => e.date))]
+        .sort();
+
+    const progs =
+        [...new Set(events.map(e => e.program))]
+        .filter(Boolean);
+
+    const semRaw =
+        [...new Set(events.map(e => e.semester))];
+
+    const semSorted =
+        sortSemesters(semRaw);
+
+    const roomSorted =
+        [...new Set(rooms)].sort((a,b)=>
+            a.localeCompare(b,"mk")
+        );
+
+    fillSelect("dateFilter", dates);
+    fillSelect("programFilter", progs);
+    fillSelect("semesterFilter", semSorted);
+    fillSelect("roomFilter", roomSorted);
+
+    const today = todayISO();
+
+    if (dates.includes(today))
+        document.getElementById("dateFilter").value =
+            today;
+
+    document.querySelectorAll("select").forEach(s =>
+        s.addEventListener("change", render)
+    );
+}
+
+// ================= RENDER =================
+
+function render() {
+
+const tbody = document.getElementById("tbody");
+
+if (isLoading) {
+
+    tbody.innerHTML = `
+    <tr>
+        <td colspan="11">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+        </td>
+    </tr>`;
+
+    return;
+}
+
+tbody.innerHTML = "";
+
+const dateF =
+    document.getElementById("dateFilter").value;
+
+const progF =
+    document.getElementById("programFilter").value;
+
+const semF =
+    document.getElementById("semesterFilter").value;
+
+const roomF =
+    document.getElementById("roomFilter").value;
+
+const view =
+    document.getElementById("viewMode").value;
+
+// ================= EVENT MAP =================
+
+const map = {};
+
+events.forEach(e => {
+
+    map[`${e.date}_${e.time}_${e.room}`] = e;
+});
+
+const selectedDate =
+    dateF || todayISO();
+
+document.getElementById("viewInfo").textContent =
+    dateF ? `Приказ: ${dateF}` : "Приказ за денес";
+
+// ================= DAY VIEW =================
+
+if (view === "day") {
+
+    for (const room of DAY_ROOMS) {
+
+        if (roomF && room !== roomF)
+            continue;
+
+        const bg =
+            getRoomColor(room);
+
+        for (const time of TIMES) {
+
+            const key =
+                `${selectedDate}_${time}_${room}`;
+
+            const e = map[key];
+
+            if (e) {
+
+                if (progF && e.program !== progF)
+                    continue;
+
+                if (semF && String(e.semester) !== String(semF))
+                    continue;
+            }
+
+            tbody.innerHTML += `
+            <tr style="background:${bg}; opacity:${e ? 1 : 0.55}">
+                <td>${e?.week || ""}</td>
+                <td>${e?.day || ""}</td>
+                <td>${formatDate(selectedDate)}</td>
+                <td>${time}</td>
+                <td>${room}</td>
+                <td>${e?.program || ""}</td>
+                <td>${e?.semester || ""}</td>
+                <td>${e?.subject || ""}</td>
+                <td>${e?.type || ""}</td>
+                <td>${e?.professor || ""}</td>
+                <td>${e?.groups || ""}</td>
+            </tr>`;
+        }
+    }
+
+    return;
+}
+
+// ================= NORMAL VIEW =================
+
+const sorted = [...events].sort((a,b)=>
+
+    (a.date||"").localeCompare(b.date||"") ||
+
+    (a.room||"").localeCompare(b.room||"") ||
+
+    (a.time||"").localeCompare(b.time||"")
+);
+
+sorted.forEach(e => {
+
+    if (dateF && e.date !== dateF)
+        return;
+
+    if (progF && e.program !== progF)
+        return;
+
+    if (semF && String(e.semester) !== String(semF))
+        return;
+
+    if (roomF && e.room !== roomF)
+        return;
+
+    tbody.innerHTML += `
+    <tr style="background:${getRoomColor(e.room)}">
+        <td>${e.week || ""}</td>
+        <td>${e.day || ""}</td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.time || ""}</td>
+        <td>${e.room || ""}</td>
+        <td>${e.program || ""}</td>
+        <td>${e.semester || ""}</td>
+        <td>${e.subject || ""}</td>
+        <td>${e.type || ""}</td>
+        <td>${e.professor || ""}</td>
+        <td>${e.groups || ""}</td>
+    </tr>`;
+});
+
+}
+
+loadData();
 
 </script>
 
