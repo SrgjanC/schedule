@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Логови</title>
+<title>Лог на промени</title>
 
 <style>
 
@@ -51,7 +51,7 @@ th{
 
 <body>
 
-<h2>Логови на промени</h2>
+<h2>Лог на промени</h2>
 
 <table>
 
@@ -100,19 +100,88 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let logs = [];
+let events = [];
+let programs = [];
+let subjects = [];
 
-async function loadLogs(){
+async function loadData(){
 
-    const snap =
+    // LOGS
+
+    const logSnap =
         await getDocs(collection(db,"logs"));
 
     logs =
-        snap.docs.map(d=>({
+        logSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    // EVENTS
+
+    const eventSnap =
+        await getDocs(collection(db,"events_new"));
+
+    events =
+        eventSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    // PROGRAMS
+
+    const progSnap =
+        await getDocs(collection(db,"programs_new"));
+
+    programs =
+        progSnap.docs.map(d=>({
+            id:d.id,
+            ...d.data()
+        }));
+
+    // SUBJECTS
+
+    const subjSnap =
+        await getDocs(collection(db,"subjects_new"));
+
+    subjects =
+        subjSnap.docs.map(d=>({
             id:d.id,
             ...d.data()
         }));
 
     render();
+}
+
+function getEvent(log){
+
+    return events.find(e=>
+        e.id===log.eventId
+    );
+}
+
+function getProgramName(event){
+
+    if(!event) return "";
+
+    const p =
+        programs.find(x=>
+            x.id===event.programId
+        );
+
+    return p?.name || "";
+}
+
+function getSubjectName(event){
+
+    if(!event) return "";
+
+    const s =
+        subjects.find(x=>
+            x.id===event.subjectId
+        );
+
+    return s?.name || "";
 }
 
 function render(){
@@ -128,6 +197,9 @@ function render(){
     );
 
     logs.forEach(log=>{
+
+        const event =
+            getEvent(log);
 
         let cls = "";
 
@@ -164,23 +236,23 @@ function render(){
             </td>
 
             <td>
-                ${log.programName || ""}
+                ${getProgramName(event)}
             </td>
 
             <td>
-                ${log.semester || ""}
+                ${event?.semester || ""}
             </td>
 
             <td>
-                ${log.subjectName || ""}
+                ${getSubjectName(event)}
             </td>
 
             <td>
-                ${log.type || ""}
+                ${event?.type || ""}
             </td>
 
             <td>
-                ${log.professor || ""}
+                ${event?.professor || ""}
             </td>
 
             <td>
@@ -192,7 +264,7 @@ function render(){
     });
 }
 
-loadLogs();
+loadData();
 
 </script>
 
