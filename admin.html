@@ -660,32 +660,34 @@ document.getElementById("saveBtn")
             data
         );
 
-        await addDoc(
-            collection(db,"logs"),
-            {
-                action:"UPDATE",
-                eventId:editingId,
+await addDoc(
+    collection(db,"logs"),
+    {
+        action:"UPDATE",
+        eventId:editingId,
 
-                timestamp:new Date().toISOString(),
+        timestamp:new Date().toISOString(),
 
-                date:currentDate,
-                time:currentTime,
-                room:currentRoom,
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
-                subjectId,
-                subjectName:subject?.name || "",
+        programId,
+        programName:
+            programs.find(p=>p.id===programId)?.name || "",
 
-                programId,
-                programName:program?.name || "",
+        subjectId,
+        subjectName:
+            subjects.find(s=>s.id===subjectId)?.name || "",
 
-                semester,
-                type,
-                professor,
-                groups,
+        semester,
+        type,
+        professor,
+        groups,
 
-                comment
-            }
-        );
+        comment
+    }
+);
     }
     else{
 
@@ -696,31 +698,33 @@ document.getElementById("saveBtn")
             );
 
         await addDoc(
-            collection(db,"logs"),
-            {
-                action:"ADD",
-                eventId:newDoc.id,
+    collection(db,"logs"),
+    {
+        action:"ADD",
+        eventId:newDoc.id,
 
-                timestamp:new Date().toISOString(),
+        timestamp:new Date().toISOString(),
 
-                date:currentDate,
-                time:currentTime,
-                room:currentRoom,
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
-                subjectId,
-                subjectName:subject?.name || "",
+        programId,
+        programName:
+            programs.find(p=>p.id===programId)?.name || "",
 
-                programId,
-                programName:program?.name || "",
+        subjectId,
+        subjectName:
+            subjects.find(s=>s.id===subjectId)?.name || "",
 
-                semester,
-                type,
-                professor,
-                groups,
+        semester,
+        type,
+        professor,
+        groups,
 
-                comment
-            }
-        );
+        comment
+    }
+);
     }
 
     await loadEvents();
@@ -751,32 +755,37 @@ document.getElementById("deleteBtn")
     const subject =
         subjects.find(s=>s.id===existing.subjectId);
 
-    await addDoc(
-        collection(db,"logs"),
-        {
-            action:"DELETE",
-            eventId:editingId,
+    const existing =
+    events.find(e=>e.id===editingId);
 
-            timestamp:new Date().toISOString(),
+await addDoc(
+    collection(db,"logs"),
+    {
+        action:"DELETE",
+        eventId:editingId,
 
-            date:existing.date,
-            time:existing.time,
-            room:existing.room,
+        timestamp:new Date().toISOString(),
 
-            subjectId:existing.subjectId,
-            subjectName:subject?.name || "",
+        date:currentDate,
+        time:currentTime,
+        room:currentRoom,
 
-            programId:existing.programId,
-            programName:program?.name || "",
+        programId: existing?.programId || "",
+        programName:
+            programs.find(p=>p.id===existing?.programId)?.name || "",
 
-            semester:existing.semester,
-            type:existing.type,
-            professor:existing.professor,
-            groups:existing.groups,
+        subjectId: existing?.subjectId || "",
+        subjectName:
+            subjects.find(s=>s.id===existing?.subjectId)?.name || "",
 
-            comment
-        }
-    );
+        semester: existing?.semester || "",
+        type: existing?.type || "",
+        professor: existing?.professor || "",
+        groups: existing?.groups || "",
+
+        comment
+    }
+);
 
     await deleteDoc(
         doc(db,"events_new",editingId)
