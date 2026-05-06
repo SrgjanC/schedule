@@ -462,7 +462,7 @@ function render(){
                 <div class="event">
                     <b>${subject?.name || ""}</b><br>
                     ${program?.name || ""}<br>
-                    Сем. ${event.semester || subject?.semester || ""}<br>
+                    Сем. ${event.semester || ""}<br>
                     ${event.type || ""}<br>
                     ${event.professor || ""}
                 </div>`;
@@ -582,6 +582,12 @@ document.getElementById("saveBtn")
     const comment =
         document.getElementById("commentInput").value.trim();
 
+    const program =
+        programs.find(p=>p.id===programId);
+
+    const subject =
+        subjects.find(s=>s.id===subjectId);
+
     const roomConflict =
         events.find(e=>
             e.date===currentDate &&
@@ -631,47 +637,6 @@ document.getElementById("saveBtn")
         }
     }
 
-    if(type==="Предавање"){
-
-        const lectureConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Предавање" &&
-                e.id!==editingId
-            );
-
-        if(lectureConflict){
-
-            alert("Предавањето веќе постои.");
-
-            return;
-        }
-    }
-
-    if(type==="Вежби"){
-
-        const sameExercise =
-            events.filter(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Вежби" &&
-                e.id!==editingId
-            );
-
-        if(sameExercise.length){
-
-            if(!LAB_ROOMS.includes(currentRoom)){
-
-                alert("Паралелни вежби се дозволени само во лаборатории.");
-
-                return;
-            }
-        }
-    }
-
     const data = {
 
         date: currentDate,
@@ -700,10 +665,24 @@ document.getElementById("saveBtn")
             {
                 action:"UPDATE",
                 eventId:editingId,
+
                 timestamp:new Date().toISOString(),
+
                 date:currentDate,
                 time:currentTime,
                 room:currentRoom,
+
+                subjectId,
+                subjectName:subject?.name || "",
+
+                programId,
+                programName:program?.name || "",
+
+                semester,
+                type,
+                professor,
+                groups,
+
                 comment
             }
         );
@@ -721,10 +700,24 @@ document.getElementById("saveBtn")
             {
                 action:"ADD",
                 eventId:newDoc.id,
+
                 timestamp:new Date().toISOString(),
+
                 date:currentDate,
                 time:currentTime,
                 room:currentRoom,
+
+                subjectId,
+                subjectName:subject?.name || "",
+
+                programId,
+                programName:program?.name || "",
+
+                semester,
+                type,
+                professor,
+                groups,
+
                 comment
             }
         );
@@ -746,18 +739,41 @@ document.getElementById("deleteBtn")
     if(!confirm("Delete event?"))
         return;
 
+    const existing =
+        events.find(e=>e.id===editingId);
+
     const comment =
         document.getElementById("commentInput").value.trim();
+
+    const program =
+        programs.find(p=>p.id===existing.programId);
+
+    const subject =
+        subjects.find(s=>s.id===existing.subjectId);
 
     await addDoc(
         collection(db,"logs"),
         {
             action:"DELETE",
             eventId:editingId,
+
             timestamp:new Date().toISOString(),
-            date:currentDate,
-            time:currentTime,
-            room:currentRoom,
+
+            date:existing.date,
+            time:existing.time,
+            room:existing.room,
+
+            subjectId:existing.subjectId,
+            subjectName:subject?.name || "",
+
+            programId:existing.programId,
+            programName:program?.name || "",
+
+            semester:existing.semester,
+            type:existing.type,
+            professor:existing.professor,
+            groups:existing.groups,
+
             comment
         }
     );
