@@ -2,7 +2,7 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>Распоред</title>
+<title>Распоред 2</title>
 
 <style>
 body { font-family: Arial; padding: 20px; }
@@ -252,76 +252,66 @@ function sortSemesters(values) {
 
 // ================= LOAD =================
 
-async function loadData() {
+function loadData() {
 
-    // EVENTS
-    const eventsSnap =
-        await getDocs(collection(db, "events_new"));
+    const eventsRef =
+        collection(db, "events_new");
 
-    events =
-        eventsSnap.docs.map(d => ({
+    const programsRef =
+        collection(db, "programs_new");
+
+    const subjectsRef =
+        collection(db, "subjects_new");
+
+    const roomsRef =
+        collection(db, "rooms");
+
+    // ================= EVENTS (LIVE) =================
+
+    onSnapshot(eventsRef, snap => {
+
+        events = snap.docs.map(d => ({
             id: d.id,
             ...d.data()
         }));
 
-    // PROGRAMS
-    const progSnap =
-        await getDocs(collection(db, "programs_new"));
+        applyJoinAndRender();
+    });
 
-    programs =
-        progSnap.docs.map(d => ({
+    // ================= PROGRAMS (LIVE) =================
+
+    onSnapshot(programsRef, snap => {
+
+        programs = snap.docs.map(d => ({
             id: d.id,
             ...d.data()
         }));
 
-    // SUBJECTS
-    const subjSnap =
-        await getDocs(collection(db, "subjects_new"));
+        applyJoinAndRender();
+    });
 
-    subjects =
-        subjSnap.docs.map(d => ({
+    // ================= SUBJECTS (LIVE) =================
+
+    onSnapshot(subjectsRef, snap => {
+
+        subjects = snap.docs.map(d => ({
             id: d.id,
             ...d.data()
         }));
 
-    // ROOMS
-    const roomsSnap =
-        await getDocs(collection(db, "rooms"));
+        applyJoinAndRender();
+    });
 
-    rooms =
-        roomsSnap.docs
+    // ================= ROOMS (LIVE) =================
+
+    onSnapshot(roomsRef, snap => {
+
+        rooms = snap.docs
             .map(d => d.data().name)
             .filter(Boolean);
 
-    // CONNECT
-    events = events.map(e => {
-
-        const program =
-            programs.find(p => p.id === e.programId);
-
-        const subject =
-            subjects.find(s => s.id === e.subjectId);
-
-        return {
-
-            ...e,
-
-            program:
-                program?.name || "",
-
-            semester:
-                subject?.semester || "",
-
-            subject:
-                subject?.name || ""
-        };
+        applyJoinAndRender();
     });
-
-    isLoading = false;
-
-    initFilters();
-
-    render();
 }
 
 // ================= FILTER INIT =================
@@ -400,6 +390,32 @@ const roomF =
 const view =
     document.getElementById("viewMode").value;
 
+// ================= new func. test =================
+function applyJoinAndRender() {
+
+    if (!events.length) return;
+
+    events = events.map(e => {
+
+        const program =
+            programs.find(p => p.id === e.programId);
+
+        const subject =
+            subjects.find(s => s.id === e.subjectId);
+
+        return {
+            ...e,
+            program: program?.name || "",
+            semester: subject?.semester || "",
+            subject: subject?.name || ""
+        };
+    });
+
+    isLoading = false;
+
+    initFilters();
+    render();
+}
 // ================= EVENT MAP =================
 
 const map = {};
