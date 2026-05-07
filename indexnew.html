@@ -173,27 +173,33 @@ const days = [
 async function loadPrograms(){
 
     const { data, error } = await supabaseClient
-        .from('programs')
-        .select('*')
-        .order('name');
+    .from('schedule')
+    .select(`
+        *,
+        classes (
+            id,
+            name,
+            semester,
+            program_id
+        ),
+        room:room_id (
+            name
+        ),
+        profesor:profesor_id (
+            name
+        ),
+        tip:tip_id (
+            name
+        ),
+        time:start_time (
+            name
+        )
+    `)
+    .eq('date', selectedDate);
 
-    if(error){
-        console.error(error);
-        return;
-    }
-
-    const select = document.getElementById('programSelect');
-
-    data.forEach(program => {
-
-        const option = document.createElement('option');
-
-        option.value = program.id;
-        option.textContent = program.name;
-
-        select.appendChild(option);
-
-    });
+console.log(data);
+console.log(error);
+    
 }
 
 async function loadSchedule(){
