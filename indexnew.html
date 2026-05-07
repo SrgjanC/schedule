@@ -2,301 +2,207 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Денешен3 Распоред</title>
+<title>НОВ Распоред</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
+body { font-family: Arial; padding: 20px; }
+h2 { margin-bottom: 10px; }
 
-body{
-    font-family: Arial, sans-serif;
-    margin:20px;
-    background:#f5f5f5;
+.controls {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-h1{
-    margin-bottom:10px;
+select {
+    padding: 5px;
 }
 
-.date-label{
-    margin-bottom:20px;
-    font-size:18px;
-    color:#444;
+table {
+    border-collapse: collapse;
+    width: 100%;
 }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
+th, td {
+    border: 1px solid #222;
+    padding: 4px 6px;
+    text-align: left;
+    font-size: 13px;
 }
 
-th, td{
-    border:1px solid #ccc;
-    padding:8px;
-    text-align:center;
-    vertical-align:top;
+th {
+    background: #3f69b1;
+    color: #fff;
 }
 
-th{
-    background:#333;
-    color:white;
+.spinner-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
 }
 
-.time-col{
-    width:90px;
-    background:#eee;
-    font-weight:bold;
+.spinner {
+    width: 34px;
+    height: 34px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #3f69b1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
-.event{
-    background:#dff0ff;
-    border-radius:6px;
-    padding:6px;
-    margin-bottom:5px;
-    text-align:left;
-    font-size:13px;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
-
-.class-name{
-    font-weight:bold;
-    margin-bottom:4px;
-}
-
-.room{
-    color:#555;
-    font-size:12px;
-}
-
-.tip{
-    color:#0077cc;
-    font-size:12px;
-}
-
-.prof{
-    color:#666;
-    font-size:12px;
-}
-
-.grupi{
-    color:#aa0000;
-    font-size:12px;
-}
-
-.empty{
-    color:#999;
-    font-size:12px;
-}
-
-@media(max-width:768px){
-
-    body{
-        margin:5px;
-    }
-
-    table{
-        font-size:11px;
-    }
-
-    .event{
-        font-size:11px;
-        padding:4px;
-    }
-
-}
-
 </style>
 </head>
 
 <body>
 
-<h1>Денешен Распоред</h1>
+<h2>Академски Распоред (Денес)</h2>
 
-<div class="date-label" id="todayLabel"></div>
+<div class="controls">
 
-<table id="scheduleTable">
+<label>Датум:</label>
+<select id="dateFilter"></select>
 
+</div>
+
+<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
+
+<table>
 <thead>
 <tr>
-    <th class="time-col">Време</th>
-    <th>Понеделник</th>
-    <th>Вторник</th>
-    <th>Среда</th>
-    <th>Четврток</th>
-    <th>Петок</th>
+<th>Ден</th>
+<th>Датум</th>
+<th>Час</th>
+<th>Просторија</th>
+<th>Програма</th>
+<th>Семестар</th>
+<th>Предмет</th>
+<th>Тип</th>
+<th>Професор</th>
+<th>Групи</th>
 </tr>
 </thead>
 
-<tbody>
-</tbody>
-
+<tbody id="tbody"></tbody>
 </table>
 
 <script>
 
-const SUPABASE_URL = 'https://xrftnuvogyskgoocmiwx.supabase.co';
+const SUPABASE_URL = "https://xrftnuvogyskgoocmiwx.supabase.co";
+const SUPABASE_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 
-const SUPABASE_KEY = 'sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU';
-
-const supabaseClient = supabase.createClient(
+const supabase = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
 );
 
-const fixedTimes = [
-    '08:00',
-    '09:00',
-    '10:00',
-    '11:00',
-    '12:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00',
-    '17:00',
-    '18:00',
-    '19:00'
-];
+let events = [];
+let isLoading = true;
 
-const days = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday'
-];
-
-const today = new Date();
-
-const todayDate = today.toISOString().split('T')[0];
-
-document.getElementById('todayLabel').innerText =
-    today.toLocaleDateString('mk-MK');
-
-function buildTable(){
-
-    const tbody = document.querySelector('#scheduleTable tbody');
-
-    tbody.innerHTML = '';
-
-    fixedTimes.forEach(time => {
-
-        const row = document.createElement('tr');
-
-        row.innerHTML = `
-            <td class="time-col">${time}</td>
-            <td data-day="Monday" data-time="${time}"></td>
-            <td data-day="Tuesday" data-time="${time}"></td>
-            <td data-day="Wednesday" data-time="${time}"></td>
-            <td data-day="Thursday" data-time="${time}"></td>
-            <td data-day="Friday" data-time="${time}"></td>
-        `;
-
-        tbody.appendChild(row);
-
-    });
-
+function todayISO(){
+    const t = new Date();
+    return t.toISOString().split("T")[0];
 }
 
-async function loadSchedule(){
+async function loadData(){
 
-    buildTable();
-
-    const { data, error } = await supabaseClient
-        .from('schedule')
+    const { data, error } = await supabase
+        .from("schedule")
         .select(`
             *,
             classes (
-                id,
                 name,
                 semester,
-                program_id
+                program_id,
+                programs ( name )
             ),
-            room:room_id (
-                name
-            ),
-            profesor:profesor_id (
-                name
-            ),
-            tip:tip_id (
-                name
-            ),
-            time:start_time (
-                name
-            )
-        `)
-        .eq('date', todayDate);
+            room:room_id ( name ),
+            profesor:profesor_id ( name ),
+            tip:tip_id ( name ),
+            time:start_time ( name )
+        `);
 
-    console.log(data);
-    console.log(error);
+    console.log(data, error);
 
     if(error){
         console.error(error);
         return;
     }
 
-    if(!data || data.length === 0){
+    events = data || [];
 
-        const tbody = document.querySelector('#scheduleTable tbody');
+    initFilters();
+    render();
 
-        const row = document.createElement('tr');
+}
 
-        row.innerHTML = `
-            <td colspan="6" class="empty">
-                Нема распоред за денес
-            </td>
-        `;
+function initFilters(){
 
-        tbody.appendChild(row);
+    const dates = [...new Set(events.map(e => e.date))].sort();
 
+    const select = document.getElementById("dateFilter");
+    select.innerHTML = "";
+
+    dates.forEach(d => {
+        select.innerHTML += `<option value="${d}">${d}</option>`;
+    });
+
+    const today = todayISO();
+
+    if(dates.includes(today)){
+        select.value = today;
+    }
+
+    select.addEventListener("change", render);
+}
+
+function render(){
+
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    const date = document.getElementById("dateFilter").value || todayISO();
+
+    document.getElementById("viewInfo").innerText =
+        "Приказ за: " + date;
+
+    const filtered = events.filter(e => e.date === date);
+
+    if(filtered.length === 0){
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="10">Нема распоред за денес</td>
+        </tr>`;
         return;
     }
 
-    data.forEach(item => {
+    filtered.forEach(e => {
 
-        const timeName = item.time?.name;
-
-        const cell = document.querySelector(
-            `[data-day="${item.day}"][data-time="${timeName}"]`
-        );
-
-        if(!cell) return;
-
-        const div = document.createElement('div');
-
-        div.className = 'event';
-
-        div.innerHTML = `
-            <div class="class-name">
-                ${item.classes?.name || ''}
-            </div>
-
-            <div class="room">
-                Просторија:
-                ${item.room?.name || '-'}
-            </div>
-
-            <div class="tip">
-                ${item.tip?.name || ''}
-            </div>
-
-            <div class="prof">
-                ${item.profesor?.name || ''}
-            </div>
-
-            <div class="grupi">
-                ${item.grupi || ''}
-            </div>
-        `;
-
-        cell.appendChild(div);
-
+        tbody.innerHTML += `
+        <tr>
+            <td>${e.day || ""}</td>
+            <td>${e.date || ""}</td>
+            <td>${e.time?.name || ""}</td>
+            <td>${e.room?.name || ""}</td>
+            <td>${e.classes?.programs?.name || ""}</td>
+            <td>${e.classes?.semester || ""}</td>
+            <td>${e.classes?.name || ""}</td>
+            <td>${e.tip?.name || ""}</td>
+            <td>${e.profesor?.name || ""}</td>
+            <td>${e.grupi || ""}</td>
+        </tr>`;
     });
 
 }
 
-loadSchedule();
+loadData();
 
 </script>
 
