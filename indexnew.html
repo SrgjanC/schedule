@@ -2,24 +2,13 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>НОВ Распоред</title>
+<title>Академски Распоред</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
 body { font-family: Arial; padding: 20px; }
 h2 { margin-bottom: 10px; }
-
-.controls {
-    margin-bottom: 15px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-select {
-    padding: 5px;
-}
 
 table {
     border-collapse: collapse;
@@ -28,65 +17,42 @@ table {
 
 th, td {
     border: 1px solid #222;
-    padding: 4px 6px;
-    text-align: left;
+    padding: 6px;
     font-size: 13px;
+    text-align: left;
+    vertical-align: top;
 }
 
 th {
     background: #3f69b1;
-    color: #fff;
+    color: white;
 }
 
-.spinner-wrap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 25px;
-}
-
-.spinner {
-    width: 34px;
-    height: 34px;
-    border: 4px solid #ddd;
-    border-top: 4px solid #3f69b1;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.empty {
+    padding: 20px;
+    text-align: center;
+    color: #777;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Академски Распоред (Денес)</h2>
+<h2>Денешен Распоред</h2>
 
-<div class="controls">
-
-<label>Датум:</label>
-<select id="dateFilter"></select>
-
-</div>
-
-<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
+<div id="info"></div>
 
 <table>
 <thead>
 <tr>
-<th>Ден</th>
-<th>Датум</th>
-<th>Час</th>
-<th>Просторија</th>
-<th>Програма</th>
-<th>Семестар</th>
-<th>Предмет</th>
-<th>Тип</th>
-<th>Професор</th>
-<th>Групи</th>
+    <th>Ден</th>
+    <th>Датум</th>
+    <th>Час</th>
+    <th>Просторија</th>
+    <th>Предмет</th>
+    <th>Тип</th>
+    <th>Професор</th>
+    <th>Групи</th>
 </tr>
 </thead>
 
@@ -96,94 +62,66 @@ th {
 <script>
 
 const SUPABASE_URL = "https://xrftnuvogyskgoocmiwx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU";
+const SUPABASE_KEY = "PASTE_YOUR_ANON_KEY_HERE";
 
 const supabase = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
 );
 
-let events = [];
-let isLoading = true;
-
 function todayISO(){
-    const t = new Date();
-    return t.toISOString().split("T")[0];
+    return new Date().toISOString().split("T")[0];
 }
 
-async function loadData(){
-
-    const { data, error } = await supabase
-        .from("schedule")
-        .select(`
-            *,
-            classes (
-                name,
-                semester,
-                program_id,
-                programs ( name )
-            ),
-            room:room_id ( name ),
-            profesor:profesor_id ( name ),
-            tip:tip_id ( name ),
-            time:start_time ( name )
-        `);
-
-    console.log(data, error);
-
-    if(error){
-        console.error(error);
-        return;
-    }
-
-    events = data || [];
-console.log(events[0]); // 👈 ADD THIS
-    initFilters();
-    render();
-
-}
-
-function initFilters(){
-
-    const dates = [...new Set(events.map(e => e.date))].sort();
-
-    const select = document.getElementById("dateFilter");
-    select.innerHTML = "";
-
-    dates.forEach(d => {
-        select.innerHTML += `<option value="${d}">${d}</option>`;
-    });
+async function load(){
 
     const today = todayISO();
 
-    if(dates.includes(today)){
-        select.value = today;
-    }
+    document.getElementById("info").innerText =
+        "Приказ за денес: " + today;
 
-    select.addEventListener("change", render);
-}
+    // ✅ SIMPLE + SAFE QUERY (NO COMPLEX JOINS FIRST)
+    const { data, error } = await supabase
+        .from("schedule")
+        .select(`
+            id,
+            day,
+            date,
+            grupi,
+            class_id,
+            room_id,
+            profesor_id,
+            tip_id,
+            start_time,
+            classes (
+                name
+            ),
+            room:room_id (name),
+            profesor:profesor_id (name),
+            tip:tip_id (name),
+            time:start_time (name)
+        `)
+        .eq("date", today);
 
-function render(){
+    console.log("DATA:", data);
+    console.log("ERROR:", error);
 
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
-    const date = document.getElementById("dateFilter").value || todayISO();
-
-    document.getElementById("viewInfo").innerText =
-        "Приказ за: " + date;
-
-    const filtered = events.filter(e => e.date === date);
-
-    if(filtered.length === 0){
-        tbody.innerHTML = `
-        <tr>
-            <td colspan="10">Нема распоред за денес</td>
-        </tr>`;
+    if(error){
+        tbody.innerHTML =
+            `<tr><td colspan="8" class="empty">Грешка при вчитување</td></tr>`;
         return;
     }
 
-    filtered.forEach(e => {
+    if(!data || data.length === 0){
+        tbody.innerHTML =
+            `<tr><td colspan="8" class="empty">Нема распоред за денес</td></tr>`;
+        return;
+    }
+
+    data.forEach(e => {
 
         tbody.innerHTML += `
         <tr>
@@ -191,8 +129,6 @@ function render(){
             <td>${e.date || ""}</td>
             <td>${e.time?.name || ""}</td>
             <td>${e.room?.name || ""}</td>
-            <td>${e.classes?.programs?.name || ""}</td>
-            <td>${e.classes?.semester || ""}</td>
             <td>${e.classes?.name || ""}</td>
             <td>${e.tip?.name || ""}</td>
             <td>${e.profesor?.name || ""}</td>
@@ -202,7 +138,7 @@ function render(){
 
 }
 
-loadData();
+load();
 
 </script>
 
