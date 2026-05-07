@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Денешен3 Распоред</title>
+<title>Неделен Распоред</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
 
@@ -46,19 +46,16 @@ th, td{
     font-size:13px;
 }
 
-/* HEADER */
 th{
     background:linear-gradient(135deg,#3f69b1,#2f5390);
     color:white;
     font-weight:600;
 }
 
-/* TIME COLUMN */
 .time-col{
     width:90px;
     background:#f0f2f7;
     font-weight:bold;
-    color:#333;
 }
 
 /* EVENT CARD */
@@ -71,7 +68,6 @@ th{
     text-align:left;
     font-size:12px;
     box-shadow:0 1px 4px rgba(0,0,0,0.05);
-    transition:transform 0.1s ease;
 }
 
 .event:hover{
@@ -82,52 +78,17 @@ th{
     font-weight:bold;
     font-size:13px;
     margin-bottom:4px;
-    color:#1f2d3d;
 }
 
-.room{
-    color:#555;
-    font-size:12px;
-}
+.room{ color:#555; font-size:12px; }
+.tip{ color:#2b6cb0; font-size:12px; }
+.prof{ color:#4a5568; font-size:12px; }
+.grupi{ color:#c53030; font-size:12px; font-weight:500; }
 
-.tip{
-    color:#2b6cb0;
-    font-size:12px;
-}
-
-.prof{
-    color:#4a5568;
-    font-size:12px;
-}
-
-.grupi{
-    color:#c53030;
-    font-size:12px;
-    font-weight:500;
-}
-
-/* EMPTY */
 .empty{
     color:#888;
     font-size:13px;
     padding:20px;
-}
-
-/* RESPONSIVE */
-@media(max-width:768px){
-
-    body{
-        margin:8px;
-    }
-
-    th, td{
-        font-size:11px;
-        padding:6px;
-    }
-
-    .event{
-        font-size:11px;
-    }
 }
 
 </style>
@@ -135,15 +96,15 @@ th{
 
 <body>
 
-<h1>Денешен Распоред</h1>
+<h1>Неделен Распоред</h1>
 
-<div class="date-label" id="todayLabel"></div>
+<div class="date-label" id="info"></div>
 
-<table id="scheduleTable">
+<table>
 
 <thead>
 <tr>
-    <th class="time-col">Време</th>
+    <th>Време</th>
     <th>Понеделник</th>
     <th>Вторник</th>
     <th>Среда</th>
@@ -152,15 +113,13 @@ th{
 </tr>
 </thead>
 
-<tbody>
-</tbody>
+<tbody id="tbody"></tbody>
 
 </table>
 
 <script>
 
 const SUPABASE_URL = 'https://xrftnuvogyskgoocmiwx.supabase.co';
-
 const SUPABASE_KEY = 'sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU';
 
 const supabaseClient = supabase.createClient(
@@ -169,39 +128,17 @@ const supabaseClient = supabase.createClient(
 );
 
 const fixedTimes = [
-    '08:00',
-    '09:00',
-    '10:00',
-    '11:00',
-    '12:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00',
-    '17:00',
-    '18:00',
-    '19:00'
+    '08:00','09:00','10:00','11:00','12:00',
+    '13:00','14:00','15:00','16:00','17:00','18:00','19:00'
 ];
 
 const days = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday'
+    'Monday','Tuesday','Wednesday','Thursday','Friday'
 ];
-
-const today = new Date();
-
-const todayDate = today.toISOString().split('T')[0];
-
-document.getElementById('todayLabel').innerText =
-    today.toLocaleDateString('mk-MK');
 
 function buildTable(){
 
-    const tbody = document.querySelector('#scheduleTable tbody');
-
+    const tbody = document.getElementById('tbody');
     tbody.innerHTML = '';
 
     fixedTimes.forEach(time => {
@@ -237,47 +174,32 @@ async function loadSchedule(){
                 semester,
                 program_id
             ),
-            room:room_id (
-                name
-            ),
-            profesor:profesor_id (
-                name
-            ),
-            tip:tip_id (
-                name
-            ),
-            time:start_time (
-                name
-            )
-        `)
-        .eq('date', todayDate);
+            room:room_id (name),
+            profesor:profesor_id (name),
+            tip:tip_id (name),
+            time:start_time (name)
+        `);
 
-    console.log(data);
-    console.log(error);
+    console.log(data, error);
 
     if(error){
-        console.error(error);
+        document.getElementById('info').innerText =
+            "Грешка при вчитување";
         return;
     }
 
     if(!data || data.length === 0){
-
-        const tbody = document.querySelector('#scheduleTable tbody');
-
-        const row = document.createElement('tr');
-
-        row.innerHTML = `
-            <td colspan="6" class="empty">
-                Нема распоред за денес
-            </td>
-        `;
-
-        tbody.appendChild(row);
-
+        document.getElementById('info').innerText =
+            "Нема податоци";
         return;
     }
 
+    document.getElementById('info').innerText =
+        "Приказ на цела недела";
+
     data.forEach(item => {
+
+        if(!days.includes(item.day)) return;
 
         const timeName = item.time?.name;
 
@@ -292,26 +214,11 @@ async function loadSchedule(){
         div.className = 'event';
 
         div.innerHTML = `
-            <div class="class-name">
-                ${item.classes?.name || ''}
-            </div>
-
-            <div class="room">
-                Просторија:
-                ${item.room?.name || '-'}
-            </div>
-
-            <div class="tip">
-                ${item.tip?.name || ''}
-            </div>
-
-            <div class="prof">
-                ${item.profesor?.name || ''}
-            </div>
-
-            <div class="grupi">
-                ${item.grupi || ''}
-            </div>
+            <div class="class-name">${item.classes?.name || ''}</div>
+            <div class="room">Просторија: ${item.room?.name || '-'}</div>
+            <div class="tip">${item.tip?.name || ''}</div>
+            <div class="prof">${item.profesor?.name || ''}</div>
+            <div class="grupi">${item.grupi || ''}</div>
         `;
 
         cell.appendChild(div);
