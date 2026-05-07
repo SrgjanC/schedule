@@ -138,6 +138,22 @@ th{
 const SUPABASE_URL = 'https://xrftnuvogyskgoocmiwx.supabase.co';
 
 const SUPABASE_KEY = 'sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU';
+async function loadSchedule(){
+
+    const { data, error } = await supabaseClient
+        .from('schedule')
+        .select('*')
+        .limit(10);
+
+    console.log("DATA:");
+    console.log(data);
+
+    console.log("ERROR:");
+    console.log(error);
+
+}
+
+loadSchedule();
 
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
