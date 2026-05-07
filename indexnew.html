@@ -104,13 +104,19 @@ async function loadSchedule(){
     const { data, error } = await supabaseClient
         .from("schedule")
         .select(`
-            *,
-            classes (name, semester, program_id),
-            room:room_id (name),
-            profesor:profesor_id (name),
-            tip:tip_id (name),
-            time:start_time (name)
-        `);
+    *,
+    classes (
+        name,
+        semester,
+        programs (
+            name
+        )
+    ),
+    room:room_id (name),
+    profesor:profesor_id (name),
+    tip:tip_id (name),
+    time:start_time (name)
+`)
 
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
@@ -141,7 +147,7 @@ async function loadSchedule(){
             <td>${e.date || ""}</td>
             <td>${e.time?.name || ""}</td>
             <td>${e.room?.name || ""}</td>
-            <td>${e.classes?.program_id || ""}</td>
+            <td>${e.classes?.programs?.name || ""}</td>
             <td>${e.classes?.semester || ""}</td>
             <td>${e.classes?.name || ""}</td>
             <td>${e.tip?.name || ""}</td>
