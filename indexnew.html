@@ -4,11 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Распоред</title>
+<title>Денешен Распоред 2</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
+
 body{
     font-family: Arial, sans-serif;
     margin:20px;
@@ -16,19 +17,13 @@ body{
 }
 
 h1{
-    margin-bottom:20px;
+    margin-bottom:10px;
 }
 
-.controls{
-    display:flex;
-    gap:10px;
+.date-label{
     margin-bottom:20px;
-    flex-wrap:wrap;
-}
-
-select,input,button{
-    padding:8px;
-    font-size:14px;
+    font-size:18px;
+    color:#444;
 }
 
 table{
@@ -37,7 +32,7 @@ table{
     background:white;
 }
 
-th,td{
+th, td{
     border:1px solid #ccc;
     padding:8px;
     text-align:center;
@@ -58,10 +53,15 @@ th{
 .event{
     background:#dff0ff;
     border-radius:6px;
-    padding:5px;
+    padding:6px;
     margin-bottom:5px;
-    font-size:13px;
     text-align:left;
+    font-size:13px;
+}
+
+.class-name{
+    font-weight:bold;
+    margin-bottom:4px;
 }
 
 .room{
@@ -79,56 +79,52 @@ th{
     font-size:12px;
 }
 
+.grupi{
+    color:#aa0000;
+    font-size:12px;
+}
+
+.empty{
+    color:#999;
+    font-size:12px;
+}
+
 @media(max-width:768px){
+
+    body{
+        margin:5px;
+    }
+
     table{
-        font-size:12px;
+        font-size:11px;
     }
 
     .event{
         font-size:11px;
+        padding:4px;
     }
+
 }
+
 </style>
 </head>
 
 <body>
 
-<h1>Распоред</h1>
+<h1>Денешен Распоред</h1>
 
-<div class="controls">
-
-<select id="programSelect">
-<option value="">Избери програма</option>
-</select>
-
-<select id="semesterSelect">
-<option value="">Семестар</option>
-<option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-<option value="4">4</option>
-<option value="5">5</option>
-<option value="6">6</option>
-<option value="7">7</option>
-<option value="8">8</option>
-</select>
-
-<input type="date" id="dateSelect">
-
-<button onclick="loadSchedule()">Прикажи</button>
-
-</div>
+<div class="date-label" id="todayLabel"></div>
 
 <table id="scheduleTable">
 
 <thead>
 <tr>
-<th class="time-col">Време</th>
-<th>Понеделник</th>
-<th>Вторник</th>
-<th>Среда</th>
-<th>Четврток</th>
-<th>Петок</th>
+    <th class="time-col">Време</th>
+    <th>Понеделник</th>
+    <th>Вторник</th>
+    <th>Среда</th>
+    <th>Четврток</th>
+    <th>Петок</th>
 </tr>
 </thead>
 
@@ -140,7 +136,8 @@ th{
 <script>
 
 const SUPABASE_URL = 'https://xrftnuvogyskgoocmiwx.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU';
+
+const SUPABASE_KEY = 'PASTE_YOUR_ANON_KEY_HERE';
 
 const supabaseClient = supabase.createClient(
     SUPABASE_URL,
@@ -170,48 +167,14 @@ const days = [
     'Friday'
 ];
 
-async function loadPrograms(){
+const today = new Date();
 
-    const { data, error } = await supabaseClient
-    .from('schedule')
-    .select(`
-        *,
-        classes (
-            id,
-            name,
-            semester,
-            program_id
-        ),
-        room:room_id (
-            name
-        ),
-        profesor:profesor_id (
-            name
-        ),
-        tip:tip_id (
-            name
-        ),
-        time:start_time (
-            name
-        )
-    `)
-    .eq('date', selectedDate);
+const todayDate = today.toISOString().split('T')[0];
 
-console.log(data);
-console.log(error);
-    
-}
+document.getElementById('todayLabel').innerText =
+    today.toLocaleDateString('mk-MK');
 
-async function loadSchedule(){
-
-    const programId = document.getElementById('programSelect').value;
-    const semester = document.getElementById('semesterSelect').value;
-    const selectedDate = document.getElementById('dateSelect').value;
-
-    if(!programId || !semester || !selectedDate){
-        alert('Избери програма, семестар и датум');
-        return;
-    }
+function buildTable(){
 
     const tbody = document.querySelector('#scheduleTable tbody');
 
@@ -234,6 +197,12 @@ async function loadSchedule(){
 
     });
 
+}
+
+async function loadSchedule(){
+
+    buildTable();
+
     const { data, error } = await supabaseClient
         .from('schedule')
         .select(`
@@ -244,37 +213,47 @@ async function loadSchedule(){
                 semester,
                 program_id
             ),
-            room (
+            room:room_id (
                 name
             ),
-            profesor (
+            profesor:profesor_id (
                 name
             ),
-            tip (
+            tip:tip_id (
                 name
             ),
-            time (
+            time:start_time (
                 name
             )
         `)
-        .eq('date', selectedDate);
+        .eq('date', todayDate);
+
+    console.log(data);
+    console.log(error);
 
     if(error){
         console.error(error);
         return;
     }
 
-    const filtered = data.filter(item => {
+    if(!data || data.length === 0){
 
-        return (
-            item.classes &&
-            item.classes.program_id === programId &&
-            item.classes.semester == semester
-        );
+        const tbody = document.querySelector('#scheduleTable tbody');
 
-    });
+        const row = document.createElement('tr');
 
-    filtered.forEach(item => {
+        row.innerHTML = `
+            <td colspan="6" class="empty">
+                Нема распоред за денес
+            </td>
+        `;
+
+        tbody.appendChild(row);
+
+        return;
+    }
+
+    data.forEach(item => {
 
         const timeName = item.time?.name;
 
@@ -289,10 +268,26 @@ async function loadSchedule(){
         div.className = 'event';
 
         div.innerHTML = `
-            <strong>${item.classes?.name || ''}</strong><br>
-            <span class="room">${item.room?.name || ''}</span><br>
-            <span class="tip">${item.tip?.name || ''}</span><br>
-            <span class="prof">${item.profesor?.name || ''}</span>
+            <div class="class-name">
+                ${item.classes?.name || ''}
+            </div>
+
+            <div class="room">
+                Просторија:
+                ${item.room?.name || '-'}
+            </div>
+
+            <div class="tip">
+                ${item.tip?.name || ''}
+            </div>
+
+            <div class="prof">
+                ${item.profesor?.name || ''}
+            </div>
+
+            <div class="grupi">
+                ${item.grupi || ''}
+            </div>
         `;
 
         cell.appendChild(div);
@@ -300,13 +295,8 @@ async function loadSchedule(){
     });
 
 }
-const { data, error } = await supabaseClient
-    .from('programs')
-    .select('*');
 
-console.log(data);
-console.log(error);
-loadPrograms();
+loadSchedule();
 
 </script>
 
