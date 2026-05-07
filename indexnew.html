@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Распоред</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:20px;
+    background:#f5f5f5;
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+.controls{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+select,input,button{
+    padding:8px;
+    font-size:14px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th,td{
+    border:1px solid #ccc;
+    padding:8px;
+    text-align:center;
+    vertical-align:top;
+}
+
+th{
+    background:#333;
+    color:white;
+}
+
+.time-col{
+    width:90px;
+    background:#eee;
+    font-weight:bold;
+}
+
+.event{
+    background:#dff0ff;
+    border-radius:6px;
+    padding:5px;
+    margin-bottom:5px;
+    font-size:13px;
+    text-align:left;
+}
+
+.room{
+    color:#555;
+    font-size:12px;
+}
+
+.tip{
+    color:#0077cc;
+    font-size:12px;
+}
+
+.prof{
+    color:#666;
+    font-size:12px;
+}
+
+@media(max-width:768px){
+    table{
+        font-size:12px;
+    }
+
+    .event{
+        font-size:11px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<h1>Распоред</h1>
+
+<div class="controls">
+
+<select id="programSelect">
+<option value="">Избери програма</option>
+</select>
+
+<select id="semesterSelect">
+<option value="">Семестар</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+</select>
+
+<input type="date" id="dateSelect">
+
+<button onclick="loadSchedule()">Прикажи</button>
+
+</div>
+
+<table id="scheduleTable">
+
+<thead>
+<tr>
+<th class="time-col">Време</th>
+<th>Понеделник</th>
+<th>Вторник</th>
+<th>Среда</th>
+<th>Четврток</th>
+<th>Петок</th>
+</tr>
+</thead>
+
+<tbody>
+</tbody>
+
+</table>
+
+<script>
+
+const SUPABASE_URL = 'https://xrftnuvogyskgoocmiwx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU';
+
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+const fixedTimes = [
+    '08:00',
+    '09:00',
+    '10:00',
+    '11:00',
+    '12:00',
+    '13:00',
+    '14:00',
+    '15:00',
+    '16:00',
+    '17:00',
+    '18:00',
+    '19:00'
+];
+
+const days = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday'
+];
+
+async function loadPrograms(){
+
+    const { data, error } = await supabaseClient
+        .from('programs')
+        .select('*')
+        .order('name');
+
+    if(error){
+        console.error(error);
+        return;
+    }
+
+    const select = document.getElementById('programSelect');
+
+    data.forEach(program => {
+
+        const option = document.createElement('option');
+
+        option.value = program.id;
+        option.textContent = program.name;
+
+        select.appendChild(option);
+
+    });
+}
+
+async function loadSchedule(){
+
+    const programId = document.getElementById('programSelect').value;
+    const semester = document.getElementById('semesterSelect').value;
+    const selectedDate = document.getElementById('dateSelect').value;
+
+    if(!programId || !semester || !selectedDate){
+        alert('Избери програма, семестар и датум');
+        return;
+    }
+
+    const tbody = document.querySelector('#scheduleTable tbody');
+
+    tbody.innerHTML = '';
+
+    fixedTimes.forEach(time => {
+
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+            <td class="time-col">${time}</td>
+            <td data-day="Monday" data-time="${time}"></td>
+            <td data-day="Tuesday" data-time="${time}"></td>
+            <td data-day="Wednesday" data-time="${time}"></td>
+            <td data-day="Thursday" data-time="${time}"></td>
+            <td data-day="Friday" data-time="${time}"></td>
+        `;
+
+        tbody.appendChild(row);
+
+    });
+
+    const { data, error } = await supabaseClient
+        .from('schedule')
+        .select(`
+            *,
+            classes (
+                id,
+                name,
+                semester,
+                program_id
+            ),
+            room (
+                name
+            ),
+            profesor (
+                name
+            ),
+            tip (
+                name
+            ),
+            time (
+                name
+            )
+        `)
+        .eq('date', selectedDate);
+
+    if(error){
+        console.error(error);
+        return;
+    }
+
+    const filtered = data.filter(item => {
+
+        return (
+            item.classes &&
+            item.classes.program_id === programId &&
+            item.classes.semester == semester
+        );
+
+    });
+
+    filtered.forEach(item => {
+
+        const timeName = item.time?.name;
+
+        const cell = document.querySelector(
+            `[data-day="${item.day}"][data-time="${timeName}"]`
+        );
+
+        if(!cell) return;
+
+        const div = document.createElement('div');
+
+        div.className = 'event';
+
+        div.innerHTML = `
+            <strong>${item.classes?.name || ''}</strong><br>
+            <span class="room">${item.room?.name || ''}</span><br>
+            <span class="tip">${item.tip?.name || ''}</span><br>
+            <span class="prof">${item.profesor?.name || ''}</span>
+        `;
+
+        cell.appendChild(div);
+
+    });
+
+}
+
+loadPrograms();
+
+</script>
+
+</body>
+</html>
