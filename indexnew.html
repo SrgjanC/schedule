@@ -294,7 +294,12 @@ async function loadSchedule(){
     });
 
 }
+const { data, error } = await supabaseClient
+    .from('programs')
+    .select('*');
 
+console.log(data);
+console.log(error);
 loadPrograms();
 
 </script>
