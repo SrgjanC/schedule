@@ -18,12 +18,12 @@ body{
 }
 
 h1{
-    margin-bottom:8px;
+    margin-bottom:10px;
     font-size:22px;
 }
 
 .date-label{
-    margin-bottom:20px;
+    margin-bottom:15px;
     font-size:16px;
     color:#555;
 }
@@ -41,9 +41,9 @@ table{
 th, td{
     border:1px solid #e6e6e6;
     padding:10px;
-    text-align:center;
-    vertical-align:top;
     font-size:13px;
+    text-align:left;
+    vertical-align:top;
 }
 
 th{
@@ -52,44 +52,32 @@ th{
     font-weight:600;
 }
 
-.time-col{
-    width:90px;
-    background:#f0f2f7;
-    font-weight:bold;
+.empty{
+    color:#888;
+    padding:20px;
+    text-align:center;
 }
 
-/* EVENT CARD */
+/* event style */
 .event{
     background:#ffffff;
     border-left:4px solid #3f69b1;
-    border-radius:8px;
-    padding:8px;
-    margin-bottom:6px;
-    text-align:left;
+    border-radius:6px;
+    padding:6px;
+    margin-bottom:5px;
     font-size:12px;
-    box-shadow:0 1px 4px rgba(0,0,0,0.05);
-}
-
-.event:hover{
-    transform:scale(1.02);
 }
 
 .class-name{
     font-weight:bold;
     font-size:13px;
-    margin-bottom:4px;
+    margin-bottom:3px;
 }
 
-.room{ color:#555; font-size:12px; }
-.tip{ color:#2b6cb0; font-size:12px; }
-.prof{ color:#4a5568; font-size:12px; }
-.grupi{ color:#c53030; font-size:12px; font-weight:500; }
-
-.empty{
-    color:#888;
-    font-size:13px;
-    padding:20px;
-}
+.room{ color:#555; }
+.tip{ color:#2b6cb0; }
+.prof{ color:#4a5568; }
+.grupi{ color:#c53030; }
 
 </style>
 </head>
@@ -104,12 +92,16 @@ th{
 
 <thead>
 <tr>
-    <th>Време</th>
-    <th>Понеделник</th>
-    <th>Вторник</th>
-    <th>Среда</th>
-    <th>Четврток</th>
-    <th>Петок</th>
+    <th>Ден</th>
+    <th>Датум</th>
+    <th>Час</th>
+    <th>Просторија</th>
+    <th>Програма</th>
+    <th>Семестар</th>
+    <th>Предмет</th>
+    <th>Тип</th>
+    <th>Професор</th>
+    <th>Групи</th>
 </tr>
 </thead>
 
@@ -127,42 +119,7 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
-const fixedTimes = [
-    '08:00','09:00','10:00','11:00','12:00',
-    '13:00','14:00','15:00','16:00','17:00','18:00','19:00'
-];
-
-const days = [
-    'Monday','Tuesday','Wednesday','Thursday','Friday'
-];
-
-function buildTable(){
-
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '';
-
-    fixedTimes.forEach(time => {
-
-        const row = document.createElement('tr');
-
-        row.innerHTML = `
-            <td class="time-col">${time}</td>
-            <td data-day="Monday" data-time="${time}"></td>
-            <td data-day="Tuesday" data-time="${time}"></td>
-            <td data-day="Wednesday" data-time="${time}"></td>
-            <td data-day="Thursday" data-time="${time}"></td>
-            <td data-day="Friday" data-time="${time}"></td>
-        `;
-
-        tbody.appendChild(row);
-
-    });
-
-}
-
 async function loadSchedule(){
-
-    buildTable();
 
     const { data, error } = await supabaseClient
         .from('schedule')
@@ -182,47 +139,63 @@ async function loadSchedule(){
 
     console.log(data, error);
 
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
     if(error){
-        document.getElementById('info').innerText =
-            "Грешка при вчитување";
+        tbody.innerHTML =
+            `<tr><td colspan="10" class="empty">Грешка при вчитување</td></tr>`;
         return;
     }
 
     if(!data || data.length === 0){
-        document.getElementById('info').innerText =
-            "Нема податоци";
+        tbody.innerHTML =
+            `<tr><td colspan="10" class="empty">Нема податоци</td></tr>`;
         return;
     }
 
-    document.getElementById('info').innerText =
-        "Приказ на цела недела";
+    // ================= SORT: DATE → ROOM → TIME =================
 
-    data.forEach(item => {
+    const sorted = [...data].sort((a, b) => {
 
-        if(!days.includes(item.day)) return;
+        const d1 = a.date || "";
+        const d2 = b.date || "";
 
-        const timeName = item.time?.name;
+        if (d1 !== d2)
+            return d1.localeCompare(d2);
 
-        const cell = document.querySelector(
-            `[data-day="${item.day}"][data-time="${timeName}"]`
-        );
+        const r1 = a.room?.name || "";
+        const r2 = b.room?.name || "";
 
-        if(!cell) return;
+        if (r1 !== r2)
+            return r1.localeCompare(r2);
 
-        const div = document.createElement('div');
+        const t1 = a.time?.name || "";
+        const t2 = b.time?.name || "";
 
-        div.className = 'event';
+        return t1.localeCompare(t2);
+    });
 
-        div.innerHTML = `
-            <div class="class-name">${item.classes?.name || ''}</div>
-            <div class="room">Просторија: ${item.room?.name || '-'}</div>
-            <div class="tip">${item.tip?.name || ''}</div>
-            <div class="prof">${item.profesor?.name || ''}</div>
-            <div class="grupi">${item.grupi || ''}</div>
-        `;
+    document.getElementById("info").innerText =
+        "Вкупно записи: " + sorted.length;
 
-        cell.appendChild(div);
+    // ================= RENDER =================
 
+    sorted.forEach(e => {
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${e.day || ""}</td>
+            <td>${e.date || ""}</td>
+            <td>${e.time?.name || ""}</td>
+            <td>${e.room?.name || ""}</td>
+            <td>${e.classes?.program_id || ""}</td>
+            <td>${e.classes?.semester || ""}</td>
+            <td>${e.classes?.name || ""}</td>
+            <td>${e.tip?.name || ""}</td>
+            <td>${e.profesor?.name || ""}</td>
+            <td>${e.grupi || ""}</td>
+        </tr>`;
     });
 
 }
