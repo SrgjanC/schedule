@@ -13,55 +13,76 @@
 body{
     font-family: Arial, sans-serif;
     margin:20px;
-    background:#f5f5f5;
+    background:#f4f6fb;
+    color:#222;
 }
 
 h1{
-    margin-bottom:10px;
+    margin-bottom:8px;
+    font-size:22px;
 }
 
 .date-label{
     margin-bottom:20px;
-    font-size:18px;
-    color:#444;
+    font-size:16px;
+    color:#555;
 }
 
+/* TABLE */
 table{
     width:100%;
     border-collapse:collapse;
     background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
 }
 
 th, td{
-    border:1px solid #ccc;
-    padding:8px;
+    border:1px solid #e6e6e6;
+    padding:10px;
     text-align:center;
     vertical-align:top;
+    font-size:13px;
 }
 
+/* HEADER */
 th{
-    background:#333;
+    background:linear-gradient(135deg,#3f69b1,#2f5390);
     color:white;
+    font-weight:600;
 }
 
+/* TIME COLUMN */
 .time-col{
     width:90px;
-    background:#eee;
+    background:#f0f2f7;
     font-weight:bold;
+    color:#333;
 }
 
+/* EVENT CARD */
 .event{
-    background:#dff0ff;
-    border-radius:6px;
-    padding:6px;
-    margin-bottom:5px;
+    background:#ffffff;
+    border-left:4px solid #3f69b1;
+    border-radius:8px;
+    padding:8px;
+    margin-bottom:6px;
     text-align:left;
-    font-size:13px;
+    font-size:12px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.05);
+    transition:transform 0.1s ease;
+}
+
+.event:hover{
+    transform:scale(1.02);
 }
 
 .class-name{
     font-weight:bold;
+    font-size:13px;
     margin-bottom:4px;
+    color:#1f2d3d;
 }
 
 .room{
@@ -70,40 +91,43 @@ th{
 }
 
 .tip{
-    color:#0077cc;
+    color:#2b6cb0;
     font-size:12px;
 }
 
 .prof{
-    color:#666;
+    color:#4a5568;
     font-size:12px;
 }
 
 .grupi{
-    color:#aa0000;
+    color:#c53030;
     font-size:12px;
+    font-weight:500;
 }
 
+/* EMPTY */
 .empty{
-    color:#999;
-    font-size:12px;
+    color:#888;
+    font-size:13px;
+    padding:20px;
 }
 
+/* RESPONSIVE */
 @media(max-width:768px){
 
     body{
-        margin:5px;
+        margin:8px;
     }
 
-    table{
+    th, td{
         font-size:11px;
+        padding:6px;
     }
 
     .event{
         font-size:11px;
-        padding:4px;
     }
-
 }
 
 </style>
