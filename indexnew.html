@@ -61,86 +61,23 @@ th {
 
 <script>
 
-const SUPABASE_URL = "https://xrftnuvogyskgoocmiwx.supabase.co";
-const SUPABASE_KEY = "sb_publishable_JhfT4_SBa_Wh1_f_2YwCQQ__xu1KwoU";
-
-const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+const supabaseClient = supabase.createClient(
+    "https://xrftnuvogyskgoocmiwx.supabase.co",
+    "PASTE_ANON_KEY_HERE"
 );
-
-function todayISO(){
-    return new Date().toISOString().split("T")[0];
-}
 
 async function load(){
 
-    const today = todayISO();
-
-    document.getElementById("info").innerText =
-        "Приказ за денес: " + today;
-
-    // ✅ SIMPLE + SAFE QUERY (NO COMPLEX JOINS FIRST)
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from("schedule")
-        .select(`
-            id,
-            day,
-            date,
-            grupi,
-            class_id,
-            room_id,
-            profesor_id,
-            tip_id,
-            start_time,
-            classes (
-                name
-            ),
-            room:room_id (name),
-            profesor:profesor_id (name),
-            tip:tip_id (name),
-            time:start_time (name)
-        `)
-        .eq("date", today);
+        .select("*")
+        .limit(20);
 
-    console.log("DATA:", data);
-    console.log("ERROR:", error);
-
-    const tbody = document.getElementById("tbody");
-    tbody.innerHTML = "";
-
-    if(error){
-        tbody.innerHTML =
-            `<tr><td colspan="8" class="empty">Грешка при вчитување</td></tr>`;
-        return;
-    }
-
-    if(!data || data.length === 0){
-        tbody.innerHTML =
-            `<tr><td colspan="8" class="empty">Нема распоред за денес</td></tr>`;
-        return;
-    }
-
-    data.forEach(e => {
-
-        tbody.innerHTML += `
-        <tr>
-            <td>${e.day || ""}</td>
-            <td>${e.date || ""}</td>
-            <td>${e.time?.name || ""}</td>
-            <td>${e.room?.name || ""}</td>
-            <td>${e.classes?.name || ""}</td>
-            <td>${e.tip?.name || ""}</td>
-            <td>${e.profesor?.name || ""}</td>
-            <td>${e.grupi || ""}</td>
-        </tr>`;
-    });
+    console.log(data, error);
 
 }
 
 load();
-
-</script>
 
 </body>
 </html>
