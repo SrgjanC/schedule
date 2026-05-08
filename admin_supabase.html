@@ -204,7 +204,7 @@ th{
 </select>
 
 <label>Професор</label>
-<input type="text" id="professorInput">
+<select id="professorSelect"></select>
 
 <label>Групи</label>
 <input type="text" id="groupsInput">
@@ -264,6 +264,7 @@ for(let h=8; h<=20; h++){
 let events = [];
 let programs = [];
 let subjects = [];
+    let professors = [];
 
 let currentDate = "";
 let currentRoom = "";
@@ -275,6 +276,21 @@ function todayISO(){
     const t = new Date();
 
     return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+}
+    function fillProfessors(){
+
+    const sel =
+        document.getElementById("professorSelect");
+
+    sel.innerHTML = `<option value="">--</option>`;
+
+    professors.forEach(p => {
+
+        sel.innerHTML += `
+        <option value="${p.id}">
+            ${p.name}
+        </option>`;
+    });
 }
 
 async function loadAll(){
@@ -309,6 +325,17 @@ async function loadAll(){
 
     subjects = subjectsData || [];
 
+    // PROFESSORS
+const { data: professorsData, error: professorsError } =
+    await supabase
+        .from('professors')
+        .select('*')
+        .order('name');
+
+console.log(professorsError);
+
+professors = professorsData || [];
+    
     // EVENTS WITH RELATIONS
 
     const {
@@ -328,7 +355,7 @@ async function loadAll(){
             `);
 
     console.log(eventsError);
-
+fillProfessors();
     events = (eventsData || []).map(e => ({
 
         id: e.id,
@@ -503,7 +530,7 @@ function render(){
                     ${program?.name || ""}<br>
                     Сем. ${event.semester || subject?.semester || ""}<br>
                     ${event.type || ""}<br>
-                    ${event.professor || ""}
+                    ${professors.find(p => p.id === event.professor_id)?.name || ""}
                 </div>`;
             }
 
@@ -560,8 +587,8 @@ window.openSlot = function(cell){
         document.getElementById("typeSelect").value =
             existing.type || "Предавање";
 
-        document.getElementById("professorInput").value =
-            existing.professor || "";
+        document.getElementById("professorSelect").value =
+    existing.professor_id || "";
 
         document.getElementById("groupsInput").value =
             existing.groups || "";
@@ -576,8 +603,7 @@ window.openSlot = function(cell){
         document.getElementById("typeSelect").value =
             "Предавање";
 
-        document.getElementById("professorInput").value =
-            "";
+        document.getElementById("professorSelect").value = "";
 
         document.getElementById("groupsInput").value =
             "";
@@ -612,8 +638,8 @@ document.getElementById("saveBtn")
     const type =
         document.getElementById("typeSelect").value;
 
-    const professor =
-        document.getElementById("professorInput").value.trim();
+    const professor_id =
+    document.getElementById("professorSelect").value;
 
     const groups =
         document.getElementById("groupsInput").value.trim();
@@ -722,7 +748,7 @@ document.getElementById("saveBtn")
         semester,
 
         type,
-        professor,
+        professor_id,
         groups,
         comment
     };
@@ -775,7 +801,7 @@ await supabase
         subjectName: subject?.name || "",
 
         type,
-        professor,
+        professor_id,
         groups,
 
         comment
@@ -831,7 +857,7 @@ await supabase
         subjectName: subject?.name || "",
 
         type,
-        professor,
+        professor_id,
         groups,
 
         comment
