@@ -251,20 +251,24 @@ async function loadData() {
     // EVENTS WITH RELATIONS
 
     const { data, error } =
-        await supabase
-            .from('events')
-            .select(`
-                *,
-                subjects (
+    await supabase
+        .from('events')
+        .select(`
+            *,
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
                     id,
-                    name,
-                    semester,
-                    programs (
-                        id,
-                        name
-                    )
+                    name
                 )
-            `);
+            ),
+            professors (
+                id,
+                name
+            )
+        `);
 
     console.log(data);
     console.log(error);
@@ -277,28 +281,26 @@ async function loadData() {
 
     // CONVERT TO OLD FORMAT
 
-    events = data.map(e => ({
+    events = (eventsData || []).map(e => ({
+    id: e.id,
 
-        id: e.id,
+    date: e.event_date,
+    time: e.event_time?.substring(0,5),
+    room: e.room,
 
-        date: e.event_date,
-        time: e.event_time?.substring(0,5),
-        room: e.room,
+    subjectId: e.subject_id,
 
-        type: e.type,
-        professor: e.professor,
-        groups: e.groups_text,
-        comment: e.comment,
+    semester: e.subjects?.semester || "",
+    programId: e.subjects?.program_id || "",
 
-        subject:
-            e.subjects?.name || "",
+    type: e.type,
 
-        semester:
-            e.subjects?.semester || "",
+    professor_id: e.professor_id,
+    professorName: e.professors?.name || "",
 
-        program:
-            e.subjects?.programs?.name || ""
-    }));
+    groups: e.groups_text,
+    comment: e.comment
+}));
 
     // ROOMS
 
@@ -443,7 +445,7 @@ if (view === "day") {
                 <td>${e?.semester || ""}</td>
                 <td>${e?.subject || ""}</td>
                 <td>${e?.type || ""}</td>
-                <td>${e?.professor || ""}</td>
+                <td>${e?.professorName  || ""}</td>
                 <td>${e?.groups || ""}</td>
             </tr>`;
         }
@@ -488,7 +490,7 @@ sorted.forEach(e => {
         <td>${e.semester || ""}</td>
         <td>${e.subject || ""}</td>
         <td>${e.type || ""}</td>
-        <td>${e.professor || ""}</td>
+        <td>${e.professorName  || ""}</td>
         <td>${e.groups || ""}</td>
     </tr>`;
 });
