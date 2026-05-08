@@ -376,7 +376,7 @@ rooms = roomsData || [];
 
     console.log(eventsError);
 fillProfessors();
-    events = (data || []).map(e => ({
+    events = (eventsData  || []).map(e => ({
 
         id: e.id,
 
@@ -386,7 +386,7 @@ fillProfessors();
        room_id: e.room_id,
 room: e.rooms?.name || "",
 
-subjectId: e.subject_id,
+subjectId: e.subjectId,
 
         semester:
             e.subjects?.semester || "",
