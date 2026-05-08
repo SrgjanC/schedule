@@ -411,11 +411,16 @@ function updateSubjects(){
         document.getElementById("subjectSelect");
 
     const filtered =
-    subjects.filter(s=>String(s.program_id)===String(programId));
+    subjects.filter(s =>
+    String(s.program_id ?? "") === String(programId ?? "")
+);
 
     const semesters =
-        [...new Set(filtered.map(s=>String(s.semester)))]
-        .sort((a,b)=>Number(a)-Number(b));
+    [...new Set(filtered
+        .map(s => s.semester)
+        .filter(s => s !== null && s !== undefined && s !== "")
+    )]
+    .sort((a,b)=>Number(a)-Number(b));
 
     semesterSel.innerHTML = "";
 
@@ -433,9 +438,9 @@ function updateSubjects(){
             semesterSel.value;
 
         const list =
-            filtered.filter(s=>
-                String(s.semester)===String(sem)
-            );
+    filtered.filter(s =>
+        String(s.semester ?? "") === String(sem ?? "")
+    );
 
         subjectSel.innerHTML = "";
 
