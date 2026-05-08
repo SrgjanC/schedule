@@ -125,7 +125,7 @@ let events = [];
 let programs = [];
 let subjects = [];
 let rooms = [];
-
+let professors = [];
 let isLoading = true;
 
 // ================= ROOMS =================
@@ -281,7 +281,7 @@ async function loadData() {
 
     // CONVERT TO OLD FORMAT
 
-    events = (eventsData || []).map(e => ({
+    events = (data || []).map(e => ({
     id: e.id,
 
     date: e.event_date,
@@ -290,8 +290,9 @@ async function loadData() {
 
     subjectId: e.subject_id,
 
-    semester: e.subjects?.semester || "",
-    programId: e.subjects?.program_id || "",
+    subject: e.subjects?.name,
+    semester: e.subjects?.semester,
+    program: e.subjects?.programs?.name,
 
     type: e.type,
 
@@ -299,7 +300,10 @@ async function loadData() {
     professorName: e.professors?.name || "",
 
     groups: e.groups_text,
-    comment: e.comment
+    comment: e.comment,
+
+    week: e.week,
+    day: e.day
 }));
 
     // ROOMS
@@ -328,7 +332,8 @@ function initFilters() {
         .filter(Boolean);
 
     const semRaw =
-        [...new Set(events.map(e => e.semester))];
+    [...new Set(events.map(e => e.semester))]
+        .filter(v => v !== null && v !== undefined && v !== "");
 
     const semSorted =
         sortSemesters(semRaw);
