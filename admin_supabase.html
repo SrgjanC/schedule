@@ -374,7 +374,7 @@ fillProfessors();
             e.subjects?.program_id || "",
 
         type: e.type,
-        professor: e.professor,
+        professor_id: e.professor_id,
         groups: e.groups_text,
         comment: e.comment
     }));
@@ -774,7 +774,7 @@ if(professor_id){
         })
         .eq('id', editingId);
 
-console.log(error);
+if (error) console.error(error);
 
         const program =
     programs.find(p=>p.id===programId);
