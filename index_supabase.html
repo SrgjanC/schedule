@@ -267,7 +267,13 @@ async function loadData() {
             professors (
                 id,
                 name
-            )
+            ),
+            rooms (
+        id,
+        name,
+        type,
+        capacity
+    )
         `);
 
     console.log(data);
@@ -286,7 +292,7 @@ async function loadData() {
 
     date: e.event_date,
     time: e.event_time?.substring(0,5),
-    room: e.room,
+    room: e.rooms?.name || "",
 
     subjectId: e.subject_id,
 
@@ -481,7 +487,7 @@ sorted.forEach(e => {
     if (semF && String(e.semester) !== String(semF))
         return;
 
-    if (roomF && e.room !== roomF)
+    if (roomF && e.rooms?.name !== roomF)
         return;
 
     tbody.innerHTML += `
