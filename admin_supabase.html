@@ -652,7 +652,7 @@ document.getElementById("saveBtn")
             e.date===currentDate &&
             e.time===currentTime &&
             e.room===currentRoom &&
-            e.id!==editingId
+            String(e.id) !== String(editingId)   // IMPORTANT FIX
         );
 
     if(roomConflict){
