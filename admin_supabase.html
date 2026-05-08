@@ -376,17 +376,17 @@ rooms = roomsData || [];
 
     console.log(eventsError);
 fillProfessors();
-    events = (eventsData || []).map(e => ({
+    events = (data || []).map(e => ({
 
         id: e.id,
 
         date: e.event_date,
         time: e.event_time?.substring(0,5),
 
-        room_id: e.room_id,
-room: e.rooms?.name || ""
+       room_id: e.room_id,
+room: e.rooms?.name || "",
 
-        subjectId: e.subject_id,
+subjectId: e.subject_id,
 
         semester:
             e.subjects?.semester || "",
@@ -836,7 +836,7 @@ await supabase
 
             event_date: currentDate,
             event_time: currentTime,
-            e.room_id === Number(currentRoom),
+            room_id: Number(currentRoom),
 
             subject_id: Number(subjectId),
 
@@ -865,7 +865,7 @@ await supabase
 
         date: currentDate,
         time: currentTime,
-        e.room_id === Number(currentRoom),
+        room_id: Number(currentRoom),
 
         programId,
         programName: program?.name || "",
