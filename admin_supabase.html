@@ -203,6 +203,9 @@ th{
 <option value="Испит">Испит</option>
 </select>
 
+    <label>Просторија</label>
+<select id="roomSelect"></select>
+    
 <label>Професор</label>
 <select id="professorSelect"></select>
 
@@ -256,7 +259,7 @@ function fillRooms() {
             </option>`;
     });
 }
-fillRooms();
+
 const LAB_ROOMS = [
 "08 лаб.","09 лаб.","10 лаб.","11 лаб.",
 "12 лаб.","14 лаб.","НФИЦ"
@@ -354,7 +357,7 @@ console.log(roomsError);
 
 rooms = roomsData || [];
     window.ROOMS = rooms;
-    
+    fillRooms();
     // EVENTS WITH RELATIONS
 
     const {
@@ -387,7 +390,7 @@ fillProfessors();
        room_id: e.room_id,
 room: e.rooms?.name || "",
 
-subjectId: e.subjectId,
+subjectId: e.subject_id,
 
         semester:
             e.subjects?.semester || "",
@@ -558,7 +561,7 @@ function render(){
 
             row += `
             <td class="slot"
-                data-room="${room.name}"
+                data-room="${room.id}"
                 data-time="${time}"
                 onclick="openSlot(this)">
                 ${content}
@@ -573,8 +576,7 @@ function render(){
 
 window.openSlot = function(cell){
 
-    currentRoom =
-        cell.dataset.room;
+    currentRoom = Number(cell.dataset.room);
 
     currentTime =
         cell.dataset.time;
