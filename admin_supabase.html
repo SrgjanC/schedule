@@ -357,17 +357,7 @@ async function loadAll(){
     render();
 }
 
-async function loadEvents(){
 
-    const snap =
-        await getDocs(collection(db,"events_new"));
-
-    events =
-        snap.docs.map(d=>({
-            id:d.id,
-            ...d.data()
-        }));
-}
 
 function initFilters(){
 
@@ -421,7 +411,7 @@ function updateSubjects(){
         document.getElementById("subjectSelect");
 
     const filtered =
-        subjects.filter(s=>s.programId===programId);
+    subjects.filter(s=>String(s.program_id)===String(programId));
 
     const semesters =
         [...new Set(filtered.map(s=>String(s.semester)))]
@@ -500,7 +490,7 @@ function render(){
                     programs.find(p=>p.id===event.programId);
 
                 const subject =
-                    subjects.find(s=>s.id===event.subjectId);
+    subjects.find(s=>String(s.id)===String(subjectId));
 
                 content = `
                 <div class="event">
@@ -759,11 +749,11 @@ console.log(error);
     programs.find(p=>p.id===programId);
 
 const subject =
-    subjects.find(s=>s.id===subjectId);
+    subjects.find(s=>String(s.id)===String(subjectId));
 
-await addDoc(
-    collection(db,"logs"),
-    {
+await supabase
+    .from('logs')
+    .insert([{
         action:"UPDATE",
         timestamp:new Date().toISOString(),
 
@@ -784,8 +774,8 @@ await addDoc(
         groups,
 
         comment
-    }
-);
+    }]);
+
     }
     else{
 
@@ -814,11 +804,33 @@ console.log(error);
     programs.find(p=>p.id===programId);
 
 const subject =
-    subjects.find(s=>s.id===subjectId);
+    subjects.find(s=>String(s.id)===String(subjectId));
 
 await supabase
     .from('logs')
-    .insert([logData]);
+    .insert([{
+
+        action:"ADD",
+        timestamp:new Date().toISOString(),
+
+        date: currentDate,
+        time: currentTime,
+        room: currentRoom,
+
+        programId,
+        programName: program?.name || "",
+
+        semester,
+
+        subjectId,
+        subjectName: subject?.name || "",
+
+        type,
+        professor,
+        groups,
+
+        comment
+}]);
       
     }
 
@@ -850,9 +862,9 @@ const program =
 const subject =
     subjects.find(s=>s.id===existing?.subjectId);
 
-await addDoc(
-    collection(db,"logs"),
-    {
+await supabase
+    .from('logs')
+    .insert([{
         action:"DELETE",
         timestamp:new Date().toISOString(),
 
@@ -873,8 +885,7 @@ await addDoc(
         groups: existing?.groups || "",
 
         comment
-    }
-);
+}]);
 
     const { error } =
     await supabase
@@ -884,7 +895,7 @@ await addDoc(
 
 console.log(error);
 
-    await loadEvents();
+    await loadAll();
 
     render();
 
