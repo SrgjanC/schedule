@@ -648,19 +648,17 @@ document.getElementById("saveBtn")
         document.getElementById("commentInput").value.trim();
 
     const roomConflict =
-        events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.room===currentRoom &&
-            String(e.id) !== String(editingId)   // IMPORTANT FIX
-        );
+    events.find(e =>
+        e.date === currentDate &&
+        e.time === currentTime &&
+        e.room === currentRoom &&
+        String(e.id) !== String(editingId)
+    );
 
-    if(roomConflict){
-
-        alert("Просторијата е зафатена.");
-
-        return;
-    }
+if (roomConflict) {
+    alert("Просторијата е зафатена.");
+    return;
+}
 
     const semesterConflict =
         events.find(e=>
