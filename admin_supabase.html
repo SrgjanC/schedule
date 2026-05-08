@@ -490,7 +490,7 @@ function render(){
                     programs.find(p=>p.id===event.programId);
 
                 const subject =
-    subjects.find(s=>String(s.id)===String(subjectId));
+    subjects.find(s=>String(s.id)===String(event.subjectId));
 
                 content = `
                 <div class="event">
@@ -834,7 +834,7 @@ await supabase
       
     }
 
-    await loadEvents();
+    await loadAll();
 
     render();
 
