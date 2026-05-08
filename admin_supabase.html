@@ -353,6 +353,7 @@ const { data: roomsData, error: roomsError } =
 console.log(roomsError);
 
 rooms = roomsData || [];
+    window.ROOMS = rooms;
     
     // EVENTS WITH RELATIONS
 
@@ -526,13 +527,13 @@ function render(){
             <td class="time-col">${time}</td>
         `;
 
-        ROOMS.forEach(room=>{
+        rooms.forEach(room=>{
 
             const event =
                 events.find(e=>
                     e.date===selectedDate &&
                     e.time===time &&
-                    e.room===room
+                    e.room_id === room.id
                 );
 
             let content = "";
@@ -557,7 +558,7 @@ function render(){
 
             row += `
             <td class="slot"
-                data-room="${room}"
+                data-room="${room.name}"
                 data-time="${time}"
                 onclick="openSlot(this)">
                 ${content}
