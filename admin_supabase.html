@@ -678,23 +678,23 @@ document.getElementById("saveBtn")
         return;
     }
 
-    if(professor){
+if(professor_id){
 
-        const profConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.professor===professor &&
-                e.id!==editingId
-            );
+    const profConflict =
+        events.find(e=>
+            e.date===currentDate &&
+            e.time===currentTime &&
+            e.professor_id===professor_id &&
+            e.id!==editingId
+        );
 
-        if(profConflict){
+    if(profConflict){
 
-            alert("Професорот веќе има час.");
+        alert("Професорот веќе има час.");
 
-            return;
-        }
+        return;
     }
+}
 
     if(type==="Предавање"){
 
@@ -767,7 +767,7 @@ document.getElementById("saveBtn")
             subject_id: Number(subjectId),
 
             type,
-            professor,
+            professor_id,
             groups_text: groups,
             comment
 
@@ -822,7 +822,7 @@ await supabase
             subject_id: Number(subjectId),
 
             type,
-            professor,
+            professor_id,
             groups_text: groups,
             comment
 
