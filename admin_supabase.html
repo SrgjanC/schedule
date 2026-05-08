@@ -674,12 +674,14 @@ document.getElementById("saveBtn")
 
     const comment =
         document.getElementById("commentInput").value.trim();
+    const selectedRoomId =
+    Number(document.getElementById("roomSelect").value);
 
     const roomConflict =
     events.find(e =>
         e.date === currentDate &&
         e.time === currentTime &&
-        e.room_id === Number(currentRoom) &&
+        e.room_id === selectedRoomId &&
         String(e.id) !== String(editingId)
     );
 
@@ -754,7 +756,10 @@ if(professor_id){
 
         if(sameExercise.length){
 
-            if(!LAB_ROOMS.includes(currentRoom)){
+            const selectedRoom =
+    rooms.find(r => r.id === selectedRoomId);
+
+if(!LAB_ROOMS.includes(selectedRoom?.name)){
 
                 alert("Паралелни вежби се дозволени само во лаборатории.");
 
@@ -767,7 +772,7 @@ if(professor_id){
 
         date: currentDate,
         time: currentTime,
-        room_id: Number(currentRoom),
+        room_id: selectedRoomId,
 
         subjectId,
         programId,
@@ -788,7 +793,7 @@ if(professor_id){
 
             event_date: currentDate,
             event_time: currentTime,
-            room_id: Number(currentRoom),
+            room_id: selectedRoomId,
 
             subject_id: Number(subjectId),
 
@@ -816,7 +821,7 @@ await supabase
 
         date: currentDate,
         time: currentTime,
-        room_id: Number(currentRoom),
+        room_id: selectedRoomId,
 
         programId,
         programName: program?.name || "",
@@ -843,7 +848,7 @@ await supabase
 
             event_date: currentDate,
             event_time: currentTime,
-            room_id: Number(currentRoom),
+            room_id: selectedRoomId,
 
             subject_id: Number(subjectId),
 
