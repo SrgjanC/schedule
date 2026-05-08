@@ -244,12 +244,19 @@ const supabase =
 
 
 
-const ROOMS = [
-"01 пред.","02 пред.","03 пред.","04 пред.",
-"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
-"12 лаб.","14 лаб.","НФИЦ"
-];
+function fillRooms() {
 
+    const sel = document.getElementById("roomSelect");
+    sel.innerHTML = "";
+
+    rooms.forEach(r => {
+        sel.innerHTML += `
+            <option value="${r.id}">
+                ${r.name}
+            </option>`;
+    });
+}
+fillRooms();
 const LAB_ROOMS = [
 "08 лаб.","09 лаб.","10 лаб.","11 лаб.",
 "12 лаб.","14 лаб.","НФИЦ"
@@ -264,8 +271,8 @@ for(let h=8; h<=20; h++){
 let events = [];
 let programs = [];
 let subjects = [];
-    let professors = [];
-
+let professors = [];
+let rooms = [];
 let currentDate = "";
 let currentRoom = "";
 let currentTime = "";
@@ -335,6 +342,17 @@ const { data: professorsData, error: professorsError } =
 console.log(professorsError);
 
 professors = professorsData || [];
+
+    // ROOMS
+const { data: roomsData, error: roomsError } =
+    await supabase
+        .from('rooms')
+        .select('*')
+        .order('name');
+
+console.log(roomsError);
+
+rooms = roomsData || [];
     
     // EVENTS WITH RELATIONS
 
@@ -350,8 +368,10 @@ professors = professorsData || [];
                     id,
                     name,
                     semester,
-                    program_id
-                )
+                    programs (id, name)
+                ),
+                professors (id, name),
+                rooms (id, name)
             `);
 
     console.log(eventsError);
@@ -363,7 +383,8 @@ fillProfessors();
         date: e.event_date,
         time: e.event_time?.substring(0,5),
 
-        room: e.room,
+        room_id: e.room_id,
+room: e.rooms?.name || ""
 
         subjectId: e.subject_id,
 
@@ -564,7 +585,7 @@ window.openSlot = function(cell){
         events.find(e=>
             e.date===currentDate &&
             e.time===currentTime &&
-            e.room===currentRoom
+            e.room_id === Number(currentRoom)
         );
 
     editingId = existing?.id || null;
@@ -651,7 +672,7 @@ document.getElementById("saveBtn")
     events.find(e =>
         e.date === currentDate &&
         e.time === currentTime &&
-        e.room === currentRoom &&
+        e.room_id === Number(currentRoom) &&
         String(e.id) !== String(editingId)
     );
 
@@ -739,7 +760,7 @@ if(professor_id){
 
         date: currentDate,
         time: currentTime,
-        room: currentRoom,
+        room_id: Number(currentRoom),
 
         subjectId,
         programId,
@@ -760,7 +781,7 @@ if(professor_id){
 
             event_date: currentDate,
             event_time: currentTime,
-            room: currentRoom,
+            room_id: Number(currentRoom),
 
             subject_id: Number(subjectId),
 
@@ -788,7 +809,7 @@ await supabase
 
         date: currentDate,
         time: currentTime,
-        room: currentRoom,
+        room_id: Number(currentRoom),
 
         programId,
         programName: program?.name || "",
@@ -815,7 +836,7 @@ await supabase
 
             event_date: currentDate,
             event_time: currentTime,
-            room: currentRoom,
+            e.room_id === Number(currentRoom),
 
             subject_id: Number(subjectId),
 
@@ -844,7 +865,7 @@ await supabase
 
         date: currentDate,
         time: currentTime,
-        room: currentRoom,
+        e.room_id === Number(currentRoom),
 
         programId,
         programName: program?.name || "",
