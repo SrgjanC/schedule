@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Supabase Test</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    padding:20px;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+}
+
+th,td{
+    border:1px solid #333;
+    padding:8px;
+}
+
+th{
+    background:#3f69b1;
+    color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Programs Test</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Type</th>
+<th>Year</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+<script type="module">
+
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl =
+'https://elmxwpwhyewgjlvoadtb.supabase.co';
+
+const supabaseKey =
+'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
+
+const supabase =
+    createClient(
+        supabaseUrl,
+        supabaseKey
+    );
+
+async function loadPrograms(){
+
+    const { data, error } =
+        await supabase
+            .from('programs')
+            .select('*')
+            .order('name');
+
+    console.log(data);
+    console.log(error);
+
+    const tbody =
+        document.getElementById('tbody');
+
+    tbody.innerHTML = '';
+
+    data.forEach(p=>{
+
+        tbody.innerHTML += `
+        <tr>
+            <td>${p.id}</td>
+            <td>${p.name}</td>
+            <td>${p.type || ''}</td>
+            <td>${p.year || ''}</td>
+        </tr>`;
+    });
+}
+
+loadPrograms();
+
+</script>
+
+</body>
+</html>
