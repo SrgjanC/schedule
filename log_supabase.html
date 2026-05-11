@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Logs</title>
+
+<style>
+body{
+    font-family: Arial;
+    padding: 20px;
+}
+
+h2{
+    margin-bottom: 10px;
+}
+
+.controls{
+    margin-bottom: 15px;
+}
+
+input, select, button{
+    padding: 6px;
+    margin-right: 8px;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+th, td{
+    border: 1px solid #333;
+    padding: 6px;
+    vertical-align: top;
+}
+
+th{
+    background: #3f69b1;
+    color: white;
+}
+
+tr:nth-child(even){
+    background: #f5f5f5;
+}
+
+.badge{
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: white;
+    font-size: 11px;
+}
+
+.ADD{ background: #2e7d32; }
+.UPDATE{ background: #f9a825; }
+.DELETE{ background: #c62828; }
+</style>
+</head>
+
+<body>
+
+<h2>Logs</h2>
+
+<div class="controls">
+
+<select id="actionFilter">
+    <option value="">Сите</option>
+    <option value="ADD">ADD</option>
+    <option value="UPDATE">UPDATE</option>
+    <option value="DELETE">DELETE</option>
+</select>
+
+<button onclick="loadLogs()">Reload</button>
+
+</div>
+
+<table>
+<thead>
+<tr>
+    <th>Action</th>
+    <th>Time</th>
+    <th>Date</th>
+    <th>Room</th>
+    <th>Subject</th>
+    <th>Professor</th>
+    <th>Type</th>
+    <th>Groups</th>
+    <th>Comment</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+</table>
+
+<script type="module">
+
+import { createClient }
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase =
+createClient(
+    "https://elmxwpwhyewgjlvoadtb.supabase.co",
+    "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd"
+);
+
+let logs = [];
+
+async function loadLogs(){
+
+    const { data, error } =
+        await supabase
+        .from("logs")
+        .select("*")
+        .order("id", { ascending: false });
+
+    console.log(error);
+
+    logs = data || [];
+
+    render();
+}
+
+function render(){
+
+    const filter =
+        document.getElementById("actionFilter").value;
+
+    const tbody =
+        document.getElementById("tbody");
+
+    tbody.innerHTML = "";
+
+    logs
+    .filter(l =>
+        !filter || l.action === filter
+    )
+    .forEach(l => {
+
+        tbody.innerHTML += `
+        <tr>
+            <td>
+                <span class="badge ${l.action}">
+                    ${l.action}
+                </span>
+            </td>
+            <td>${l.created_at || ""}</td>
+            <td>${l.event_date || ""}</td>
+            <td>${l.room_name || ""}</td>
+            <td>${l.subject_name || ""}</td>
+            <td>${l.professor_name || ""}</td>
+            <td>${l.type || ""}</td>
+            <td>${l.groups_text || ""}</td>
+            <td>${l.comment || ""}</td>
+        </tr>`;
+    });
+}
+
+document
+.getElementById("actionFilter")
+.addEventListener("change", render);
+
+loadLogs();
+
+</script>
+
+</body>
+</html>
