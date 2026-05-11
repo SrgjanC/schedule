@@ -214,6 +214,24 @@ function buildTimeSlots() {
 }
 
 const TIMES = buildTimeSlots();
+    function getDayName(dateStr){
+
+    if(!dateStr) return "";
+
+    const days = [
+        "недела",
+        "понеделник",
+        "вторник",
+        "среда",
+        "четврток",
+        "петок",
+        "сабота"
+    ];
+
+    const d = new Date(dateStr);
+
+    return days[d.getDay()];
+}
 
 // ================= FILTERS =================
 
@@ -448,7 +466,7 @@ if (view === "day") {
             tbody.innerHTML += `
             <tr style="background:${bg}; opacity:${e ? 1 : 0.55}">
                 
-                <td>${e?.day || ""}</td>
+                <td>${getDayName(e?.date)}</td>
                 <td>${formatDate(selectedDate)}</td>
                 <td>${time}</td>
                 <td>${room}</td>
@@ -492,7 +510,7 @@ sorted.forEach(e => {
 
     tbody.innerHTML += `
     <tr style="background:${getRoomColor(e.room)}">
-        <td>${e.week || ""}</td>
+        
         <td>${e.day || ""}</td>
         <td>${formatDate(e.date)}</td>
         <td>${e.time || ""}</td>
