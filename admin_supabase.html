@@ -400,11 +400,6 @@ async function addLog(action, payload){
             Number(s.id) === Number(payload.subject_id)
         );
 
-    const program =
-        programs.find(p =>
-            Number(p.id) === Number(subject?.program_id)
-        );
-
     const professor =
         professors.find(p =>
             Number(p.id) === Number(payload.professor_id)
@@ -414,8 +409,8 @@ async function addLog(action, payload){
 
         action,
 
-        timestamp:
-            new Date().toISOString(),
+        event_id:
+            payload.event_id || null,
 
         event_date:
             payload.event_date,
@@ -429,29 +424,20 @@ async function addLog(action, payload){
         room_name:
             room?.name || "",
 
-        program_id:
-            subject?.program_id || null,
-
-        program_name:
-            program?.name || "",
-
-        semester:
-            subject?.semester || "",
-
         subject_id:
             payload.subject_id,
 
         subject_name:
             subject?.name || "",
 
-        type:
-            payload.type || "",
-
         professor_id:
             payload.professor_id || null,
 
         professor_name:
             professor?.name || "",
+
+        type:
+            payload.type || "",
 
         groups_text:
             payload.groups_text || "",
