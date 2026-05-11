@@ -244,35 +244,19 @@ const supabaseKey =
 'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
 
 const supabase =
-    createClient(
-        supabaseUrl,
-        supabaseKey
-    );
-
-
-
-function fillRooms() {
-
-    const sel = document.getElementById("roomSelect");
-    sel.innerHTML = "";
-
-    rooms.forEach(r => {
-        sel.innerHTML += `
-            <option value="${r.id}">
-                ${r.name}
-            </option>`;
-    });
-}
+createClient(supabaseUrl, supabaseKey);
 
 const LAB_ROOMS = [
-"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
-"12 лаб.","14 лаб.","НФИЦ"
+"08 лаб.","09 лаб.","10 лаб.",
+"11 лаб.","12 лаб.","14 лаб.","НФИЦ"
 ];
 
 const TIMES = [];
 
 for(let h=8; h<=20; h++){
-    TIMES.push(String(h).padStart(2,"0")+":00");
+    TIMES.push(
+        String(h).padStart(2,"0")+":00"
+    );
 }
 
 let events = [];
@@ -280,8 +264,8 @@ let programs = [];
 let subjects = [];
 let professors = [];
 let rooms = [];
+
 let currentDate = "";
-let currentRoom = "";
 let currentTime = "";
 let editingId = null;
 
@@ -289,150 +273,44 @@ function todayISO(){
 
     const t = new Date();
 
-    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+    return `${t.getFullYear()}-${
+        String(t.getMonth()+1).padStart(2,"0")
+    }-${
+        String(t.getDate()).padStart(2,"0")
+    }`;
 }
-    function fillProfessors(){
+
+function fillRooms(){
+
+    const sel =
+        document.getElementById("roomSelect");
+
+    sel.innerHTML = "";
+
+    rooms.forEach(r=>{
+
+        sel.innerHTML += `
+        <option value="${r.id}">
+            ${r.name}
+        </option>`;
+    });
+}
+
+function fillProfessors(){
 
     const sel =
         document.getElementById("professorSelect");
 
-    sel.innerHTML = `<option value="">--</option>`;
+    sel.innerHTML =
+        `<option value="">--</option>`;
 
-    professors.forEach(p => {
+    professors.forEach(p=>{
 
         sel.innerHTML += `
         <option value="${p.id}">
             ${p.name}
         </option>`;
     });
-}
-
-async function loadAll(){
-
-    // PROGRAMS
-
-    const {
-        data: programsData,
-        error: programsError
-    } =
-        await supabase
-            .from('programs')
-            .select('*')
-            .order('name');
-
-    console.log(programsError);
-
-    programs = programsData || [];
-
-    // SUBJECTS
-
-    const {
-        data: subjectsData,
-        error: subjectsError
-    } =
-        await supabase
-            .from('subjects')
-            .select('*')
-            .order('semester');
-
-    console.log(subjectsError);
-
-    subjects = subjectsData || [];
-
-    // PROFESSORS
-const { data: professorsData, error: professorsError } =
-    await supabase
-        .from('professors')
-        .select('*')
-        .order('name');
-
-console.log(professorsError);
-
-professors = professorsData || [];
-
-    // ROOMS
-const { data: roomsData, error: roomsError } =
-    await supabase
-        .from('rooms')
-        .select('*')
-        .order('name');
-
-console.log(roomsError);
-
-rooms = roomsData || [];
-    window.ROOMS = rooms;
-    fillRooms();
-    // EVENTS WITH RELATIONS
-
-    const {
-        data: eventsData,
-        error: eventsError
-    } =
-        await supabase
-            .from('events')
-            .select(`
-                *,
-                subjects (
-                    id,
-                    name,
-                    semester,
-                    programs (id, name)
-                ),
-                professors (id, name),
-                rooms (id, name)
-            `);
-
-    console.log(eventsError);
-fillProfessors();
-    events = (eventsData  || []).map(e => ({
-
-        id: e.id,
-
-        date: e.event_date,
-        time: e.event_time?.substring(0,5),
-
-       room_id: e.room_id,
-room: e.rooms?.name || "",
-
-subjectId: e.subject_id,
-
-        semester:
-            e.subjects?.semester || "",
-
-        programId:
-            e.subjects?.program_id || "",
-
-        type: e.type,
-        professor_id: e.professor_id,
-        groups: e.groups_text,
-        comment: e.comment
-    }));
-
-    initFilters();
-
-    render();
-}
-
-
-
-function initFilters(){
-
-    const datePicker =
-        document.getElementById("datePicker");
-
-    datePicker.value = todayISO();
-
-    datePicker.addEventListener("change",render);
-
-    document.getElementById("todayBtn")
-        .addEventListener("click",()=>{
-
-            datePicker.value = todayISO();
-
-            render();
-        });
-
-    fillPrograms();
 }
 
 function fillPrograms(){
@@ -452,7 +330,7 @@ function fillPrograms(){
 
     updateSubjects();
 
-    sel.addEventListener("change",updateSubjects);
+    sel.onchange = updateSubjects;
 }
 
 function updateSubjects(){
@@ -467,16 +345,14 @@ function updateSubjects(){
         document.getElementById("subjectSelect");
 
     const filtered =
-    subjects.filter(s =>
-    String(s.program_id ?? "") === String(programId ?? "")
-);
+        subjects.filter(s =>
+            String(s.program_id) === String(programId)
+        );
 
     const semesters =
-    [...new Set(filtered
-        .map(s => s.semester)
-        .filter(s => s !== null && s !== undefined && s !== "")
-    )]
-    .sort((a,b)=>Number(a)-Number(b));
+        [...new Set(
+            filtered.map(s=>s.semester)
+        )];
 
     semesterSel.innerHTML = "";
 
@@ -490,13 +366,12 @@ function updateSubjects(){
 
     function refreshSubjects(){
 
-        const sem =
-            semesterSel.value;
+        const sem = semesterSel.value;
 
         const list =
-    filtered.filter(s =>
-        String(s.semester ?? "") === String(sem ?? "")
-    );
+            filtered.filter(s =>
+                String(s.semester) === String(sem)
+            );
 
         subjectSel.innerHTML = "";
 
@@ -514,6 +389,109 @@ function updateSubjects(){
     semesterSel.onchange = refreshSubjects;
 }
 
+async function loadAll(){
+
+    const { data: p1 } =
+        await supabase
+        .from('programs')
+        .select('*')
+        .order('name');
+
+    programs = p1 || [];
+
+    const { data: p2 } =
+        await supabase
+        .from('subjects')
+        .select('*')
+        .order('semester');
+
+    subjects = p2 || [];
+
+    const { data: p3 } =
+        await supabase
+        .from('professors')
+        .select('*')
+        .order('name');
+
+    professors = p3 || [];
+
+    const { data: p4 } =
+        await supabase
+        .from('rooms')
+        .select('*')
+        .order('name');
+
+    rooms = p4 || [];
+
+    fillRooms();
+    fillProfessors();
+    fillPrograms();
+
+    const { data: p5, error } =
+        await supabase
+        .from('events')
+        .select(`
+            *,
+            subjects (
+                id,
+                name,
+                semester,
+                program_id
+            ),
+            professors (
+                id,
+                name
+            ),
+            rooms (
+                id,
+                name
+            )
+        `);
+
+    console.log(error);
+
+    events = (p5 || []).map(e=>({
+
+        id: e.id,
+
+        date: e.event_date,
+
+        time:
+            e.event_time?.substring(0,5),
+
+        room_id: e.room_id,
+
+        room:
+            e.rooms?.name || "",
+
+        subjectId:
+            e.subject_id,
+
+        semester:
+            e.subjects?.semester || "",
+
+        programId:
+            e.subjects?.program_id || "",
+
+        type:
+            e.type || "",
+
+        professor_id:
+            e.professor_id || null,
+
+        professor:
+            e.professors?.name || "",
+
+        groups:
+            e.groups_text || "",
+
+        comment:
+            e.comment || ""
+    }));
+
+    render();
+}
+
 function render(){
 
     const tbody =
@@ -524,42 +502,44 @@ function render(){
     const selectedDate =
         document.getElementById("datePicker").value;
 
-    document.getElementById("info").textContent =
-        `Приказ за ${selectedDate}`;
-
     TIMES.forEach(time=>{
 
         let row = `
         <tr>
-            <td class="time-col">${time}</td>
+        <td class="time-col">${time}</td>
         `;
 
         rooms.forEach(room=>{
 
             const event =
                 events.find(e=>
-                    e.date===selectedDate &&
-                    e.time===time &&
-                    e.room_id === room.id
+
+                    e.date === selectedDate &&
+                    e.time === time &&
+                    Number(e.room_id) === Number(room.id)
                 );
 
             let content = "";
 
             if(event){
 
-                const program =
-                    programs.find(p=>p.id===event.programId);
-
                 const subject =
-    subjects.find(s=>String(s.id)===String(event.subjectId));
+                    subjects.find(s=>
+                        s.id == event.subjectId
+                    );
+
+                const program =
+                    programs.find(p=>
+                        p.id == event.programId
+                    );
 
                 content = `
                 <div class="event">
                     <b>${subject?.name || ""}</b><br>
                     ${program?.name || ""}<br>
-                    Сем. ${event.semester || subject?.semester || ""}<br>
-                    ${event.type || ""}<br>
-                    ${professors.find(p => p.id === event.professor_id)?.name || ""}
+                    Сем. ${event.semester}<br>
+                    ${event.type}<br>
+                    ${event.professor}
                 </div>`;
             }
 
@@ -580,65 +560,62 @@ function render(){
 
 window.openSlot = function(cell){
 
-    currentRoom = Number(cell.dataset.room);
+    currentDate =
+        document.getElementById("datePicker").value;
 
     currentTime =
         cell.dataset.time;
 
-    currentDate =
-        document.getElementById("datePicker").value;
+    const roomId =
+        Number(cell.dataset.room);
 
     const existing =
         events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.room_id === Number(currentRoom)
+
+            e.date === currentDate &&
+            e.time === currentTime &&
+            Number(e.room_id) === roomId
         );
 
     editingId = existing?.id || null;
 
+    document.getElementById("roomSelect").value =
+        roomId;
+
     if(existing){
 
-    document.getElementById("roomSelect").value =
-        existing.room_id || "";
-
-    document.getElementById("programSelect").value =
-        existing.programId || "";
+        document.getElementById("programSelect").value =
+            existing.programId;
 
         updateSubjects();
 
         document.getElementById("semesterSelect").value =
-            existing.semester || "";
+            existing.semester;
 
         updateSubjects();
 
         document.getElementById("subjectSelect").value =
-            existing.subjectId || "";
+            existing.subjectId;
 
         document.getElementById("typeSelect").value =
-            existing.type || "Предавање";
+            existing.type;
 
         document.getElementById("professorSelect").value =
-    existing.professor_id || "";
+            existing.professor_id || "";
 
         document.getElementById("groupsInput").value =
-            existing.groups || "";
+            existing.groups;
 
         document.getElementById("commentInput").value =
-            existing.comment || "";
+            existing.comment;
     }
     else{
 
-    editingId = null;
+        document.getElementById("typeSelect").value =
+            "Предавање";
 
-    document.getElementById("roomSelect").value =
-        currentRoom;
-
-    document.getElementById("typeSelect").value =
-        "Предавање";
-
-
-        document.getElementById("professorSelect").value = "";
+        document.getElementById("professorSelect").value =
+            "";
 
         document.getElementById("groupsInput").value =
             "";
@@ -652,324 +629,141 @@ window.openSlot = function(cell){
 };
 
 document.getElementById("closeBtn")
-.addEventListener("click",()=>{
+.onclick = ()=>{
 
     document.getElementById("modal").style.display =
         "none";
-});
+};
 
 document.getElementById("saveBtn")
-.addEventListener("click", async ()=>{
+.onclick = async ()=>{
+
+    const selectedRoomId =
+        Number(
+            document.getElementById("roomSelect").value
+        );
 
     const subjectId =
-        document.getElementById("subjectSelect").value;
-
-    const programId =
-        document.getElementById("programSelect").value;
-
-    const semester =
-        document.getElementById("semesterSelect").value;
+        Number(
+            document.getElementById("subjectSelect").value
+        );
 
     const type =
         document.getElementById("typeSelect").value;
 
     const professor_id =
-    document.getElementById("professorSelect").value;
+        document.getElementById("professorSelect").value || null;
 
     const groups =
-        document.getElementById("groupsInput").value.trim();
+        document.getElementById("groupsInput").value;
 
     const comment =
-        document.getElementById("commentInput").value.trim();
-    const selectedRoomId =
-    Number(document.getElementById("roomSelect").value);
+        document.getElementById("commentInput").value;
 
     const roomConflict =
-    events.find(e =>
-        e.date === currentDate &&
-        e.time === currentTime &&
-        e.room_id === selectedRoomId &&
-        String(e.id) !== String(editingId)
-    );
-
-if (roomConflict) {
-    alert("Просторијата е зафатена.");
-    return;
-}
-
-    const semesterConflict =
         events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.programId===programId &&
-            String(e.semester)===String(semester) &&
-            e.id!==editingId
+
+            e.date === currentDate &&
+            e.time === currentTime &&
+            Number(e.room_id) === selectedRoomId &&
+            String(e.id) !== String(editingId)
         );
 
-    if(semesterConflict){
+    if(roomConflict){
 
-        alert("Овој семестар веќе има час во истиот термин.");
+        alert("Просторијата е зафатена.");
 
         return;
     }
 
-if(professor_id){
+    const payload = {
 
-    const profConflict =
-        events.find(e=>
-            e.date===currentDate &&
-            e.time===currentTime &&
-            e.professor_id===professor_id &&
-            e.id!==editingId
-        );
+        event_date: currentDate,
 
-    if(profConflict){
+        event_time: currentTime,
 
-        alert("Професорот веќе има час.");
-
-        return;
-    }
-}
-
-    if(type==="Предавање"){
-
-        const lectureConflict =
-            events.find(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Предавање" &&
-                e.id!==editingId
-            );
-
-        if(lectureConflict){
-
-            alert("Предавањето веќе постои.");
-
-            return;
-        }
-    }
-
-    if(type==="Вежби"){
-
-        const sameExercise =
-            events.filter(e=>
-                e.date===currentDate &&
-                e.time===currentTime &&
-                e.subjectId===subjectId &&
-                e.type==="Вежби" &&
-                e.id!==editingId
-            );
-
-        if(sameExercise.length){
-
-            const selectedRoom =
-    rooms.find(r => r.id === selectedRoomId);
-
-if(!LAB_ROOMS.includes(selectedRoom?.name)){
-
-                alert("Паралелни вежби се дозволени само во лаборатории.");
-
-                return;
-            }
-        }
-    }
-
-    const data = {
-
-        date: currentDate,
-        time: currentTime,
         room_id: selectedRoomId,
 
-        subjectId,
-        programId,
-        semester,
+        subject_id: subjectId,
 
         type,
+
         professor_id,
-        groups,
+
+        groups_text: groups,
+
         comment
     };
 
+    let error;
+
     if(editingId){
 
-        const { error } =
-    await supabase
-        .from('events')
-        .update({
-
-            event_date: currentDate,
-            event_time: currentTime,
-            room_id: selectedRoomId,
-
-            subject_id: Number(subjectId),
-
-            type,
-            professor_id,
-            groups_text: groups,
-            comment
-
-        })
-        .eq('id', editingId);
-
-if (error) console.error(error);
-
-        const program =
-    programs.find(p=>p.id===programId);
-
-const subject =
-    subjects.find(s=>String(s.id)===String(subjectId));
-
-await supabase
-    .from('logs')
-    .insert([{
-        action:"UPDATE",
-        timestamp:new Date().toISOString(),
-
-        date: currentDate,
-        time: currentTime,
-        room_id: selectedRoomId,
-
-        programId,
-        programName: program?.name || "",
-
-        semester,
-
-        subjectId,
-        subjectName: subject?.name || "",
-
-        type,
-        professor_id,
-        groups,
-
-        comment
-    }]);
-
+        ({ error } =
+            await supabase
+            .from('events')
+            .update(payload)
+            .eq('id', editingId)
+        );
     }
     else{
 
-        const { data: inserted, error } =
-    await supabase
-        .from('events')
-        .insert([{
-
-            event_date: currentDate,
-            event_time: currentTime,
-            room_id: selectedRoomId,
-
-            subject_id: Number(subjectId),
-
-            type,
-            professor_id,
-            groups_text: groups,
-            comment
-
-        }])
-        .select();
-
-console.log(error);
-
-        const program =
-    programs.find(p=>p.id===programId);
-
-const subject =
-    subjects.find(s=>String(s.id)===String(subjectId));
-
-await supabase
-    .from('logs')
-    .insert([{
-
-        action:"ADD",
-        timestamp:new Date().toISOString(),
-
-        date: currentDate,
-        time: currentTime,
-        room_id: Number(currentRoom),
-
-        programId,
-        programName: program?.name || "",
-
-        semester,
-
-        subjectId,
-        subjectName: subject?.name || "",
-
-        type,
-        professor_id,
-        groups,
-
-        comment
-}]);
-      
+        ({ error } =
+            await supabase
+            .from('events')
+            .insert([payload])
+        );
     }
 
-    await loadAll();
+    console.log(error);
 
-    render();
+    if(error){
+
+        alert(error.message);
+
+        return;
+    }
 
     document.getElementById("modal").style.display =
         "none";
-});
+
+    await loadAll();
+};
 
 document.getElementById("deleteBtn")
-.addEventListener("click", async ()=>{
+.onclick = async ()=>{
 
     if(!editingId) return;
 
-    if(!confirm("Delete event?"))
-        return;
-
-    const comment =
-        document.getElementById("commentInput").value.trim();
-
-    const existing =
-    events.find(e=>e.id===editingId);
-
-const program =
-    programs.find(p=>p.id===existing?.programId);
-
-const subject =
-    subjects.find(s=>s.id===existing?.subjectId);
-
-await supabase
-    .from('logs')
-    .insert([{
-        action:"DELETE",
-        timestamp:new Date().toISOString(),
-
-        date: existing?.date || "",
-        time: existing?.time || "",
-        room: existing?.room || "",
-
-        programId: existing?.programId || "",
-        programName: program?.name || "",
-
-        semester: existing?.semester || "",
-
-        subjectId: existing?.subjectId || "",
-        subjectName: subject?.name || "",
-
-        type: existing?.type || "",
-        professor: existing?.professor || "",
-        groups: existing?.groups || "",
-
-        comment
-}]);
+    if(!confirm("Delete?")) return;
 
     const { error } =
-    await supabase
+        await supabase
         .from('events')
         .delete()
         .eq('id', editingId);
 
-console.log(error);
-
-    await loadAll();
-
-    render();
+    console.log(error);
 
     document.getElementById("modal").style.display =
         "none";
+
+    await loadAll();
+};
+
+document.getElementById("datePicker").value =
+    todayISO();
+
+document.getElementById("datePicker")
+.addEventListener("change", render);
+
+document.getElementById("todayBtn")
+.addEventListener("click",()=>{
+
+    document.getElementById("datePicker").value =
+        todayISO();
+
+    render();
 });
 
 loadAll();
