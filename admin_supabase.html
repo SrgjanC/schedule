@@ -241,19 +241,23 @@ const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
 
 const supabaseKey =
-'YOUR_SUPABASE_KEY';
+'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
 
 const supabase =
-    createClient(
-        supabaseUrl,
-        supabaseKey
+createClient(supabaseUrl, supabaseKey);
+
+const LAB_ROOMS = [
+"08 лаб.","09 лаб.","10 лаб.",
+"11 лаб.","12 лаб.","14 лаб.","НФИЦ"
+];
+
+const TIMES = [];
+
+for(let h=8; h<=20; h++){
+    TIMES.push(
+        String(h).padStart(2,"0")+":00"
     );
-
-
-
-/* =====================================================
-   GLOBALS
-===================================================== */
+}
 
 let events = [];
 let programs = [];
@@ -262,154 +266,168 @@ let professors = [];
 let rooms = [];
 
 let currentDate = "";
-let currentRoom = "";
 let currentTime = "";
 let editingId = null;
-
-
-
-/* =====================================================
-   HELPERS
-===================================================== */
 
 function todayISO(){
 
     const t = new Date();
 
-    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
+    return `${t.getFullYear()}-${
+        String(t.getMonth()+1).padStart(2,"0")
+    }-${
+        String(t.getDate()).padStart(2,"0")
+    }`;
 }
 
-const LAB_ROOMS = [
-"08 лаб.","09 лаб.","10 лаб.","11 лаб.",
-"12 лаб.","14 лаб.","НФИЦ"
-];
+function fillRooms(){
 
-const TIMES = [];
+    const sel =
+        document.getElementById("roomSelect");
 
-for(let h=8; h<=20; h++){
+    sel.innerHTML = "";
 
-    TIMES.push(
-        String(h).padStart(2,"0")+":00"
-    );
+    rooms.forEach(r=>{
+
+        sel.innerHTML += `
+        <option value="${r.id}">
+            ${r.name}
+        </option>`;
+    });
 }
 
+function fillProfessors(){
 
+    const sel =
+        document.getElementById("professorSelect");
 
-/* =====================================================
-   LOGGING
-===================================================== */
+    sel.innerHTML =
+        `<option value="">--</option>`;
 
-async function addLog(action, eventData){
+    professors.forEach(p=>{
 
-    const room =
-        rooms.find(r =>
-            r.id == eventData.room_id
-        );
-
-    const subject =
-        subjects.find(s =>
-            s.id == eventData.subject_id
-        );
-
-    const professor =
-        professors.find(p =>
-            p.id == eventData.professor_id
-        );
-
-    const payload = {
-
-        action,
-
-        event_id:
-            eventData.id || null,
-
-        event_date:
-            eventData.event_date,
-
-        event_time:
-            eventData.event_time,
-
-        room_id:
-            eventData.room_id,
-
-        room_name:
-            room?.name || "",
-
-        subject_id:
-            eventData.subject_id,
-
-        subject_name:
-            subject?.name || "",
-
-        professor_id:
-            eventData.professor_id || null,
-
-        professor_name:
-            professor?.name || "",
-
-        type:
-            eventData.type || "",
-
-        groups_text:
-            eventData.groups_text || "",
-
-        comment:
-            eventData.comment || ""
-    };
-
-    const { error } =
-        await supabase
-        .from('logs')
-        .insert([payload]);
-
-    console.log(error);
+        sel.innerHTML += `
+        <option value="${p.id}">
+            ${p.name}
+        </option>`;
+    });
 }
 
+function fillPrograms(){
 
+    const sel =
+        document.getElementById("programSelect");
 
-/* =====================================================
-   LOAD DATA
-===================================================== */
+    sel.innerHTML = "";
+
+    programs.forEach(p=>{
+
+        sel.innerHTML += `
+        <option value="${p.id}">
+            ${p.name}
+        </option>`;
+    });
+
+    updateSubjects();
+
+    sel.onchange = updateSubjects;
+}
+
+function updateSubjects(){
+
+    const programId =
+        document.getElementById("programSelect").value;
+
+    const semesterSel =
+        document.getElementById("semesterSelect");
+
+    const subjectSel =
+        document.getElementById("subjectSelect");
+
+    const filtered =
+        subjects.filter(s =>
+            String(s.program_id) === String(programId)
+        );
+
+    const semesters =
+        [...new Set(
+            filtered.map(s=>s.semester)
+        )];
+
+    semesterSel.innerHTML = "";
+
+    semesters.forEach(s=>{
+
+        semesterSel.innerHTML += `
+        <option value="${s}">
+            ${s}
+        </option>`;
+    });
+
+    function refreshSubjects(){
+
+        const sem = semesterSel.value;
+
+        const list =
+            filtered.filter(s =>
+                String(s.semester) === String(sem)
+            );
+
+        subjectSel.innerHTML = "";
+
+        list.forEach(s=>{
+
+            subjectSel.innerHTML += `
+            <option value="${s.id}">
+                ${s.name}
+            </option>`;
+        });
+    }
+
+    refreshSubjects();
+
+    semesterSel.onchange = refreshSubjects;
+}
 
 async function loadAll(){
 
-    const { data: programsData } =
+    const { data: p1 } =
         await supabase
         .from('programs')
         .select('*')
         .order('name');
 
-    programs = programsData || [];
+    programs = p1 || [];
 
-
-    const { data: subjectsData } =
+    const { data: p2 } =
         await supabase
         .from('subjects')
         .select('*')
         .order('semester');
 
-    subjects = subjectsData || [];
+    subjects = p2 || [];
 
-
-    const { data: professorsData } =
+    const { data: p3 } =
         await supabase
         .from('professors')
         .select('*')
         .order('name');
 
-    professors = professorsData || [];
+    professors = p3 || [];
 
-
-    const { data: roomsData } =
+    const { data: p4 } =
         await supabase
         .from('rooms')
         .select('*')
         .order('name');
 
-    rooms = roomsData || [];
+    rooms = p4 || [];
 
+    fillRooms();
+    fillProfessors();
+    fillPrograms();
 
-    const { data: eventsData } =
+    const { data: p5, error } =
         await supabase
         .from('events')
         .select(`
@@ -430,7 +448,9 @@ async function loadAll(){
             )
         `);
 
-    events = (eventsData || []).map(e => ({
+    console.log(error);
+
+    events = (p5 || []).map(e=>({
 
         id: e.id,
 
@@ -439,8 +459,7 @@ async function loadAll(){
         time:
             e.event_time?.substring(0,5),
 
-        room_id:
-            e.room_id,
+        room_id: e.room_id,
 
         room:
             e.rooms?.name || "",
@@ -455,146 +474,23 @@ async function loadAll(){
             e.subjects?.program_id || "",
 
         type:
-            e.type,
+            e.type || "",
 
         professor_id:
-            e.professor_id,
+            e.professor_id || null,
+
+        professor:
+            e.professors?.name || "",
 
         groups:
-            e.groups_text,
+            e.groups_text || "",
 
         comment:
-            e.comment
+            e.comment || ""
     }));
-
-    fillPrograms();
-    fillProfessors();
-    fillRooms();
 
     render();
 }
-
-
-
-/* =====================================================
-   SELECTS
-===================================================== */
-
-function fillPrograms(){
-
-    const sel =
-        document.getElementById("programSelect");
-
-    sel.innerHTML = "";
-
-    programs.forEach(p => {
-
-        sel.innerHTML += `
-        <option value="${p.id}">
-            ${p.name}
-        </option>`;
-    });
-
-    updateSubjects();
-
-    sel.onchange = updateSubjects;
-}
-
-function fillProfessors(){
-
-    const sel =
-        document.getElementById("professorSelect");
-
-    sel.innerHTML =
-        `<option value="">--</option>`;
-
-    professors.forEach(p => {
-
-        sel.innerHTML += `
-        <option value="${p.id}">
-            ${p.name}
-        </option>`;
-    });
-}
-
-function fillRooms(){
-
-    const sel =
-        document.getElementById("roomSelect");
-
-    sel.innerHTML = "";
-
-    rooms.forEach(r => {
-
-        sel.innerHTML += `
-        <option value="${r.id}">
-            ${r.name}
-        </option>`;
-    });
-}
-
-function updateSubjects(){
-
-    const programId =
-        document.getElementById("programSelect").value;
-
-    const semesterSel =
-        document.getElementById("semesterSelect");
-
-    const subjectSel =
-        document.getElementById("subjectSelect");
-
-    const filtered =
-        subjects.filter(s =>
-            String(s.program_id) === String(programId)
-        );
-
-    const semesters =
-        [...new Set(filtered.map(s => s.semester))]
-        .sort((a,b)=>a-b);
-
-    semesterSel.innerHTML = "";
-
-    semesters.forEach(s => {
-
-        semesterSel.innerHTML += `
-        <option value="${s}">
-            ${s}
-        </option>`;
-    });
-
-    function refreshSubjects(){
-
-        const sem =
-            semesterSel.value;
-
-        const list =
-            filtered.filter(s =>
-                String(s.semester) === String(sem)
-            );
-
-        subjectSel.innerHTML = "";
-
-        list.forEach(s => {
-
-            subjectSel.innerHTML += `
-            <option value="${s.id}">
-                ${s.name}
-            </option>`;
-        });
-    }
-
-    refreshSubjects();
-
-    semesterSel.onchange =
-        refreshSubjects;
-}
-
-
-
-/* =====================================================
-   RENDER
-===================================================== */
 
 function render(){
 
@@ -606,20 +502,21 @@ function render(){
     const selectedDate =
         document.getElementById("datePicker").value;
 
-    TIMES.forEach(time => {
+    TIMES.forEach(time=>{
 
         let row = `
         <tr>
-            <td class="time-col">${time}</td>
+        <td class="time-col">${time}</td>
         `;
 
-        rooms.forEach(room => {
+        rooms.forEach(room=>{
 
             const event =
-                events.find(e =>
+                events.find(e=>
+
                     e.date === selectedDate &&
                     e.time === time &&
-                    e.room_id === room.id
+                    Number(e.room_id) === Number(room.id)
                 );
 
             let content = "";
@@ -627,14 +524,22 @@ function render(){
             if(event){
 
                 const subject =
-                    subjects.find(s =>
+                    subjects.find(s=>
                         s.id == event.subjectId
+                    );
+
+                const program =
+                    programs.find(p=>
+                        p.id == event.programId
                     );
 
                 content = `
                 <div class="event">
                     <b>${subject?.name || ""}</b><br>
-                    ${event.type || ""}
+                    ${program?.name || ""}<br>
+                    Сем. ${event.semester}<br>
+                    ${event.type}<br>
+                    ${event.professor}
                 </div>`;
             }
 
@@ -653,37 +558,31 @@ function render(){
     });
 }
 
-
-
-/* =====================================================
-   OPEN SLOT
-===================================================== */
-
 window.openSlot = function(cell){
-
-    currentRoom =
-        Number(cell.dataset.room);
-
-    currentTime =
-        cell.dataset.time;
 
     currentDate =
         document.getElementById("datePicker").value;
 
+    currentTime =
+        cell.dataset.time;
+
+    const roomId =
+        Number(cell.dataset.room);
+
     const existing =
-        events.find(e =>
+        events.find(e=>
+
             e.date === currentDate &&
             e.time === currentTime &&
-            e.room_id === currentRoom
+            Number(e.room_id) === roomId
         );
 
-    editingId =
-        existing?.id || null;
+    editingId = existing?.id || null;
+
+    document.getElementById("roomSelect").value =
+        roomId;
 
     if(existing){
-
-        document.getElementById("roomSelect").value =
-            existing.room_id;
 
         document.getElementById("programSelect").value =
             existing.programId;
@@ -705,171 +604,138 @@ window.openSlot = function(cell){
             existing.professor_id || "";
 
         document.getElementById("groupsInput").value =
-            existing.groups || "";
+            existing.groups;
 
         document.getElementById("commentInput").value =
-            existing.comment || "";
+            existing.comment;
     }
     else{
 
-        editingId = null;
+        document.getElementById("typeSelect").value =
+            "Предавање";
 
-        document.getElementById("roomSelect").value =
-            currentRoom;
+        document.getElementById("professorSelect").value =
+            "";
+
+        document.getElementById("groupsInput").value =
+            "";
+
+        document.getElementById("commentInput").value =
+            "";
     }
 
     document.getElementById("modal").style.display =
         "flex";
 };
 
-
-
-/* =====================================================
-   SAVE EVENT
-===================================================== */
-
-document.getElementById("saveBtn")
-.addEventListener("click", async ()=>{
-
-    const payload = {
-
-        event_date:
-            currentDate,
-
-        event_time:
-            currentTime,
-
-        room_id:
-            Number(
-                document.getElementById("roomSelect").value
-            ),
-
-        subject_id:
-            Number(
-                document.getElementById("subjectSelect").value
-            ),
-
-        type:
-            document.getElementById("typeSelect").value,
-
-        professor_id:
-            document.getElementById("professorSelect").value || null,
-
-        groups_text:
-            document.getElementById("groupsInput").value,
-
-        comment:
-            document.getElementById("commentInput").value
-    };
-
-
-
-    /* UPDATE */
-
-    if(editingId){
-
-        const { error } =
-            await supabase
-            .from('events')
-            .update(payload)
-            .eq('id', editingId);
-
-        console.log(error);
-
-        if(!error){
-
-            await addLog(
-                "UPDATE",
-                {
-                    id: editingId,
-                    ...payload
-                }
-            );
-        }
-    }
-
-
-
-    /* INSERT */
-
-    else{
-
-        const {
-            data: inserted,
-            error
-        } =
-            await supabase
-            .from('events')
-            .insert([payload])
-            .select();
-
-        console.log(error);
-
-        if(!error && inserted?.length){
-
-            await addLog(
-                "ADD",
-                inserted[0]
-            );
-        }
-    }
-
-    await loadAll();
+document.getElementById("closeBtn")
+.onclick = ()=>{
 
     document.getElementById("modal").style.display =
         "none";
-});
+};
 
+document.getElementById("saveBtn")
+.onclick = async ()=>{
 
-
-/* =====================================================
-   DELETE
-===================================================== */
-
-document.getElementById("deleteBtn")
-.addEventListener("click", async ()=>{
-
-    if(!editingId)
-        return;
-
-    const existing =
-        events.find(e =>
-            e.id === editingId
+    const selectedRoomId =
+        Number(
+            document.getElementById("roomSelect").value
         );
 
-    if(existing){
+    const subjectId =
+        Number(
+            document.getElementById("subjectSelect").value
+        );
 
-        await addLog(
-            "DELETE",
-            {
-                id: existing.id,
+    const type =
+        document.getElementById("typeSelect").value;
 
-                event_date:
-                    existing.date,
+    const professor_id =
+        document.getElementById("professorSelect").value || null;
 
-                event_time:
-                    existing.time,
+    const groups =
+        document.getElementById("groupsInput").value;
 
-                room_id:
-                    existing.room_id,
+    const comment =
+        document.getElementById("commentInput").value;
 
-                subject_id:
-                    existing.subjectId,
+    const roomConflict =
+        events.find(e=>
 
-                professor_id:
-                    existing.professor_id,
+            e.date === currentDate &&
+            e.time === currentTime &&
+            Number(e.room_id) === selectedRoomId &&
+            String(e.id) !== String(editingId)
+        );
 
-                type:
-                    existing.type,
+    if(roomConflict){
 
-                groups_text:
-                    existing.groups,
+        alert("Просторијата е зафатена.");
 
-                comment:
-                    existing.comment
-            }
+        return;
+    }
+
+    const payload = {
+
+        event_date: currentDate,
+
+        event_time: currentTime,
+
+        room_id: selectedRoomId,
+
+        subject_id: subjectId,
+
+        type,
+
+        professor_id,
+
+        groups_text: groups,
+
+        comment
+    };
+
+    let error;
+
+    if(editingId){
+
+        ({ error } =
+            await supabase
+            .from('events')
+            .update(payload)
+            .eq('id', editingId)
         );
     }
+    else{
+
+        ({ error } =
+            await supabase
+            .from('events')
+            .insert([payload])
+        );
+    }
+
+    console.log(error);
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+    }
+
+    document.getElementById("modal").style.display =
+        "none";
+
+    await loadAll();
+};
+
+document.getElementById("deleteBtn")
+.onclick = async ()=>{
+
+    if(!editingId) return;
+
+    if(!confirm("Delete?")) return;
 
     const { error } =
         await supabase
@@ -879,30 +745,11 @@ document.getElementById("deleteBtn")
 
     console.log(error);
 
+    document.getElementById("modal").style.display =
+        "none";
+
     await loadAll();
-
-    document.getElementById("modal").style.display =
-        "none";
-});
-
-
-
-/* =====================================================
-   CLOSE
-===================================================== */
-
-document.getElementById("closeBtn")
-.addEventListener("click",()=>{
-
-    document.getElementById("modal").style.display =
-        "none";
-});
-
-
-
-/* =====================================================
-   INIT
-===================================================== */
+};
 
 document.getElementById("datePicker").value =
     todayISO();
@@ -910,8 +757,18 @@ document.getElementById("datePicker").value =
 document.getElementById("datePicker")
 .addEventListener("change", render);
 
+document.getElementById("todayBtn")
+.addEventListener("click",()=>{
+
+    document.getElementById("datePicker").value =
+        todayISO();
+
+    render();
+});
+
 loadAll();
 
 </script>
+
 </body>
 </html>
