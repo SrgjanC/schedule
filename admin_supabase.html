@@ -388,7 +388,85 @@ function updateSubjects(){
 
     semesterSel.onchange = refreshSubjects;
 }
+async function addLog(action, payload){
 
+    const room =
+        rooms.find(r =>
+            Number(r.id) === Number(payload.room_id)
+        );
+
+    const subject =
+        subjects.find(s =>
+            Number(s.id) === Number(payload.subject_id)
+        );
+
+    const program =
+        programs.find(p =>
+            Number(p.id) === Number(subject?.program_id)
+        );
+
+    const professor =
+        professors.find(p =>
+            Number(p.id) === Number(payload.professor_id)
+        );
+
+    const logData = {
+
+        action,
+
+        timestamp:
+            new Date().toISOString(),
+
+        event_date:
+            payload.event_date,
+
+        event_time:
+            payload.event_time,
+
+        room_id:
+            payload.room_id,
+
+        room_name:
+            room?.name || "",
+
+        program_id:
+            subject?.program_id || null,
+
+        program_name:
+            program?.name || "",
+
+        semester:
+            subject?.semester || "",
+
+        subject_id:
+            payload.subject_id,
+
+        subject_name:
+            subject?.name || "",
+
+        type:
+            payload.type || "",
+
+        professor_id:
+            payload.professor_id || null,
+
+        professor_name:
+            professor?.name || "",
+
+        groups_text:
+            payload.groups_text || "",
+
+        comment:
+            payload.comment || ""
+    };
+
+    const { error } =
+        await supabase
+        .from('logs')
+        .insert([logData]);
+
+    console.log("LOG:", error);
+}
 async function loadAll(){
 
     const { data: p1 } =
@@ -699,21 +777,37 @@ document.getElementById("saveBtn")
 
     if(editingId){
 
-        ({ error } =
-            await supabase
-            .from('events')
-            .update(payload)
-            .eq('id', editingId)
+    ({ error } =
+        await supabase
+        .from('events')
+        .update(payload)
+        .eq('id', editingId)
+    );
+
+    if(!error){
+
+        await addLog(
+            "UPDATE",
+            payload
         );
     }
+}
     else{
 
-        ({ error } =
-            await supabase
-            .from('events')
-            .insert([payload])
+    ({ error } =
+        await supabase
+        .from('events')
+        .insert([payload])
+    );
+
+    if(!error){
+
+        await addLog(
+            "ADD",
+            payload
         );
     }
+}
 
     console.log(error);
 
@@ -736,7 +830,43 @@ document.getElementById("deleteBtn")
     if(!editingId) return;
 
     if(!confirm("Delete?")) return;
+const existing =
+    events.find(e =>
+        e.id === editingId
+    );
 
+if(existing){
+
+    await addLog(
+        "DELETE",
+        {
+
+            event_date:
+                existing.date,
+
+            event_time:
+                existing.time,
+
+            room_id:
+                existing.room_id,
+
+            subject_id:
+                existing.subjectId,
+
+            type:
+                existing.type,
+
+            professor_id:
+                existing.professor_id,
+
+            groups_text:
+                existing.groups,
+
+            comment:
+                existing.comment
+        }
+    );
+}
     const { error } =
         await supabase
         .from('events')
