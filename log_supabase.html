@@ -124,20 +124,7 @@ async function loadLogs(){
     render();
 }
 
- document.getElementById("eventDateFilter")
-.addEventListener("change", (e) => {
 
-    eventDateFilter = e.target.value;
-    render();
-});
-
-document.getElementById("clearEventFilter")
-.addEventListener("click", () => {
-
-    eventDateFilter = "";
-    document.getElementById("eventDateFilter").value = "";
-    render();
-});
     
 function formatDateTime(ts){
 
@@ -198,7 +185,20 @@ document
 .addEventListener("change", render);
 
 loadLogs();
+ document.getElementById("eventDateFilter")
+.addEventListener("change", (e) => {
 
+    eventDateFilter = e.target.value;
+    render();
+});
+
+document.getElementById("clearEventFilter")
+.addEventListener("click", () => {
+
+    eventDateFilter = "";
+    document.getElementById("eventDateFilter").value = "";
+    render();
+});
 </script>
 
 </body>
