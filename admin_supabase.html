@@ -599,8 +599,11 @@ window.openSlot = function(cell){
 
     if(existing){
 
-        document.getElementById("programSelect").value =
-            existing.programId || "";
+    document.getElementById("roomSelect").value =
+        existing.room_id || "";
+
+    document.getElementById("programSelect").value =
+        existing.programId || "";
 
         updateSubjects();
 
@@ -626,10 +629,14 @@ window.openSlot = function(cell){
     }
     else{
 
-        editingId = null;
+    editingId = null;
 
-        document.getElementById("typeSelect").value =
-            "Предавање";
+    document.getElementById("roomSelect").value =
+        currentRoom;
+
+    document.getElementById("typeSelect").value =
+        "Предавање";
+
 
         document.getElementById("professorSelect").value = "";
 
