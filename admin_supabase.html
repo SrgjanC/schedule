@@ -199,13 +199,7 @@ th{
 <label>Предмет</label>
 <select id="subjectSelect"></select>
 
-<label>Тип</label>
-<select id="typeSelect">
-<option value="Предавање">Предавање</option>
-<option value="Вежби">Вежби</option>
-<option value="Колоквиум">Колоквиум</option>
-<option value="Испит">Испит</option>
-</select>
+<select id="typeSelect"></select>
 
     <label>Просторија</label>
 <select id="roomSelect"></select>
@@ -264,7 +258,8 @@ let programs = [];
 let subjects = [];
 let professors = [];
 let rooms = [];
-
+let lessonTypes = [];
+    
 let currentDate = "";
 let currentTime = "";
 let editingId = null;
@@ -453,6 +448,23 @@ async function addLog(action, payload){
 
     console.log("LOG:", error);
 }
+
+    function fillLessonTypes(){
+
+    const sel =
+        document.getElementById("typeSelect");
+
+    sel.innerHTML = "";
+
+    lessonTypes.forEach(t => {
+
+        sel.innerHTML += `
+        <option value="${t.name}">
+            ${t.name}
+        </option>`;
+    });
+}
+    
 async function loadAll(){
 
     const { data: p1 } =
@@ -478,7 +490,14 @@ async function loadAll(){
         .order('id', { ascending: true });
 
     professors = p3 || [];
+    
+const { data: lt } =
+    await supabase
+    .from('lesson_types')
+    .select('*')
+    .order('id');
 
+lessonTypes = lt || [];
     const { data: p4 } =
         await supabase
         .from('rooms')
@@ -490,6 +509,7 @@ async function loadAll(){
     fillRooms();
     fillProfessors();
     fillPrograms();
+    fillLessonTypes();
 
     const { data: p5, error } =
         await supabase
