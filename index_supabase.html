@@ -292,7 +292,8 @@ async function loadData() {
         type,
         capacity
     )
-        `);
+        `).order('event_date', { ascending: true })
+    .range(0, 10000);
 
     console.log(data);
     console.log(error);
