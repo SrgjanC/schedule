@@ -372,11 +372,20 @@ function initFilters() {
     fillSelect("semesterFilter", semSorted);
     fillSelect("roomFilter", roomSorted);
 
-    const today = todayISO();
+   // use latest available date from events
 
-    if (dates.includes(today))
-        document.getElementById("dateFilter").value =
-            today;
+const today = todayISO();
+
+if (dates.includes(today)){
+
+    document.getElementById("dateFilter").value =
+        today;
+}
+else if (dates.length > 0){
+
+    document.getElementById("dateFilter").value =
+        dates[dates.length - 1];
+}
 
     document.querySelectorAll("select").forEach(s =>
         s.addEventListener("change", render)
