@@ -295,6 +295,18 @@ async function loadData() {
         `).order('event_date', { ascending: true })
     .range(0, 10000);
 
+console.log("EVENT COUNT:", data?.length);
+
+console.log(
+    "FIRST DATE:",
+    data?.[0]?.event_date
+);
+
+console.log(
+    "LAST DATE:",
+    data?.[data.length - 1]?.event_date
+);
+    
     console.log(data);
     console.log(error);
 
