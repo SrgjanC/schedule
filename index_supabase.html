@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.1'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.2'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -307,7 +307,21 @@ function computeRange(view, selectedDate) {
         fromDate = toISO(startOfMonth(baseDate));
         toDate = toISO(endOfMonth(baseDate));
     }
+else if (view === "year") {
 
+    const base = new Date(selectedDate);
+
+    const year = base.getFullYear();
+
+    // if we're before October, academic year started last year
+    const startYear = base.getMonth() >= 9 ? year : year - 1;
+
+    const start = new Date(startYear, 9, 1); // Oct = 9
+    const end   = new Date(startYear + 1, 8, 30); // Sep 30
+
+    fromDate = toISO(start);
+    toDate = toISO(end);
+}
     else {
         fromDate = selectedDate;
         toDate = selectedDate;
