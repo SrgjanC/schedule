@@ -549,7 +549,7 @@ sorted.forEach(e => {
     tbody.innerHTML += `
     <tr style="background:${getRoomColor(e.room)}">
         
-        <td>${day: getDayName(e.event_date)}</td>
+        <td>${e.day || ""}</td>
         <td>${formatDate(e.date)}</td>
         <td>${e.time || ""}</td>
         <td>${e.room || ""}</td>
