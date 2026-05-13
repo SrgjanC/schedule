@@ -177,6 +177,7 @@ th{
 <th>Инст. за Анатомија</th>
 <th>ПМФ</th>
 <th>Фак. за физичко образование</th>
+<th>Кат. за Медицинска физика</th>
 </tr>
 </thead>
 
@@ -415,13 +416,13 @@ async function addLog(action, payload){
             payload.event_time,
 
         room_id:
-            payload.room_id,
+            payload.room_id || "",
 
         room_name:
             room?.name || "",
 
         subject_id:
-            payload.subject_id,
+            payload.subject_id || "",
 
         subject_name:
             subject?.name || "",
