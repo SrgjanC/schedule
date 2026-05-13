@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.2'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.3'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -130,6 +130,7 @@ let isLoading = true;
 let allDates = [];
 let fromDate = "";
 let toDate = "";
+
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -287,45 +288,47 @@ function sortSemesters(values) {
         .filter(v => !Number.isNaN(v))
         .sort((a,b) => a - b);
 }
-function computeRange(view, selectedDate) {
+function computeRange() {
 
-    if (!selectedDate) selectedDate = todayISO();
+    const view = document.getElementById("viewMode").value;
 
-    const baseDate = new Date(selectedDate);
+    const selectedDate =
+        document.getElementById("dateFilter").value || todayISO();
+
+    const baseDate = selectedDate
+        ? new Date(selectedDate)
+        : new Date();
 
     if (view === "day") {
+
         fromDate = selectedDate;
         toDate = selectedDate;
     }
 
     else if (view === "week") {
+
         fromDate = toISO(startOfWeek(baseDate));
         toDate = toISO(endOfWeek(baseDate));
     }
 
     else if (view === "month") {
+
         fromDate = toISO(startOfMonth(baseDate));
         toDate = toISO(endOfMonth(baseDate));
     }
-else if (view === "year") {
 
-    const base = new Date(selectedDate);
+    else if (view === "year") {
 
-    const year = base.getFullYear();
+    let year = baseDate.getFullYear();
 
-    // if we're before October, academic year started last year
-    const startYear = base.getMonth() >= 9 ? year : year - 1;
-
-    const start = new Date(startYear, 9, 1); // Oct = 9
-    const end   = new Date(startYear + 1, 8, 30); // Sep 30
-
-    fromDate = toISO(start);
-    toDate = toISO(end);
-}
-    else {
-        fromDate = selectedDate;
-        toDate = selectedDate;
+    // Jan-Sep belong to previous academic year
+    if (baseDate.getMonth() < 9) {
+        year--;
     }
+
+    fromDate = toISO(new Date(year, 9, 1));
+    toDate = toISO(new Date(year + 1, 8, 30));
+}
 }
 
 
@@ -333,106 +336,64 @@ else if (view === "year") {
 
 async function loadData() {
 
+    computeRange();
+
     isLoading = true;
-    render(); // show spinner immediately
+    render();
 
-    const view =
-        document.getElementById("viewMode").value;
-
-    const selectedDate =
-        document.getElementById("dateFilter").value || todayISO();
-
-    computeRange(view, selectedDate);
-    // EVENTS WITH RELATIONS
-
-    const { data, error } =
-await supabase
-    .from('events')
-    .select(`
-        *,
-        subjects (
-            id,
-            name,
-            semester,
-            programs (
+    const { data, error } = await supabase
+        .from('events')
+        .select(`
+            *,
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
+                    id,
+                    name
+                )
+            ),
+            professors (
                 id,
                 name
+            ),
+            rooms (
+                id,
+                name,
+                type,
+                capacity
             )
-        ),
-        professors (
-            id,
-            name
-        ),
-        rooms (
-            id,
-            name,
-            type,
-            capacity
-        )
-    `)
-    .gte('event_date', fromDate)
-    .lte('event_date', toDate)
-    .order('event_date', { ascending: true })
-    .order('event_time', { ascending: true });
+        `)
+        .gte('event_date', fromDate)
+        .lte('event_date', toDate)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true });
 
-console.log("EVENT COUNT:", data?.length);
-
-console.log(
-    "FIRST DATE:",
-    data?.[0]?.event_date
-);
-
-console.log(
-    "LAST DATE:",
-    data?.[data.length - 1]?.event_date
-);
-    
-    console.log(data);
-    console.log(error);
-
-    if(error){
-
+    if (error) {
         alert(error.message);
         return;
     }
 
-    // CONVERT TO OLD FORMAT
-
     events = (data || []).map(e => ({
-    id: e.id,
-
-    date: e.event_date,
-    time: e.event_time?.substring(0,5),
-    room: e.rooms?.name || "",
-
-    subjectId: e.subject_id,
-
-    subject: e.subjects?.name,
-    semester: e.subjects?.semester || "",
-    program: e.subjects?.programs?.name  || "",
-
-    type: e.type || "",
-
-    professor_id: e.professor_id  || "",
-    professorName: e.professors?.name || "",
-
-    groups: e.groups_text,
-    comment: e.comment,
-
-    week: e.week,
-    day: e.day
-}));
-
-    // ROOMS
+        id: e.id,
+        date: e.event_date,
+        time: e.event_time?.substring(0,5),
+        room: e.rooms?.name || "",
+        subject: e.subjects?.name,
+        semester: e.subjects?.semester || "",
+        program: e.subjects?.programs?.name || "",
+        type: e.type || "",
+        professorName: e.professors?.name || "",
+        groups: e.groups_text,
+        day: getDayName(e.event_date)
+    }));
 
     rooms =
-        [...new Set(events.map(e=>e.room))]
-        .filter(Boolean);
-
+    [...new Set(events.map(e => e.room))]
+    .filter(Boolean);
     isLoading = false;
-
-initFilters();
-render();
+    render();
 }
 
 // ================= FILTER INIT =================
@@ -464,20 +425,11 @@ function initFilters() {
 
    // use latest available date from events
 
-
-
-
-
-
-function reload() {
-    loadData();
-}
-
 document.getElementById("viewMode")
-    .addEventListener("change", reload);
+    .addEventListener("change", loadData);
 
 document.getElementById("dateFilter")
-    .addEventListener("change", reload);
+    .addEventListener("change", loadData);
 
 document.getElementById("programFilter")
     .addEventListener("change", render);
@@ -592,14 +544,7 @@ if (view === "day") {
 
 // ================= NORMAL VIEW =================
 
-const sorted = [...events].sort((a,b)=>
-
-    (a.date||"").localeCompare(b.date||"") ||
-
-    (a.room||"").localeCompare(b.room||"") ||
-
-    (a.time||"").localeCompare(b.time||"")
-);
+const sorted = events;
 
 sorted.forEach(e => {
 
@@ -612,13 +557,13 @@ sorted.forEach(e => {
     if (semF && String(e.semester) !== String(semF))
         return;
 
-    if (roomF && e.rooms?.name !== roomF)
+    if (roomF && e.room !== roomF)
         return;
 
     tbody.innerHTML += `
     <tr style="background:${getRoomColor(e.room)}">
         
-        <td>${e.day || ""}</td>
+        <td>${day: getDayName(e.event_date)}</td>
         <td>${formatDate(e.date)}</td>
         <td>${e.time || ""}</td>
         <td>${e.room || ""}</td>
@@ -635,6 +580,8 @@ sorted.forEach(e => {
 
 document.getElementById("dateFilter").value =
     todayISO();
+
+initFilters();
 loadData();
 
 </script>
