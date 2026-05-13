@@ -350,7 +350,7 @@ function initFilters() {
 
     const dates =
         [...new Set(events.map(e => e.date))]
-        .sort();
+        .sort((a,b)=>a.localeCompare(b));
 
     const progs =
         [...new Set(events.map(e => e.program))]
