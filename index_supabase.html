@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=2'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -128,6 +128,8 @@ let rooms = [];
 let professors = [];
 let isLoading = true;
 
+let fromDate = "";
+let toDate = "";
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -285,11 +287,46 @@ function sortSemesters(values) {
         .filter(v => !Number.isNaN(v))
         .sort((a,b) => a - b);
 }
+function computeRange(view, selectedDate) {
 
+    if (!selectedDate) selectedDate = todayISO();
+
+    const baseDate = new Date(selectedDate);
+
+    if (view === "day") {
+        fromDate = selectedDate;
+        toDate = selectedDate;
+    }
+
+    else if (view === "week") {
+        fromDate = toISO(startOfWeek(baseDate));
+        toDate = toISO(endOfWeek(baseDate));
+    }
+
+    else if (view === "month") {
+        fromDate = toISO(startOfMonth(baseDate));
+        toDate = toISO(endOfMonth(baseDate));
+    }
+
+    else {
+        fromDate = selectedDate;
+        toDate = selectedDate;
+    }
+}
 // ================= LOAD =================
 
 async function loadData() {
 
+    isLoading = true;
+    render(); // show spinner immediately
+
+    const view =
+        document.getElementById("viewMode").value;
+
+    const selectedDate =
+        document.getElementById("dateFilter").value || todayISO();
+
+    computeRange(view, selectedDate);
     // EVENTS WITH RELATIONS
 
     const { data, error } =
@@ -378,9 +415,8 @@ console.log(
 
     isLoading = false;
 
-    initFilters();
-
-    render();
+initFilters();
+render();
 }
 
 // ================= FILTER INIT =================
@@ -427,11 +463,15 @@ else if (dates.length > 0){
         dates[dates.length - 1];
 }
 
-    document.getElementById("viewMode")
-    .addEventListener("change", loadData);
+function reload() {
+    loadData();
+}
+
+document.getElementById("viewMode")
+    .addEventListener("change", reload);
 
 document.getElementById("dateFilter")
-    .addEventListener("change", loadData);
+    .addEventListener("change", reload);
 
 document.getElementById("programFilter")
     .addEventListener("change", render);
@@ -442,7 +482,6 @@ document.getElementById("semesterFilter")
 document.getElementById("roomFilter")
     .addEventListener("change", render);
 
-loadData();
 }
 
 // ================= RENDER =================
@@ -478,37 +517,6 @@ const semF =
 
 const roomF =
     document.getElementById("roomFilter").value;
-//===========new view=========
-if (view === "day") {
-
-    fromDate = selectedDate;
-    toDate = selectedDate;
-}
-
-else if (view === "week") {
-
-    const start = startOfWeek(baseDate);
-    const end = endOfWeek(baseDate);
-
-    fromDate = toISO(start);
-    toDate = toISO(end);
-}
-
-else if (view === "month") {
-
-    const start = startOfMonth(baseDate);
-    const end = endOfMonth(baseDate);
-
-    fromDate = toISO(start);
-    toDate = toISO(end);
-}
-
-else {
-
-    // fallback
-    fromDate = selectedDate;
-    toDate = selectedDate;
-}
     
 const view =
     document.getElementById("viewMode").value;
@@ -618,6 +626,7 @@ sorted.forEach(e => {
 });
 
 }
+
 
 loadData();
 
