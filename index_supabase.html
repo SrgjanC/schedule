@@ -62,7 +62,7 @@ th {
 </select>
 
 <label>Датум:</label>
-<select id="dateFilter"></select>
+<input type="date" id="dateFilter">
 
 <label>Програма:</label>
 <select id="programFilter"></select>
@@ -314,46 +314,7 @@ function computeRange(view, selectedDate) {
     }
 }
 
-    async function loadAvailableDates() {
 
-    const { data, error } = await supabase
-        .from('events')
-        .select('event_date', { count: 'exact', head: false })
-        .order('event_date', { ascending: true });
-
-    if (error) {
-
-        console.log(error);
-        return;
-    }
-
-    allDates = [
-        ...new Set(
-            data.map(e => e.event_date)
-        )
-    ];
-
-    fillSelect("dateFilter", allDates);
-
-    const current =
-        document.getElementById("dateFilter").value;
-
-    const today = todayISO();
-
-    if (!current) {
-
-        if (allDates.includes(today)) {
-
-            document.getElementById("dateFilter").value =
-                today;
-        }
-        else if (allDates.length > 0) {
-
-            document.getElementById("dateFilter").value =
-                allDates[0];
-        }
-    }
-}
 // ================= LOAD =================
 
 async function loadData() {
@@ -658,7 +619,8 @@ sorted.forEach(e => {
 
 }
 
-await loadAvailableDates();
+document.getElementById("dateFilter").value =
+    todayISO();
 loadData();
 
 </script>
