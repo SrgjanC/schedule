@@ -170,7 +170,31 @@ function getRoomColor(room) {
 }
 
 // ================= DATE =================
+function startOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
 
+function endOfWeek(date) {
+    const start = startOfWeek(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end;
+}
+
+function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function endOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function toISO(d) {
+    return d.toISOString().split("T")[0];
+}
 function formatDate(dateStr) {
 
     if (!dateStr) return "";
@@ -269,31 +293,34 @@ async function loadData() {
     // EVENTS WITH RELATIONS
 
     const { data, error } =
-    await supabase
-        .from('events')
-        .select(`
-            *,
-            subjects (
-                id,
-                name,
-                semester,
-                programs (
-                    id,
-                    name
-                )
-            ),
-            professors (
+await supabase
+    .from('events')
+    .select(`
+        *,
+        subjects (
+            id,
+            name,
+            semester,
+            programs (
                 id,
                 name
-            ),
-            rooms (
-        id,
-        name,
-        type,
-        capacity
-    )
-        `).order('event_date', { ascending: true })
-    .range(0, 10000);
+            )
+        ),
+        professors (
+            id,
+            name
+        ),
+        rooms (
+            id,
+            name,
+            type,
+            capacity
+        )
+    `)
+    .gte('event_date', fromDate)
+    .lte('event_date', toDate)
+    .order('event_date', { ascending: true })
+    .order('event_time', { ascending: true });
 
 console.log("EVENT COUNT:", data?.length);
 
@@ -400,9 +427,22 @@ else if (dates.length > 0){
         dates[dates.length - 1];
 }
 
-    document.querySelectorAll("select").forEach(s =>
-        s.addEventListener("change", render)
-    );
+    document.getElementById("viewMode")
+    .addEventListener("change", loadData);
+
+document.getElementById("dateFilter")
+    .addEventListener("change", loadData);
+
+document.getElementById("programFilter")
+    .addEventListener("change", render);
+
+document.getElementById("semesterFilter")
+    .addEventListener("change", render);
+
+document.getElementById("roomFilter")
+    .addEventListener("change", render);
+
+loadData();
 }
 
 // ================= RENDER =================
@@ -438,7 +478,38 @@ const semF =
 
 const roomF =
     document.getElementById("roomFilter").value;
+//===========new view=========
+if (view === "day") {
 
+    fromDate = selectedDate;
+    toDate = selectedDate;
+}
+
+else if (view === "week") {
+
+    const start = startOfWeek(baseDate);
+    const end = endOfWeek(baseDate);
+
+    fromDate = toISO(start);
+    toDate = toISO(end);
+}
+
+else if (view === "month") {
+
+    const start = startOfMonth(baseDate);
+    const end = endOfMonth(baseDate);
+
+    fromDate = toISO(start);
+    toDate = toISO(end);
+}
+
+else {
+
+    // fallback
+    fromDate = selectedDate;
+    toDate = selectedDate;
+}
+    
 const view =
     document.getElementById("viewMode").value;
 
