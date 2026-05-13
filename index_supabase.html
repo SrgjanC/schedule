@@ -393,6 +393,7 @@ async function loadData() {
     [...new Set(events.map(e => e.room))]
     .filter(Boolean);
     isLoading = false;
+    initFilters();
     render();
 }
 
@@ -423,22 +424,7 @@ function initFilters() {
     fillSelect("semesterFilter", semSorted);
     fillSelect("roomFilter", roomSorted);
 
-   // use latest available date from events
-
-document.getElementById("viewMode")
-    .addEventListener("change", loadData);
-
-document.getElementById("dateFilter")
-    .addEventListener("change", loadData);
-
-document.getElementById("programFilter")
-    .addEventListener("change", render);
-
-document.getElementById("semesterFilter")
-    .addEventListener("change", render);
-
-document.getElementById("roomFilter")
-    .addEventListener("change", render);
+   
 
 }
 
@@ -525,7 +511,7 @@ if (view === "day") {
             tbody.innerHTML += `
             <tr style="background:${bg}; opacity:${e ? 1 : 0.55}">
                 
-                <td>${getDayName(e?.date)}</td>
+                <td>${e.day || ""}</td>
                 <td>${formatDate(selectedDate)}</td>
                 <td>${time}</td>
                 <td>${room}</td>
@@ -580,6 +566,24 @@ sorted.forEach(e => {
 
 document.getElementById("dateFilter").value =
     todayISO();
+document.getElementById("viewMode")
+    .addEventListener("change", loadData);
+
+document.getElementById("dateFilter")
+    .addEventListener("change", loadData);
+
+document.getElementById("programFilter")
+    .addEventListener("change", render);
+
+document.getElementById("semesterFilter")
+    .addEventListener("change", render);
+
+document.getElementById("roomFilter")
+    .addEventListener("change", render);
+
+document.getElementById("dateFilter").value =
+    todayISO();
+
 
 initFilters();
 loadData();
