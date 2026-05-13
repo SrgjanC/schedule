@@ -315,12 +315,12 @@ async function loadData() {
     subjectId: e.subject_id,
 
     subject: e.subjects?.name,
-    semester: e.subjects?.semester,
-    program: e.subjects?.programs?.name,
+    semester: e.subjects?.semester || "",
+    program: e.subjects?.programs?.name  || "",
 
     type: e.type,
 
-    professor_id: e.professor_id,
+    professor_id: e.professor_id  || "",
     professorName: e.professors?.name || "",
 
     groups: e.groups_text,
