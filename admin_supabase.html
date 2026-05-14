@@ -784,58 +784,75 @@ const selectedProgramId =
 const selectedSemester =
     selectedSubject?.semester;
 
-const sameGroupConflict =
-    events.find(e => {
+const selectedSubject =
+    subjects.find(s =>
+        Number(s.id) === subjectId
+    );
 
-        if(
-            e.date !== currentDate ||
-            e.time !== currentTime
-        ){
-            return false;
-        }
+const selectedProgramId =
+    selectedSubject?.program_id;
 
-        if(
-            String(e.id) === String(editingId)
-        ){
-            return false;
-        }
+const selectedSemester =
+    selectedSubject?.semester;
 
-        const sameProgram =
-            String(e.programId) ===
-            String(selectedProgramId);
-
-        const sameSemester =
-            String(e.semester) ===
-            String(selectedSemester);
-
-        if(!sameProgram || !sameSemester){
-            return false;
-        }
-
-        // allow only Вежби + Вежби
-        const parallelAllowed = [
+const parallelAllowed = [
     "Вежби",
     "Испит",
     "Практичен испит"
 ];
 
-if(
-    parallelAllowed.includes(e.type) &&
-    parallelAllowed.includes(type) &&
-    e.type === type
-){
-    return false;
-}
+const sameGroupConflict =
+    events.find(e => {
 
+        if (
+            e.date !== currentDate ||
+            e.time !== currentTime
+        ) {
+            return false;
+        }
 
-if(sameGroupConflict){
+        if (
+            String(e.id) === String(editingId)
+        ) {
+            return false;
+        }
 
-    alert(
-        "Оваа програма и семестар веќе имаат настава во истиот термин."
-    );
+        const sameProgram =
+            String(e.programId) === String(selectedProgramId);
 
+        const sameSemester =
+            String(e.semester) === String(selectedSemester);
+
+        if (!sameProgram || !sameSemester) {
+            return false;
+        }
+
+        // RULE:
+        // only allow same TYPE in parallel (no mixing types)
+        const isParallelType =
+            parallelAllowed.includes(type);
+
+        const existingIsParallelType =
+            parallelAllowed.includes(e.type);
+
+        if (isParallelType && existingIsParallelType) {
+
+            if (type === e.type) {
+                return false; // allowed (same type parallel)
+            }
+
+            return true; // BLOCK mixing types
+        }
+
+        // everything else is blocked
+        return true;
+    });
+
+if (sameGroupConflict) {
+
+    alert("Оваа програма и семестар веќе имаат настава во истиот термин.");
     return;
-});
+}
     
     const roomConflict =
         events.find(e=>
