@@ -523,26 +523,33 @@ lessonTypes = lt || [];
     fillPrograms();
     fillLessonTypes();
 
-    const { data: p5, error } =
-        await supabase
-        .from('events')
-        .select(`
-            *,
-            subjects (
-                id,
-                name,
-                semester,
-                program_id
-            ),
-            professors (
-                id,
-                name
-            ),
-            rooms (
-                id,
-                name
-            )
-        `);
+    const selectedDate =
+    document.getElementById("datePicker").value;
+
+const { data: p5, error } =
+    await supabase
+    .from('events')
+    .select(`
+        *,
+        subjects (
+            id,
+            name,
+            semester,
+            program_id
+        ),
+        professors (
+            id,
+            name
+        ),
+        rooms (
+            id,
+            name
+        )
+    `)
+    .eq('event_date', selectedDate)
+    .order('event_time', { ascending: true });
+
+    
 console.log("ROOMS:", rooms);
 console.log("EVENTS:", p5);
     console.log(error);
@@ -913,7 +920,7 @@ document.getElementById("datePicker").value =
     todayISO();
 
 document.getElementById("datePicker")
-.addEventListener("change", render);
+.addEventListener("change", loadAll);
 
 document.getElementById("todayBtn")
 .addEventListener("click",()=>{
@@ -921,7 +928,7 @@ document.getElementById("todayBtn")
     document.getElementById("datePicker").value =
         todayISO();
 
-    render();
+    loadAll();
 });
 
 loadAll();
