@@ -784,51 +784,60 @@ const selectedProgramId =
 const selectedSemester =
     selectedSubject?.semester;
 
-const selectedRoom =
-    rooms.find(r =>
-        Number(r.id) === selectedRoomId
+const sameGroupConflict =
+    events.find(e => {
+
+        if(
+            e.date !== currentDate ||
+            e.time !== currentTime
+        ){
+            return false;
+        }
+
+        if(
+            String(e.id) === String(editingId)
+        ){
+            return false;
+        }
+
+        const sameProgram =
+            String(e.programId) ===
+            String(selectedProgramId);
+
+        const sameSemester =
+            String(e.semester) ===
+            String(selectedSemester);
+
+        if(!sameProgram || !sameSemester){
+            return false;
+        }
+
+        // allow only Вежби + Вежби
+        const parallelAllowed = [
+    "Вежби",
+    "Испит",
+    "Практичен испит"
+];
+
+if(
+    parallelAllowed.includes(e.type) &&
+    parallelAllowed.includes(type) &&
+    e.type === type
+){
+    return false;
+}
+
+        return true;
+    });
+
+if(sameGroupConflict){
+
+    alert(
+        "Оваа програма и семестар веќе имаат настава во истиот термин."
     );
 
-const isLecture =
-    type === "Предавање";
-
-if(isLecture){
-
-    const lectureConflict =
-        events.find(e => {
-
-            if(
-                e.date !== currentDate ||
-                e.time !== currentTime
-            ){
-                return false;
-            }
-
-            if(
-                String(e.id) === String(editingId)
-            ){
-                return false;
-            }
-
-            const sameProgram =
-                String(e.programId) ===
-                String(selectedProgramId);
-
-            const sameSemester =
-                String(e.semester) ===
-                String(selectedSemester);
-
-            return sameProgram && sameSemester;
-        });
-
-    if(lectureConflict){
-
-        alert(
-            "Оваа програма и семестар веќе имаат Предавање во истиот термин."
-        );
-
-        return;
-    }
+    return;
+}
 }
     
     const roomConflict =
