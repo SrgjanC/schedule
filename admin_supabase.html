@@ -231,7 +231,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.5'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -276,6 +276,17 @@ let currentDate = "";
 let currentTime = "";
 let editingId = null;
 
+let formState = {
+    programId: null,
+    semester: null,
+    subjectId: null,
+    type: null,
+    roomId: null,
+    professorId: null,
+    groups: "",
+    comment: ""
+};
+    
 function todayISO(){
 
     const t = new Date();
@@ -340,6 +351,73 @@ function fillPrograms(){
     sel.onchange = updateSubjects;
 }
 
+function renderForm(){
+
+    const programSel = document.getElementById("programSelect");
+    const semesterSel = document.getElementById("semesterSelect");
+    const subjectSel = document.getElementById("subjectSelect");
+
+    // 1. PROGRAM
+    programSel.value = formState.programId || "";
+
+    const filteredByProgram =
+        subjects.filter(s =>
+            String(s.program_id) === String(formState.programId)
+        );
+
+    // 2. SEMESTERS
+    const semesters =
+        [...new Set(filteredByProgram.map(s => s.semester))];
+
+    semesterSel.innerHTML = "";
+
+    semesters.forEach(s => {
+        semesterSel.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+
+    // IMPORTANT: set semester AFTER options exist
+    if (formState.semester && semesters.includes(formState.semester)) {
+        semesterSel.value = formState.semester;
+    } else {
+        formState.semester = semesterSel.value;
+    }
+
+    // 3. SUBJECTS (NOW SEMESTER IS GUARANTEED)
+    const filteredBySemester =
+        filteredByProgram.filter(s =>
+            String(s.semester) === String(formState.semester)
+        );
+
+    subjectSel.innerHTML = "";
+
+    filteredBySemester.forEach(s => {
+        subjectSel.innerHTML += `
+            <option value="${s.id}">
+                ${s.name}
+            </option>`;
+    });
+
+    if (formState.subjectId) {
+        subjectSel.value = formState.subjectId;
+    }
+
+    // 4. SIMPLE FIELDS
+    document.getElementById("typeSelect").value =
+        formState.type || "";
+
+    document.getElementById("roomSelect").value =
+        formState.roomId || "";
+
+    document.getElementById("professorSelect").value =
+        formState.professorId || "";
+
+    document.getElementById("groupsInput").value =
+        formState.groups || "";
+
+    document.getElementById("commentInput").value =
+        formState.comment || "";
+}
+    
 function updateSubjects(selectedSemester = null, selectedSubjectId = null){
 
     const programId =
@@ -689,7 +767,7 @@ window.openSlot = function(cell){
         Number(cell.dataset.room);
 
     const existing =
-        events.find(e=>
+        events.find(e =>
             e.date === currentDate &&
             e.time === currentTime &&
             Number(e.room_id) === roomId
@@ -697,55 +775,31 @@ window.openSlot = function(cell){
 
     editingId = existing?.id || null;
 
-    document.getElementById("roomSelect").value = roomId;
-
+    // LOAD STATE
     if(existing){
 
-        // STEP 1: PROGRAM
-        document.getElementById("programSelect").value =
-    existing.programId;
+        formState.programId = existing.programId;
+        formState.semester = existing.semester;
+        formState.subjectId = existing.subjectId;
+        formState.type = existing.type;
+        formState.roomId = roomId;
+        formState.professorId = existing.professor_id || "";
+        formState.groups = existing.groups;
+        formState.comment = existing.comment;
 
-// rebuild everything in correct order
-updateSubjects(existing.semester, existing.subjectId);
+    } else {
 
-        // STEP 2: SEMESTER (after subjects are loaded)
-        setTimeout(() => {
-
-            document.getElementById("semesterSelect").value =
-                existing.semester;
-
-            updateSubjects();
-
-            // STEP 3: SUBJECT (after semester rebuild)
-            setTimeout(() => {
-
-                document.getElementById("subjectSelect").value =
-                    existing.subjectId;
-
-            }, 0);
-
-        }, 0);
-
-        // OTHER FIELDS (safe immediately)
-        document.getElementById("typeSelect").value =
-            existing.type;
-
-        document.getElementById("professorSelect").value =
-            existing.professor_id || "";
-
-        document.getElementById("groupsInput").value =
-            existing.groups;
-
-        document.getElementById("commentInput").value =
-            existing.comment;
+        formState.programId = "";
+        formState.semester = existing?.semester || "";
+        formState.subjectId = existing?.subjectId || "";
+        formState.type = "Предавање";
+        formState.roomId = roomId;
+        formState.professorId = "";
+        formState.groups = "";
+        formState.comment = "";
     }
-    else{
 
-        document.getElementById("typeSelect").value = "Предавање";
-        document.getElementById("professorSelect").value = "";
-        document.getElementById("groupsInput").value = "";
-        document.getElementById("commentInput").value = "";
-    }
+    renderForm();
 
     document.getElementById("modal").style.display = "flex";
 };
@@ -1003,6 +1057,23 @@ document.getElementById("todayBtn")
     loadAll();
 });
 
+    document.getElementById("programSelect").onchange = (e) => {
+    formState.programId = e.target.value;
+    formState.semester = "";
+    formState.subjectId = "";
+    renderForm();
+};
+
+document.getElementById("semesterSelect").onchange = (e) => {
+    formState.semester = e.target.value;
+    formState.subjectId = "";
+    renderForm();
+};
+
+document.getElementById("subjectSelect").onchange = (e) => {
+    formState.subjectId = e.target.value;
+};
+    
 loadAll();
 
 </script>
