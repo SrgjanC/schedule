@@ -81,7 +81,8 @@ tr:nth-child(even){
 <tr>
     <th>Измена</th>
     <th>Датум на измена</th>
-    <th>Датум на настан</th>
+    <th>Датум</th>
+    <th>Час</th>
     <th>Локација</th>
     <th>Предмет</th>
     <th>Професор</th>
@@ -170,6 +171,7 @@ function render(){
             </td>
             <td>${formatDateTime(l.created_at)}</td>
             <td>${l.event_date || ""}</td>
+            <td>${l.event_time || ""}</td>
             <td>${l.room_name || ""}</td>
             <td>${l.subject_name || ""}</td>
             <td>${l.professor_name || ""}</td>
