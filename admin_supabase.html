@@ -789,17 +789,12 @@ const selectedRoom =
         Number(r.id) === selectedRoomId
     );
 
-const isLectureRoom =
-    [
-        "01 пред.",
-        "02 пред.",
-        "03 пред.",
-        "04 пред."
-    ].includes(selectedRoom?.name);
+const isLecture =
+    type === "Предавање";
 
-if(isLectureRoom){
+if(isLecture){
 
-    const semesterConflict =
+    const lectureConflict =
         events.find(e => {
 
             if(
@@ -826,10 +821,10 @@ if(isLectureRoom){
             return sameProgram && sameSemester;
         });
 
-    if(semesterConflict){
+    if(lectureConflict){
 
         alert(
-            "Оваа програма и семестар веќе имаат настава во ист термин."
+            "Оваа програма и семестар веќе имаат Предавање во истиот термин."
         );
 
         return;
