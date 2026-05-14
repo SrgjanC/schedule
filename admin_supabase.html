@@ -246,7 +246,17 @@ const LAB_ROOMS = [
 "08 лаб.","09 лаб.","10 лаб.",
 "11 лаб.","12 лаб.","14 лаб.","НФИЦ"
 ];
-
+const DAY_ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.",
+"НФИЦ",
+"Инст. за Физиологија",
+"Инст. за Микробиологија",
+"Инст. за Анатомија",
+"ПМФ",
+"Фак. за физичко образование",
+"Кат. за Медицинска физика"
+];
 const TIMES = [];
 
 for(let h=8; h<=20; h++){
@@ -533,7 +543,8 @@ lessonTypes = lt || [];
                 name
             )
         `);
-
+console.log("ROOMS:", rooms);
+console.log("EVENTS:", p5);
     console.log(error);
 
     events = (p5 || []).map(e=>({
@@ -595,7 +606,16 @@ function render(){
         <td class="time-col">${time}</td>
         `;
 
-        rooms.forEach(room=>{
+        DAY_ROOMS.forEach(roomName => {
+
+    const room =
+        rooms.find(r => r.name === roomName);
+
+    if(!room){
+
+        row += `<td></td>`;
+        return;
+    }
 
             const event =
                 events.find(e=>
