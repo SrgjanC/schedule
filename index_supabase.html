@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.4'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.5'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -530,7 +530,17 @@ if (view === "day") {
 
 // ================= NORMAL VIEW =================
 
-const sorted = events;
+const sorted = [...events].sort((a, b) =>
+
+    (a.date || "").localeCompare(b.date || "") ||
+
+    (a.room || "").localeCompare(
+        b.room || "",
+        "mk"
+    ) ||
+
+    (a.time || "").localeCompare(b.time || "")
+);
 
 sorted.forEach(e => {
 
