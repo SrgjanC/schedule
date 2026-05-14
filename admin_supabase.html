@@ -684,7 +684,6 @@ window.openSlot = function(cell){
 
     const existing =
         events.find(e=>
-
             e.date === currentDate &&
             e.time === currentTime &&
             Number(e.room_id) === roomId
@@ -692,24 +691,35 @@ window.openSlot = function(cell){
 
     editingId = existing?.id || null;
 
-    document.getElementById("roomSelect").value =
-        roomId;
+    document.getElementById("roomSelect").value = roomId;
 
     if(existing){
 
+        // STEP 1: PROGRAM
         document.getElementById("programSelect").value =
             existing.programId;
 
         updateSubjects();
 
-        document.getElementById("semesterSelect").value =
-            existing.semester;
+        // STEP 2: SEMESTER (after subjects are loaded)
+        setTimeout(() => {
 
-        updateSubjects();
+            document.getElementById("semesterSelect").value =
+                existing.semester;
 
-        document.getElementById("subjectSelect").value =
-            existing.subjectId;
+            updateSubjects();
 
+            // STEP 3: SUBJECT (after semester rebuild)
+            setTimeout(() => {
+
+                document.getElementById("subjectSelect").value =
+                    existing.subjectId;
+
+            }, 0);
+
+        }, 0);
+
+        // OTHER FIELDS (safe immediately)
         document.getElementById("typeSelect").value =
             existing.type;
 
@@ -724,21 +734,13 @@ window.openSlot = function(cell){
     }
     else{
 
-        document.getElementById("typeSelect").value =
-            "Предавање";
-
-        document.getElementById("professorSelect").value =
-            "";
-
-        document.getElementById("groupsInput").value =
-            "";
-
-        document.getElementById("commentInput").value =
-            "";
+        document.getElementById("typeSelect").value = "Предавање";
+        document.getElementById("professorSelect").value = "";
+        document.getElementById("groupsInput").value = "";
+        document.getElementById("commentInput").value = "";
     }
 
-    document.getElementById("modal").style.display =
-        "flex";
+    document.getElementById("modal").style.display = "flex";
 };
 
 document.getElementById("closeBtn")
