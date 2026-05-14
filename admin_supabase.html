@@ -784,10 +784,7 @@ const selectedProgramId =
 const selectedSemester =
     selectedSubject?.semester;
 
-const selectedSubject =
-    subjects.find(s =>
-        Number(s.id) === subjectId
-    );
+
 
 const selectedProgramId =
     selectedSubject?.program_id;
@@ -801,52 +798,39 @@ const parallelAllowed = [
     "Практичен испит"
 ];
 
-const sameGroupConflict =
-    events.find(e => {
+const sameGroupConflict = events.find(e => {
 
-        if (
-            e.date !== currentDate ||
-            e.time !== currentTime
-        ) {
-            return false;
-        }
+    if (
+        e.date !== currentDate ||
+        e.time !== currentTime ||
+        String(e.id) === String(editingId)
+    ) {
+        return false;
+    }
 
-        if (
-            String(e.id) === String(editingId)
-        ) {
-            return false;
-        }
+    const sameProgram =
+        String(e.programId) === String(selectedProgramId);
 
-        const sameProgram =
-            String(e.programId) === String(selectedProgramId);
+    const sameSemester =
+        String(e.semester) === String(selectedSemester);
 
-        const sameSemester =
-            String(e.semester) === String(selectedSemester);
+    if (!sameProgram || !sameSemester) {
+        return false;
+    }
 
-        if (!sameProgram || !sameSemester) {
-            return false;
-        }
+    // RULE:
+    // - Same TYPE allowed (e.g. Вежби + Вежби)
+    // - Different TYPES blocked inside same program+semester+time
 
-        // RULE:
-        // only allow same TYPE in parallel (no mixing types)
-        const isParallelType =
-            parallelAllowed.includes(type);
+    if (parallelAllowed.includes(type) &&
+        parallelAllowed.includes(e.type)) {
 
-        const existingIsParallelType =
-            parallelAllowed.includes(e.type);
+        return type !== e.type; // true = conflict, false = allowed
+    }
 
-        if (isParallelType && existingIsParallelType) {
-
-            if (type === e.type) {
-                return false; // allowed (same type parallel)
-            }
-
-            return true; // BLOCK mixing types
-        }
-
-        // everything else is blocked
-        return true;
-    });
+    // everything else: block if same program+semester+time
+    return true;
+});
 
 if (sameGroupConflict) {
 
