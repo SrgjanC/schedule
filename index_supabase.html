@@ -382,6 +382,7 @@ async function loadData() {
         room: e.rooms?.name || "",
         subject: e.subjects?.name,
         semester: e.subjects?.semester || "",
+        programId: e.subjects?.programs?.id || 0,
         program: e.subjects?.programs?.name || "",
         type: e.type || "",
         professorName: e.professors?.name || "",
@@ -403,9 +404,20 @@ function initFilters() {
 
     
 
-    const progs =
-        [...new Set(events.map(e => e.program))]
-        .filter(Boolean);
+    const progs = [...new Map(
+    events
+        .filter(e => e.program)
+        .map(e => [
+            e.programId,
+            {
+                id: e.programId,
+                name: e.program
+            }
+        ])
+
+).values()]
+.sort((a, b) => a.id - b.id)
+.map(p => p.name);
 
     const semRaw =
     [...new Set(events.map(e => e.semester))]
