@@ -773,6 +773,69 @@ document.getElementById("saveBtn")
     const comment =
         document.getElementById("commentInput").value;
 
+    const selectedSubject =
+    subjects.find(s =>
+        Number(s.id) === subjectId
+    );
+
+const selectedProgramId =
+    selectedSubject?.program_id;
+
+const selectedSemester =
+    selectedSubject?.semester;
+
+const selectedRoom =
+    rooms.find(r =>
+        Number(r.id) === selectedRoomId
+    );
+
+const isLectureRoom =
+    [
+        "01 пред.",
+        "02 пред.",
+        "03 пред.",
+        "04 пред."
+    ].includes(selectedRoom?.name);
+
+if(isLectureRoom){
+
+    const semesterConflict =
+        events.find(e => {
+
+            if(
+                e.date !== currentDate ||
+                e.time !== currentTime
+            ){
+                return false;
+            }
+
+            if(
+                String(e.id) === String(editingId)
+            ){
+                return false;
+            }
+
+            const sameProgram =
+                String(e.programId) ===
+                String(selectedProgramId);
+
+            const sameSemester =
+                String(e.semester) ===
+                String(selectedSemester);
+
+            return sameProgram && sameSemester;
+        });
+
+    if(semesterConflict){
+
+        alert(
+            "Оваа програма и семестар веќе имаат настава во ист термин."
+        );
+
+        return;
+    }
+}
+    
     const roomConflict =
         events.find(e=>
 
