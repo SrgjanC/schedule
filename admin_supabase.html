@@ -340,7 +340,7 @@ function fillPrograms(){
     sel.onchange = updateSubjects;
 }
 
-function updateSubjects(){
+function updateSubjects(selectedSemester = null, selectedSubjectId = null){
 
     const programId =
         document.getElementById("programSelect").value;
@@ -357,21 +357,23 @@ function updateSubjects(){
         );
 
     const semesters =
-        [...new Set(
-            filtered.map(s=>s.semester)
-        )];
+        [...new Set(filtered.map(s => s.semester))];
 
+    // build semesters
     semesterSel.innerHTML = "";
 
-    semesters.forEach(s=>{
-
+    semesters.forEach(s => {
         semesterSel.innerHTML += `
-        <option value="${s}">
-            ${s}
-        </option>`;
+            <option value="${s}">${s}</option>
+        `;
     });
 
-    function refreshSubjects(){
+    // IMPORTANT: set semester AFTER options exist
+    if (selectedSemester) {
+        semesterSel.value = selectedSemester;
+    }
+
+    const refreshSubjects = () => {
 
         const sem = semesterSel.value;
 
@@ -382,19 +384,23 @@ function updateSubjects(){
 
         subjectSel.innerHTML = "";
 
-        list.forEach(s=>{
-
+        list.forEach(s => {
             subjectSel.innerHTML += `
-            <option value="${s.id}">
-                ${s.name}
-            </option>`;
+                <option value="${s.id}">
+                    ${s.name}
+                </option>`;
         });
-    }
+
+        if (selectedSubjectId) {
+            subjectSel.value = selectedSubjectId;
+        }
+    };
 
     refreshSubjects();
 
     semesterSel.onchange = refreshSubjects;
 }
+    
 async function addLog(action, payload){
 
     const room =
@@ -697,9 +703,10 @@ window.openSlot = function(cell){
 
         // STEP 1: PROGRAM
         document.getElementById("programSelect").value =
-            existing.programId;
+    existing.programId;
 
-        updateSubjects();
+// rebuild everything in correct order
+updateSubjects(existing.semester, existing.subjectId);
 
         // STEP 2: SEMESTER (after subjects are loaded)
         setTimeout(() => {
