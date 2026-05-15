@@ -389,9 +389,10 @@ function validateRows(rows){
                 Number(raw.subject_id),
 
             professor_id:
-                raw.professor_id
-                ? Number(raw.professor_id)
-                : null,
+    raw.professor_id &&
+    !isNaN(Number(raw.professor_id))
+        ? Number(raw.professor_id)
+        : null,
 
             room_id:
                 Number(raw.room_id)
@@ -445,39 +446,46 @@ function validateRows(rows){
 
         // PROFESSOR
 
-        if(normalized.professor_id){
+       if(normalized.professor_id !== null){
 
-            const prof =
-                professors.find(p =>
-                    Number(p.id) ===
-                    normalized.professor_id
-                );
+    const prof =
+        professors.find(p =>
+            Number(p.id) ===
+            Number(normalized.professor_id)
+        );
 
-            if(!prof){
-                errors.push(
-                    "Invalid professor_id"
-                );
-            }
-        }
+    if(!prof){
+
+        errors.push(
+            "Invalid professor_id"
+        );
+
+        normalized.professor_id = null;
+    }
+}
 
         // DUPLICATE INSIDE CSV
 
-        const dupKey = `
-            ${normalized.event_date}
-            |
-            ${normalized.event_time}
-            |
-            ${normalized.room_id}
-        `;
+       const dupKey = `
+    ${normalized.event_date}
+    |
+    ${normalized.event_time}
+    |
+    ${normalized.room_id}
+    |
+    ${normalized.subject_id}
+    |
+    ${normalized.type}
+`.replace(/\s/g,'');
 
-        if(csvDuplicates.has(dupKey)){
+if(csvDuplicates.has(dupKey)){
 
-            errors.push(
-                "Duplicate inside CSV"
-            );
-        }
+    errors.push(
+        "Exact duplicate inside CSV"
+    );
+}
 
-        csvDuplicates.add(dupKey);
+csvDuplicates.add(dupKey);
 
         // DUPLICATE IN DB
 
@@ -673,30 +681,38 @@ document.getElementById("importBtn")
 .onclick = async ()=>{
 
     const validRows =
-        validatedRows
-        .filter(r =>
-            r.status === "VALID"
-        )
-        .map(r => ({
+    validatedRows
+    .filter(r =>
+        r.status === "VALID"
+    )
+    .map(r => ({
 
-            event_date:
-                r.data.event_date,
+        event_date:
+            r.data.event_date,
 
-            event_time:
-                r.data.event_time,
+        event_time:
+            r.data.event_time,
 
-            type:
-                r.data.type,
+        type:
+            r.data.type,
 
-            subject_id:
-                r.data.subject_id,
+        subject_id:
+            r.data.subject_id,
 
-            professor_id:
-                r.data.professor_id,
+        professor_id:
+            (
+                r.data.professor_id &&
+                professors.find(p =>
+                    Number(p.id) ===
+                    Number(r.data.professor_id)
+                )
+            )
+            ? r.data.professor_id
+            : null,
 
-            room_id:
-                r.data.room_id
-        }));
+        room_id:
+            r.data.room_id
+    }));
 
     if(!validRows.length){
 
