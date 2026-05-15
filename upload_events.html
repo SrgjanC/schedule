@@ -2,49 +2,84 @@
 <html lang="mk">
 <head>
 <meta charset="UTF-8">
-<title>CSV Upload</title>
+<title>CSV Import - Распоред</title>
 
 <style>
 
 body{
-    font-family: Arial;
-    padding:20px;
+    font-family:Arial;
+    margin:20px;
 }
 
 h2{
     margin-bottom:15px;
 }
 
-input,button{
-    padding:8px;
+.controls{
+    margin-bottom:20px;
+}
+
+button,input{
+    padding:8px 12px;
     margin-right:10px;
 }
 
-button{
-    cursor:pointer;
+.summary{
+    display:flex;
+    gap:15px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
 }
 
-#log{
-    margin-top:20px;
-    white-space:pre-wrap;
-    font-family:monospace;
-    background:#f5f5f5;
-    padding:15px;
-    border:1px solid #ccc;
-    max-height:500px;
-    overflow:auto;
+.box{
+    padding:10px 15px;
+    border-radius:6px;
+    color:white;
+    font-weight:bold;
 }
 
-.ok{
-    color:green;
+.valid{ background:#2e7d32; }
+.warning{ background:#f9a825; }
+.error{ background:#c62828; }
+
+.progress{
+    margin:15px 0;
+    font-weight:bold;
+    font-size:15px;
 }
 
-.err{
-    color:red;
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
 }
 
-.warn{
-    color:#d68910;
+th,td{
+    border:1px solid #333;
+    padding:6px;
+    vertical-align:top;
+}
+
+th{
+    background:#3f69b1;
+    color:white;
+}
+
+tr.valid-row{
+    background:#e8f5e9;
+}
+
+tr.warning-row{
+    background:#fff8e1;
+}
+
+tr.error-row{
+    background:#ffebee;
+}
+
+.small{
+    font-size:11px;
+    color:#555;
 }
 
 </style>
@@ -52,48 +87,157 @@ button{
 
 <body>
 
-<h2>CSV Import → events</h2>
+<h2>CSV Import - Распоред</h2>
 
-<input type="file" id="csvFile" accept=".csv">
+<div class="controls">
 
-<button id="uploadBtn">
-Upload
+<input type="file"
+       id="csvFile"
+       accept=".csv">
+
+<button id="validateBtn">
+    Validate CSV
 </button>
 
-<div id="log"></div>
+<button id="importBtn" disabled>
+    Import Valid Rows
+</button>
+
+</div>
+
+<div class="summary">
+
+<div class="box valid">
+    VALID:
+    <span id="validCount">0</span>
+</div>
+
+<div class="box warning">
+    WARNINGS:
+    <span id="warningCount">0</span>
+</div>
+
+<div class="box error">
+    ERRORS:
+    <span id="errorCount">0</span>
+</div>
+
+</div>
+
+<div class="progress" id="progress"></div>
+
+<table>
+
+<thead>
+<tr>
+    <th>Status</th>
+    <th>Row</th>
+    <th>Date</th>
+    <th>Time</th>
+    <th>Type</th>
+    <th>Subject</th>
+    <th>Professor</th>
+    <th>Room</th>
+    <th>Errors / Warnings</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
 
 <script type="module">
 
 import { createClient }
-from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.5';
 
 const supabase =
 createClient(
-    "https://elmxwpwhyewgjlvoadtb.supabase.co",
-    "YOUR_PUBLIC_KEY"
+    'https://elmxwpwhyewgjlvoadtb.supabase.co',
+    'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
 );
 
-const log =
-    document.getElementById("log");
+let subjects = [];
+let professors = [];
+let rooms = [];
+let events = [];
 
-function addLog(text, cls=""){
+let validatedRows = [];
 
-    log.innerHTML += `
-        <div class="${cls}">
-            ${text}
-        </div>
-    `;
+const parallelAllowed = [
+    "Вежби",
+    "Испит",
+    "Практичен испит"
+];
 
-    log.scrollTop = log.scrollHeight;
+async function loadReferenceData(){
+
+    document.getElementById("progress")
+    .innerText =
+        "Loading reference data...";
+
+    const { data: s } =
+        await supabase
+        .from('subjects')
+        .select('*');
+
+    subjects = s || [];
+
+    const { data: p } =
+        await supabase
+        .from('professors')
+        .select('*');
+
+    professors = p || [];
+
+    const { data: r } =
+        await supabase
+        .from('rooms')
+        .select('*');
+
+    rooms = r || [];
+
+    const { data: e } =
+        await supabase
+        .from('events')
+        .select(`
+            *,
+            subjects (
+                semester,
+                program_id
+            )
+        `);
+
+    events = (e || []).map(ev => ({
+
+        event_date:
+            ev.event_date,
+
+        event_time:
+            ev.event_time?.substring(0,5),
+
+        room_id:
+            ev.room_id,
+
+        type:
+            ev.type,
+
+        subject_id:
+            ev.subject_id,
+
+        semester:
+            ev.subjects?.semester,
+
+        program_id:
+            ev.subjects?.program_id
+    }));
 }
 
-function normalizeDate(d){
+function normalizeDate(v){
 
-    // 4/1/2026 -> 2026-04-01
+    if(!v) return null;
 
-    if(!d) return null;
-
-    const parts = d.split("/");
+    const parts = v.split("/");
 
     if(parts.length !== 3){
         return null;
@@ -111,251 +255,508 @@ function normalizeDate(d){
     return `${year}-${month}-${day}`;
 }
 
-function normalizeTime(t){
+function normalizeTime(v){
 
-    // 9:00:00 -> 09:00
+    if(!v) return null;
 
-    if(!t) return null;
+    const parts = v.split(":");
 
-    const parts = t.split(":");
-
-    return `${parts[0].padStart(2,"0")}:${parts[1]}`;
-}
-
-async function getExistingEvents(){
-
-    const { data, error } =
-        await supabase
-        .from("events")
-        .select(`
-            id,
-            event_date,
-            event_time,
-            room_id,
-            subject_id
-        `);
-
-    if(error){
-
-        addLog(
-            "ERROR loading existing events",
-            "err"
-        );
-
-        console.error(error);
-
-        return [];
+    if(parts.length < 2){
+        return null;
     }
 
-    return data || [];
+    return `
+        ${parts[0].padStart(2,"0")}
+        :
+        ${parts[1]}
+    `.replace(/\s/g,'');
 }
 
-async function uploadBatch(batch){
+function validateConflict(row){
 
-    const { error } =
-        await supabase
-        .from("events")
-        .insert(batch);
-
-    if(error){
-
-        console.error(error);
-
-        addLog(
-            `BATCH ERROR: ${error.message}`,
-            "err"
+    const subject =
+        subjects.find(s =>
+            Number(s.id) ===
+            Number(row.subject_id)
         );
 
+    if(!subject){
         return false;
     }
 
-    return true;
+    const existingConflict =
+        events.find(e => {
+
+            if(
+                e.event_date !== row.event_date ||
+                e.event_time !== row.event_time
+            ){
+                return false;
+            }
+
+            const sameProgram =
+                String(e.program_id) ===
+                String(subject.program_id);
+
+            const sameSemester =
+                String(e.semester) ===
+                String(subject.semester);
+
+            if(
+                !sameProgram ||
+                !sameSemester
+            ){
+                return false;
+            }
+
+            if(
+                parallelAllowed.includes(row.type) &&
+                parallelAllowed.includes(e.type)
+            ){
+                return row.type !== e.type;
+            }
+
+            return true;
+        });
+
+    return !!existingConflict;
 }
 
-document
-.getElementById("uploadBtn")
+function parseCSV(text){
+
+    const clean =
+        text.replace(/\r/g,'');
+
+    const lines =
+        clean
+        .split('\n')
+        .filter(l => l.trim());
+
+    const header =
+        lines[0]
+        .replace(/^\uFEFF/, '')
+        .split(";");
+
+    const rows = [];
+
+    for(let i=1; i<lines.length; i++){
+
+        const cols =
+            lines[i].split(";");
+
+        const obj = {};
+
+        header.forEach((h,index)=>{
+
+            obj[h.trim()] =
+                cols[index]?.trim() || "";
+        });
+
+        rows.push(obj);
+    }
+
+    return rows;
+}
+
+function validateRows(rows){
+
+    validatedRows = [];
+
+    const csvDuplicates =
+        new Set();
+
+    rows.forEach((raw,index)=>{
+
+        const errors = [];
+        const warnings = [];
+
+        const normalized = {
+
+            event_date:
+                normalizeDate(
+                    raw.event_date
+                ),
+
+            event_time:
+                normalizeTime(
+                    raw.event_time
+                ),
+
+            type:
+                raw.type?.trim(),
+
+            subject_id:
+                Number(raw.subject_id),
+
+            professor_id:
+                raw.professor_id
+                ? Number(raw.professor_id)
+                : null,
+
+            room_id:
+                Number(raw.room_id)
+        };
+
+        // REQUIRED
+
+        if(!normalized.event_date){
+            errors.push("Invalid date");
+        }
+
+        if(!normalized.event_time){
+            errors.push("Invalid time");
+        }
+
+        if(!normalized.type){
+            errors.push("Missing type");
+        }
+
+        if(!normalized.subject_id){
+            errors.push("Missing subject_id");
+        }
+
+        if(!normalized.room_id){
+            errors.push("Missing room_id");
+        }
+
+        // SUBJECT
+
+        const subject =
+            subjects.find(s =>
+                Number(s.id) ===
+                normalized.subject_id
+            );
+
+        if(!subject){
+            errors.push("Invalid subject_id");
+        }
+
+        // ROOM
+
+        const room =
+            rooms.find(r =>
+                Number(r.id) ===
+                normalized.room_id
+            );
+
+        if(!room){
+            errors.push("Invalid room_id");
+        }
+
+        // PROFESSOR
+
+        if(normalized.professor_id){
+
+            const prof =
+                professors.find(p =>
+                    Number(p.id) ===
+                    normalized.professor_id
+                );
+
+            if(!prof){
+                errors.push(
+                    "Invalid professor_id"
+                );
+            }
+        }
+
+        // DUPLICATE INSIDE CSV
+
+        const dupKey = `
+            ${normalized.event_date}
+            |
+            ${normalized.event_time}
+            |
+            ${normalized.room_id}
+        `;
+
+        if(csvDuplicates.has(dupKey)){
+
+            errors.push(
+                "Duplicate inside CSV"
+            );
+        }
+
+        csvDuplicates.add(dupKey);
+
+        // DUPLICATE IN DB
+
+        const dbDuplicate =
+            events.find(e =>
+
+                e.event_date ===
+                normalized.event_date &&
+
+                e.event_time ===
+                normalized.event_time &&
+
+                Number(e.room_id) ===
+                Number(normalized.room_id)
+            );
+
+        if(dbDuplicate){
+
+            errors.push(
+                "Room already occupied"
+            );
+        }
+
+        // BUSINESS RULES
+
+        if(
+            validateConflict(normalized)
+        ){
+            errors.push(
+                "Program/Semester conflict"
+            );
+        }
+
+        // STATUS
+
+        let status = "VALID";
+
+        if(errors.length){
+            status = "ERROR";
+        }
+        else if(warnings.length){
+            status = "WARNING";
+        }
+
+        validatedRows.push({
+
+            status,
+
+            raw,
+
+            data: normalized,
+
+            errors,
+
+            warnings
+        });
+    });
+
+    renderTable();
+}
+
+function renderTable(){
+
+    const tbody =
+        document.getElementById("tbody");
+
+    tbody.innerHTML = "";
+
+    let valid = 0;
+    let warning = 0;
+    let error = 0;
+
+    validatedRows.forEach((r,index)=>{
+
+        if(r.status === "VALID"){
+            valid++;
+        }
+
+        if(r.status === "WARNING"){
+            warning++;
+        }
+
+        if(r.status === "ERROR"){
+            error++;
+        }
+
+        const cls =
+            r.status === "VALID"
+            ? "valid-row"
+            : r.status === "WARNING"
+            ? "warning-row"
+            : "error-row";
+
+        tbody.innerHTML += `
+        <tr class="${cls}">
+
+            <td>${r.status}</td>
+
+            <td>${index+1}</td>
+
+            <td>${r.data.event_date || ""}</td>
+
+            <td>${r.data.event_time || ""}</td>
+
+            <td>${r.data.type || ""}</td>
+
+            <td>${r.data.subject_id || ""}</td>
+
+            <td>${r.data.professor_id || ""}</td>
+
+            <td>${r.data.room_id || ""}</td>
+
+            <td class="small">
+                ${[
+                    ...r.errors,
+                    ...r.warnings
+                ].join("<br>")}
+            </td>
+
+        </tr>`;
+    });
+
+    document.getElementById("validCount")
+    .innerText = valid;
+
+    document.getElementById("warningCount")
+    .innerText = warning;
+
+    document.getElementById("errorCount")
+    .innerText = error;
+
+    document.getElementById("importBtn")
+    .disabled = valid === 0;
+}
+
+function chunkArray(array, size){
+
+    const chunks = [];
+
+    for(
+        let i=0;
+        i<array.length;
+        i += size
+    ){
+        chunks.push(
+            array.slice(i, i + size)
+        );
+    }
+
+    return chunks;
+}
+
+document.getElementById("validateBtn")
 .onclick = async ()=>{
 
-    log.innerHTML = "";
-
     const file =
-        document
-        .getElementById("csvFile")
+        document.getElementById("csvFile")
         .files[0];
 
     if(!file){
 
-        alert("Select CSV");
-
+        alert("Select CSV file");
         return;
     }
 
-    addLog("Reading CSV...");
+    await loadReferenceData();
+
+    document.getElementById("progress")
+    .innerText =
+        "Reading CSV...";
 
     const text =
         await file.text();
 
-    const lines =
-        text.split(/\r?\n/);
+    const rows =
+        parseCSV(text);
 
-    if(lines.length <= 1){
+    document.getElementById("progress")
+    .innerText =
+        `Parsed ${rows.length} rows`;
 
-        addLog("CSV empty","err");
+    validateRows(rows);
 
-        return;
-    }
+    document.getElementById("progress")
+    .innerText =
+        `Validation complete`;
+};
 
-    const existingEvents =
-        await getExistingEvents();
+document.getElementById("importBtn")
+.onclick = async ()=>{
 
-    addLog(
-        `Loaded existing events: ${existingEvents.length}`
-    );
-
-    const inserts = [];
-
-    let skipped = 0;
-    let invalid = 0;
-
-    for(let i=1; i<lines.length; i++){
-
-        const line =
-            lines[i].trim();
-
-        if(!line){
-            continue;
-        }
-
-        const cols =
-            line.split(";");
-
-        if(cols.length < 6){
-
-            invalid++;
-
-            addLog(
-                `Line ${i+1}: invalid column count`,
-                "err"
-            );
-
-            continue;
-        }
-
-        const row = {
+    const validRows =
+        validatedRows
+        .filter(r =>
+            r.status === "VALID"
+        )
+        .map(r => ({
 
             event_date:
-                normalizeDate(cols[0]),
+                r.data.event_date,
 
             event_time:
-                normalizeTime(cols[1]),
+                r.data.event_time,
 
             type:
-                cols[2]?.trim(),
+                r.data.type,
 
             subject_id:
-                Number(cols[3]),
+                r.data.subject_id,
 
             professor_id:
-                cols[4]
-                    ? Number(cols[4])
-                    : null,
+                r.data.professor_id,
 
             room_id:
-                Number(cols[5])
-        };
+                r.data.room_id
+        }));
 
-        // validation
+    if(!validRows.length){
 
-        if(
-            !row.event_date ||
-            !row.event_time ||
-            !row.type ||
-            !row.subject_id ||
-            !row.room_id
-        ){
-
-            invalid++;
-
-            addLog(
-                `Line ${i+1}: missing required fields`,
-                "err"
-            );
-
-            continue;
-        }
-
-        // DUPLICATE CHECK
-        // SAME:
-        // date + time + room + subject
-
-        const duplicate =
-            existingEvents.find(e => {
-
-                return (
-                    e.event_date === row.event_date &&
-                    e.event_time.substring(0,5) === row.event_time &&
-                    Number(e.room_id) === Number(row.room_id) &&
-                    Number(e.subject_id) === Number(row.subject_id)
-                );
-            });
-
-        if(duplicate){
-
-            skipped++;
-
-            addLog(
-                `Duplicate skipped → ${row.event_date} ${row.event_time} room:${row.room_id} subject:${row.subject_id}`,
-                "warn"
-            );
-
-            continue;
-        }
-
-        inserts.push(row);
-    }
-
-    addLog("");
-    addLog(`VALID: ${inserts.length}`,"ok");
-    addLog(`SKIPPED: ${skipped}`,"warn");
-    addLog(`INVALID: ${invalid}`,"err");
-
-    if(!inserts.length){
-
-        addLog("Nothing to insert.","warn");
-
+        alert("No valid rows");
         return;
     }
 
-    // BATCH INSERT
+    const chunks =
+        chunkArray(validRows, 200);
 
-    const BATCH_SIZE = 500;
+    let inserted = 0;
 
-    for(let i=0; i<inserts.length; i += BATCH_SIZE){
+    for(let i=0; i<chunks.length; i++){
 
-        const batch =
-            inserts.slice(
-                i,
-                i + BATCH_SIZE
+        document.getElementById("progress")
+        .innerText = `
+            Importing chunk
+            ${i+1}
+            /
+            ${chunks.length}
+            ...
+        `;
+
+        const chunk =
+            chunks[i];
+
+        const { error } =
+            await supabase
+            .from('events')
+            .insert(chunk);
+
+        if(error){
+
+            console.error(error);
+
+            alert(
+                "Import failed: " +
+                error.message
             );
 
-        addLog(
-            `Uploading batch ${Math.floor(i/BATCH_SIZE)+1} (${batch.length} rows)...`
-        );
-
-        const ok =
-            await uploadBatch(batch);
-
-        if(ok){
-
-            addLog(
-                `Batch uploaded.`,
-                "ok"
-            );
+            return;
         }
+
+        inserted += chunk.length;
+
+        document.getElementById("progress")
+        .innerText = `
+            Imported
+            ${inserted}
+            /
+            ${validRows.length}
+        `;
     }
 
-    addLog("");
-    addLog("IMPORT FINISHED","ok");
+    document.getElementById("progress")
+    .innerText =
+        "Import complete";
+
+    alert(
+        `Successfully imported ${inserted} events`
+    );
+
+    location.reload();
 };
 
 </script>
