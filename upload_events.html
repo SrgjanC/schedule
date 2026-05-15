@@ -491,7 +491,10 @@ function validateRows(rows){
                 normalized.event_time &&
 
                 Number(e.room_id) ===
-                Number(normalized.room_id)
+                Number(normalized.room_id) &&
+                
+                Number(e.subject_id) === 
+                Number(row.subject_id)
             );
 
         if(dbDuplicate){
