@@ -481,18 +481,16 @@ function validateRows(rows){
 
         // DUPLICATE IN DB
 
-        const dbDuplicate =
-            events.find(e =>
+        const duplicate =
+    existingEvents.find(e => {
 
-                e.event_date ===
-                normalized.event_date &&
-
-                e.event_time ===
-                normalized.event_time &&
-
-                Number(e.room_id) ===
-                Number(normalized.room_id)
-            );
+        return (
+            e.event_date === row.event_date &&
+            e.event_time === row.event_time &&
+            Number(e.room_id) === Number(row.room_id) &&
+            Number(e.subject_id) === Number(row.subject_id)
+        );
+    });
 
         if(dbDuplicate){
 
