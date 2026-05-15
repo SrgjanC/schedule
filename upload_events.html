@@ -149,7 +149,7 @@ tr.error-row{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.5';
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.1';
 
 const supabase =
 createClient(
@@ -388,11 +388,17 @@ function validateRows(rows){
             subject_id:
                 Number(raw.subject_id),
 
-            professor_id:
-    raw.professor_id &&
-    !isNaN(Number(raw.professor_id))
-        ? Number(raw.professor_id)
-        : null,
+           professor_id:
+    (
+        r.data.professor_id !== null &&
+        !isNaN(Number(r.data.professor_id)) &&
+        professors.some(p =>
+            Number(p.id) ===
+            Number(r.data.professor_id)
+        )
+    )
+    ? Number(r.data.professor_id)
+    : null,
 
             room_id:
                 Number(raw.room_id)
@@ -719,7 +725,7 @@ document.getElementById("importBtn")
         alert("No valid rows");
         return;
     }
-
+console.log(validRows);
     const chunks =
         chunkArray(validRows, 200);
 
@@ -737,7 +743,18 @@ document.getElementById("importBtn")
         `;
 
         const chunk =
-            chunks[i];
+    chunks[i].map(row => ({
+
+        ...row,
+
+        professor_id:
+            (
+                row.professor_id !== null &&
+                !isNaN(Number(row.professor_id))
+            )
+            ? Number(row.professor_id)
+            : null
+    }));
 
         const { error } =
             await supabase
