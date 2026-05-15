@@ -5,19 +5,14 @@
 <title>CSV Import - Распоред</title>
 
 <style>
-
 body{
     font-family:Arial;
     margin:20px;
 }
 
-h2{
-    margin-bottom:15px;
-}
+h2{ margin-bottom:15px; }
 
-.controls{
-    margin-bottom:20px;
-}
+.controls{ margin-bottom:20px; }
 
 button,input{
     padding:8px 12px;
@@ -28,7 +23,6 @@ button,input{
     display:flex;
     gap:15px;
     margin-bottom:20px;
-    flex-wrap:wrap;
 }
 
 .box{
@@ -45,7 +39,6 @@ button,input{
 .progress{
     margin:15px 0;
     font-weight:bold;
-    font-size:15px;
 }
 
 table{
@@ -57,299 +50,125 @@ table{
 th,td{
     border:1px solid #333;
     padding:6px;
-    vertical-align:top;
 }
 
-th{
-    background:#3f69b1;
-    color:white;
-}
+th{ background:#3f69b1; color:white; }
 
-tr.valid-row{
-    background:#e8f5e9;
-}
+.valid-row{ background:#e8f5e9; }
+.warning-row{ background:#fff8e1; }
+.error-row{ background:#ffebee; }
 
-tr.warning-row{
-    background:#fff8e1;
-}
-
-tr.error-row{
-    background:#ffebee;
-}
-
-.small{
-    font-size:11px;
-    color:#555;
-}
-
+.small{ font-size:11px; }
 </style>
 </head>
 
 <body>
 
-<h2>CSV Import - Распоред</h2>
+<h2>CSV Import</h2>
 
 <div class="controls">
-
-<input type="file"
-       id="csvFile"
-       accept=".csv">
-
-<button id="validateBtn">
-    Validate CSV
-</button>
-
-<button id="importBtn" disabled>
-    Import Valid Rows
-</button>
-
+<input type="file" id="csvFile" accept=".csv">
+<button id="validateBtn">Validate</button>
+<button id="importBtn" disabled>Import</button>
 </div>
 
 <div class="summary">
-
-<div class="box valid">
-    VALID:
-    <span id="validCount">0</span>
-</div>
-
-<div class="box warning">
-    WARNINGS:
-    <span id="warningCount">0</span>
-</div>
-
-<div class="box error">
-    ERRORS:
-    <span id="errorCount">0</span>
-</div>
-
+<div class="box valid">VALID: <span id="validCount">0</span></div>
+<div class="box warning">WARN: <span id="warningCount">0</span></div>
+<div class="box error">ERROR: <span id="errorCount">0</span></div>
 </div>
 
 <div class="progress" id="progress"></div>
 
 <table>
-
 <thead>
 <tr>
-    <th>Status</th>
-    <th>Row</th>
-    <th>Date</th>
-    <th>Time</th>
-    <th>Type</th>
-    <th>Subject</th>
-    <th>Professor</th>
-    <th>Room</th>
-    <th>Errors / Warnings</th>
+<th>Status</th>
+<th>Row</th>
+<th>Date</th>
+<th>Time</th>
+<th>Type</th>
+<th>Subject</th>
+<th>Professor</th>
+<th>Room</th>
+<th>Errors</th>
 </tr>
 </thead>
-
 <tbody id="tbody"></tbody>
-
 </table>
 
 <script type="module">
 
-import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.1';
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase =
-createClient(
-    'https://elmxwpwhyewgjlvoadtb.supabase.co',
-    'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
+const supabase = createClient(
+    "https://elmxwpwhyewgjlvoadtb.supabase.co",
+    "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd"
 );
 
 let subjects = [];
 let professors = [];
 let rooms = [];
 let events = [];
-
 let validatedRows = [];
 
-const parallelAllowed = [
-    "Вежби",
-    "Испит",
-    "Практичен испит"
-];
+const parallelAllowed = ["Вежби","Испит","Практичен испит"];
 
+// ---------------- SAFE NUMBER ----------------
+const toNumber = (v) => {
+    const n = Number(String(v).trim());
+    return Number.isFinite(n) ? n : null;
+};
+
+// ---------------- LOAD DATA ----------------
 async function loadReferenceData(){
 
-    document.getElementById("progress")
-    .innerText =
-        "Loading reference data...";
-
-    const { data: s } =
-        await supabase
-        .from('subjects')
-        .select('*');
+    const { data: s } = await supabase.from('subjects').select('*');
+    const { data: p } = await supabase.from('professors').select('*');
+    const { data: r } = await supabase.from('rooms').select('*');
 
     subjects = s || [];
-
-    const { data: p } =
-        await supabase
-        .from('professors')
-        .select('*');
-
     professors = p || [];
-
-    const { data: r } =
-        await supabase
-        .from('rooms')
-        .select('*');
-
     rooms = r || [];
 
-    const { data: e } =
-        await supabase
+    const { data: e } = await supabase
         .from('events')
-        .select(`
-            *,
-            subjects (
-                semester,
-                program_id
-            )
-        `);
+        .select('*');
 
-    events = (e || []).map(ev => ({
-
-        event_date:
-            ev.event_date,
-
-        event_time:
-            ev.event_time?.substring(0,5),
-
-        room_id:
-            ev.room_id,
-
-        type:
-            ev.type,
-
-        subject_id:
-            ev.subject_id,
-
-        semester:
-            ev.subjects?.semester,
-
-        program_id:
-            ev.subjects?.program_id
-    }));
+    events = e || [];
 }
 
+// ---------------- DATE ----------------
 function normalizeDate(v){
-
     if(!v) return null;
-
     const parts = v.split("/");
+    if(parts.length !== 3) return null;
 
-    if(parts.length !== 3){
-        return null;
-    }
-
-    const month =
-        parts[0].padStart(2,"0");
-
-    const day =
-        parts[1].padStart(2,"0");
-
-    const year =
-        parts[2];
-
-    return `${year}-${month}-${day}`;
+    return `${parts[2]}-${parts[0].padStart(2,"0")}-${parts[1].padStart(2,"0")}`;
 }
 
+// ---------------- TIME ----------------
 function normalizeTime(v){
-
     if(!v) return null;
-
     const parts = v.split(":");
-
-    if(parts.length < 2){
-        return null;
-    }
-
-    return `
-        ${parts[0].padStart(2,"0")}
-        :
-        ${parts[1]}
-    `.replace(/\s/g,'');
+    if(parts.length < 2) return null;
+    return `${parts[0].padStart(2,"0")}:${parts[1]}`;
 }
 
-function validateConflict(row){
-
-    const subject =
-        subjects.find(s =>
-            Number(s.id) ===
-            Number(row.subject_id)
-        );
-
-    if(!subject){
-        return false;
-    }
-
-    const existingConflict =
-        events.find(e => {
-
-            if(
-                e.event_date !== row.event_date ||
-                e.event_time !== row.event_time
-            ){
-                return false;
-            }
-
-            const sameProgram =
-                String(e.program_id) ===
-                String(subject.program_id);
-
-            const sameSemester =
-                String(e.semester) ===
-                String(subject.semester);
-
-            if(
-                !sameProgram ||
-                !sameSemester
-            ){
-                return false;
-            }
-
-            if(
-                parallelAllowed.includes(row.type) &&
-                parallelAllowed.includes(e.type)
-            ){
-                return row.type !== e.type;
-            }
-
-            return true;
-        });
-
-    return !!existingConflict;
-}
-
+// ---------------- CSV PARSE ----------------
 function parseCSV(text){
 
-    const clean =
-        text.replace(/\r/g,'');
-
-    const lines =
-        clean
-        .split('\n')
-        .filter(l => l.trim());
-
-    const header =
-        lines[0]
-        .replace(/^\uFEFF/, '')
-        .split(";");
+    const lines = text.replace(/\r/g,'').split('\n').filter(l => l.trim());
+    const header = lines[0].split(";");
 
     const rows = [];
 
-    for(let i=1; i<lines.length; i++){
-
-        const cols =
-            lines[i].split(";");
-
+    for(let i=1;i<lines.length;i++){
+        const cols = lines[i].split(";");
         const obj = {};
 
-        header.forEach((h,index)=>{
-
-            obj[h.trim()] =
-                cols[index]?.trim() || "";
+        header.forEach((h,idx)=>{
+            obj[h.trim()] = cols[idx]?.trim() || "";
         });
 
         rows.push(obj);
@@ -358,441 +177,165 @@ function parseCSV(text){
     return rows;
 }
 
+// ---------------- VALIDATE ----------------
 function validateRows(rows){
 
     validatedRows = [];
-
-    const csvDuplicates =
-        new Set();
+    const csvDup = new Set();
 
     rows.forEach((raw,index)=>{
 
-        const errors = [];
-        const warnings = [];
-
         const normalized = {
-
-            event_date:
-                normalizeDate(
-                    raw.event_date
-                ),
-
-            event_time:
-                normalizeTime(
-                    raw.event_time
-                ),
-
-            type:
-                raw.type?.trim(),
-
-            subject_id:
-                Number(raw.subject_id),
-
-           professor_id:
-    (
-        r.data.professor_id !== null &&
-        !isNaN(Number(r.data.professor_id)) &&
-        professors.some(p =>
-            Number(p.id) ===
-            Number(r.data.professor_id)
-        )
-    )
-    ? Number(r.data.professor_id)
-    : null,
-
-            room_id:
-                Number(raw.room_id)
+            event_date: normalizeDate(raw.event_date),
+            event_time: normalizeTime(raw.event_time),
+            type: raw.type?.trim(),
+            subject_id: toNumber(raw.subject_id),
+            professor_id: raw.professor_id ? toNumber(raw.professor_id) : null,
+            room_id: toNumber(raw.room_id)
         };
 
-        // REQUIRED
+        const errors = [];
 
-        if(!normalized.event_date){
-            errors.push("Invalid date");
+        if(!normalized.event_date) errors.push("Bad date");
+        if(!normalized.event_time) errors.push("Bad time");
+        if(!normalized.type) errors.push("Missing type");
+        if(normalized.subject_id === null) errors.push("Bad subject");
+        if(normalized.room_id === null) errors.push("Bad room");
+
+        const subject = subjects.find(s => Number(s.id) === normalized.subject_id);
+
+        if(!subject) errors.push("Subject not found");
+
+        const room = rooms.find(r => Number(r.id) === normalized.room_id);
+
+        if(!room) errors.push("Room not found");
+
+        if(normalized.professor_id !== null){
+            const prof = professors.find(p => Number(p.id) === normalized.professor_id);
+            if(!prof){
+                errors.push("Professor not found");
+                normalized.professor_id = null;
+            }
         }
 
-        if(!normalized.event_time){
-            errors.push("Invalid time");
+        // CSV duplicate RULE (ALLOW same time+room+subject different types)
+        const key = `${normalized.event_date}|${normalized.event_time}|${normalized.room_id}|${normalized.subject_id}`;
+
+        if(csvDup.has(key)){
+            errors.push("Duplicate row in CSV");
         }
+        csvDup.add(key);
 
-        if(!normalized.type){
-            errors.push("Missing type");
-        }
-
-        if(!normalized.subject_id){
-            errors.push("Missing subject_id");
-        }
-
-        if(!normalized.room_id){
-            errors.push("Missing room_id");
-        }
-
-        // SUBJECT
-
-        const subject =
-            subjects.find(s =>
-                Number(s.id) ===
-                normalized.subject_id
-            );
-
-        if(!subject){
-            errors.push("Invalid subject_id");
-        }
-
-        // ROOM
-
-        const room =
-            rooms.find(r =>
-                Number(r.id) ===
-                normalized.room_id
-            );
-
-        if(!room){
-            errors.push("Invalid room_id");
-        }
-
-        // PROFESSOR
-
-       if(normalized.professor_id !== null){
-
-    const prof =
-        professors.find(p =>
-            Number(p.id) ===
-            Number(normalized.professor_id)
+        // DB duplicate (ONLY exact same event)
+        const dbDup = events.find(e =>
+            e.event_date === normalized.event_date &&
+            e.event_time === normalized.event_time &&
+            Number(e.room_id) === normalized.room_id &&
+            Number(e.subject_id) === normalized.subject_id &&
+            e.type === normalized.type
         );
 
-    if(!prof){
-
-        errors.push(
-            "Invalid professor_id"
-        );
-
-        normalized.professor_id = null;
-    }
-}
-
-        // DUPLICATE INSIDE CSV
-
-       const dupKey = `
-    ${normalized.event_date}
-    |
-    ${normalized.event_time}
-    |
-    ${normalized.room_id}
-    |
-    ${normalized.subject_id}
-    |
-    ${normalized.type}
-`.replace(/\s/g,'');
-
-if(csvDuplicates.has(dupKey)){
-
-    errors.push(
-        "Exact duplicate inside CSV"
-    );
-}
-
-csvDuplicates.add(dupKey);
-
-        // DUPLICATE IN DB
-
-        const dbDuplicate =
-            events.find(e =>
-
-                e.event_date ===
-                normalized.event_date &&
-
-                e.event_time ===
-                normalized.event_time &&
-
-                Number(e.room_id) ===
-                Number(normalized.room_id) &&
-                
-                Number(e.subject_id) === 
-                Number(row.subject_id)
-            );
-
-        if(dbDuplicate){
-
-            errors.push(
-                "Room already occupied"
-            );
+        if(dbDup){
+            errors.push("Already exists in DB");
         }
 
-        // BUSINESS RULES
-
-        if(
-            validateConflict(normalized)
-        ){
-            errors.push(
-                "Program/Semester conflict"
-            );
-        }
-
-        // STATUS
-
-        let status = "VALID";
-
-        if(errors.length){
-            status = "ERROR";
-        }
-        else if(warnings.length){
-            status = "WARNING";
-        }
+        let status = errors.length ? "ERROR" : "VALID";
 
         validatedRows.push({
-
             status,
-
             raw,
-
             data: normalized,
-
-            errors,
-
-            warnings
+            errors
         });
     });
 
-    renderTable();
+    render();
 }
 
-function renderTable(){
+// ---------------- RENDER ----------------
+function render(){
 
-    const tbody =
-        document.getElementById("tbody");
-
+    const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
 
-    let valid = 0;
-    let warning = 0;
-    let error = 0;
+    let v=0,e=0;
 
-    validatedRows.forEach((r,index)=>{
+    validatedRows.forEach((r,i)=>{
 
-        if(r.status === "VALID"){
-            valid++;
-        }
-
-        if(r.status === "WARNING"){
-            warning++;
-        }
-
-        if(r.status === "ERROR"){
-            error++;
-        }
-
-        const cls =
-            r.status === "VALID"
-            ? "valid-row"
-            : r.status === "WARNING"
-            ? "warning-row"
-            : "error-row";
+        if(r.status==="VALID") v++;
+        else e++;
 
         tbody.innerHTML += `
-        <tr class="${cls}">
-
+        <tr class="${r.status==='VALID'?'valid-row':'error-row'}">
             <td>${r.status}</td>
-
-            <td>${index+1}</td>
-
-            <td>${r.data.event_date || ""}</td>
-
-            <td>${r.data.event_time || ""}</td>
-
-            <td>${r.data.type || ""}</td>
-
-            <td>${r.data.subject_id || ""}</td>
-
-            <td>${r.data.professor_id || ""}</td>
-
-            <td>${r.data.room_id || ""}</td>
-
-            <td class="small">
-                ${[
-                    ...r.errors,
-                    ...r.warnings
-                ].join("<br>")}
-            </td>
-
+            <td>${i+1}</td>
+            <td>${r.data.event_date}</td>
+            <td>${r.data.event_time}</td>
+            <td>${r.data.type}</td>
+            <td>${r.data.subject_id}</td>
+            <td>${r.data.professor_id}</td>
+            <td>${r.data.room_id}</td>
+            <td class="small">${r.errors.join("<br>")}</td>
         </tr>`;
     });
 
-    document.getElementById("validCount")
-    .innerText = valid;
-
-    document.getElementById("warningCount")
-    .innerText = warning;
-
-    document.getElementById("errorCount")
-    .innerText = error;
-
-    document.getElementById("importBtn")
-    .disabled = valid === 0;
+    document.getElementById("validCount").innerText = v;
+    document.getElementById("errorCount").innerText = e;
+    document.getElementById("importBtn").disabled = v===0;
 }
 
-function chunkArray(array, size){
+// ---------------- IMPORT ----------------
+document.getElementById("importBtn").onclick = async ()=>{
+
+    const valid = validatedRows
+        .filter(r => r.status==="VALID")
+        .map(r => r.data);
 
     const chunks = [];
 
-    for(
-        let i=0;
-        i<array.length;
-        i += size
-    ){
-        chunks.push(
-            array.slice(i, i + size)
-        );
+    for(let i=0;i<valid.length;i+=200){
+        chunks.push(valid.slice(i,i+200));
     }
 
-    return chunks;
-}
+    for(let i=0;i<chunks.length;i++){
 
-document.getElementById("validateBtn")
-.onclick = async ()=>{
+        const { error } = await supabase
+            .from('events')
+            .insert(chunks[i]);
 
-    const file =
-        document.getElementById("csvFile")
-        .files[0];
+        if(error){
+            alert("Import failed: " + error.message);
+            console.error(error);
+            return;
+        }
+    }
+
+    alert("Import OK");
+    location.reload();
+};
+
+// ---------------- EVENTS ----------------
+document.getElementById("validateBtn").onclick = async ()=>{
+
+    const file = document.getElementById("csvFile").files[0];
 
     if(!file){
-
-        alert("Select CSV file");
+        alert("Select file");
         return;
     }
+
+    document.getElementById("progress").innerText = "Loading...";
 
     await loadReferenceData();
 
-    document.getElementById("progress")
-    .innerText =
-        "Reading CSV...";
+    const text = await file.text();
+    const rows = parseCSV(text);
 
-    const text =
-        await file.text();
-
-    const rows =
-        parseCSV(text);
-
-    document.getElementById("progress")
-    .innerText =
-        `Parsed ${rows.length} rows`;
+    document.getElementById("progress").innerText = "Validating...";
 
     validateRows(rows);
 
-    document.getElementById("progress")
-    .innerText =
-        `Validation complete`;
-};
-
-document.getElementById("importBtn")
-.onclick = async ()=>{
-
-    const validRows =
-    validatedRows
-    .filter(r =>
-        r.status === "VALID"
-    )
-    .map(r => ({
-
-        event_date:
-            r.data.event_date,
-
-        event_time:
-            r.data.event_time,
-
-        type:
-            r.data.type,
-
-        subject_id:
-            r.data.subject_id,
-
-        professor_id:
-            (
-                r.data.professor_id &&
-                professors.find(p =>
-                    Number(p.id) ===
-                    Number(r.data.professor_id)
-                )
-            )
-            ? r.data.professor_id
-            : null,
-
-        room_id:
-            r.data.room_id
-    }));
-
-    if(!validRows.length){
-
-        alert("No valid rows");
-        return;
-    }
-console.log(validRows);
-    const chunks =
-        chunkArray(validRows, 200);
-
-    let inserted = 0;
-
-    for(let i=0; i<chunks.length; i++){
-
-        document.getElementById("progress")
-        .innerText = `
-            Importing chunk
-            ${i+1}
-            /
-            ${chunks.length}
-            ...
-        `;
-
-        const chunk =
-    chunks[i].map(row => ({
-
-        ...row,
-
-        professor_id:
-            (
-                row.professor_id !== null &&
-                !isNaN(Number(row.professor_id))
-            )
-            ? Number(row.professor_id)
-            : null
-    }));
-
-        const { error } =
-            await supabase
-            .from('events')
-            .insert(chunk);
-
-        if(error){
-
-            console.error(error);
-
-            alert(
-                "Import failed: " +
-                error.message
-            );
-
-            return;
-        }
-
-        inserted += chunk.length;
-
-        document.getElementById("progress")
-        .innerText = `
-            Imported
-            ${inserted}
-            /
-            ${validRows.length}
-        `;
-    }
-
-    document.getElementById("progress")
-    .innerText =
-        "Import complete";
-
-    alert(
-        `Successfully imported ${inserted} events`
-    );
-
-    location.reload();
+    document.getElementById("progress").innerText = "Done";
 };
 
 </script>
