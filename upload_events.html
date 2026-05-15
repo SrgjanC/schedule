@@ -28,18 +28,25 @@ button,input{
     display:flex;
     gap:15px;
     margin-bottom:20px;
-    font-weight:bold;
+    flex-wrap:wrap;
 }
 
 .box{
     padding:10px 15px;
     border-radius:6px;
     color:white;
+    font-weight:bold;
 }
 
 .valid{ background:#2e7d32; }
 .warning{ background:#f9a825; }
 .error{ background:#c62828; }
+
+.progress{
+    margin:15px 0;
+    font-weight:bold;
+    font-size:15px;
+}
 
 table{
     width:100%;
@@ -84,7 +91,9 @@ tr.error-row{
 
 <div class="controls">
 
-<input type="file" id="csvFile" accept=".csv">
+<input type="file"
+       id="csvFile"
+       accept=".csv">
 
 <button id="validateBtn">
     Validate CSV
@@ -99,18 +108,23 @@ tr.error-row{
 <div class="summary">
 
 <div class="box valid">
-    VALID: <span id="validCount">0</span>
+    VALID:
+    <span id="validCount">0</span>
 </div>
 
 <div class="box warning">
-    WARNINGS: <span id="warningCount">0</span>
+    WARNINGS:
+    <span id="warningCount">0</span>
 </div>
 
 <div class="box error">
-    ERRORS: <span id="errorCount">0</span>
+    ERRORS:
+    <span id="errorCount">0</span>
 </div>
 
 </div>
+
+<div class="progress" id="progress"></div>
 
 <table>
 
@@ -158,6 +172,10 @@ const parallelAllowed = [
 
 async function loadReferenceData(){
 
+    document.getElementById("progress")
+    .innerText =
+        "Loading reference data...";
+
     const { data: s } =
         await supabase
         .from('subjects')
@@ -192,16 +210,20 @@ async function loadReferenceData(){
 
     events = (e || []).map(ev => ({
 
-        event_date: ev.event_date,
+        event_date:
+            ev.event_date,
 
         event_time:
             ev.event_time?.substring(0,5),
 
-        room_id: ev.room_id,
+        room_id:
+            ev.room_id,
 
-        type: ev.type,
+        type:
+            ev.type,
 
-        subject_id: ev.subject_id,
+        subject_id:
+            ev.subject_id,
 
         semester:
             ev.subjects?.semester,
@@ -217,7 +239,9 @@ function normalizeDate(v){
 
     const parts = v.split("/");
 
-    if(parts.length !== 3) return null;
+    if(parts.length !== 3){
+        return null;
+    }
 
     const month =
         parts[0].padStart(2,"0");
@@ -225,7 +249,8 @@ function normalizeDate(v){
     const day =
         parts[1].padStart(2,"0");
 
-    const year = parts[2];
+    const year =
+        parts[2];
 
     return `${year}-${month}-${day}`;
 }
@@ -236,25 +261,28 @@ function normalizeTime(v){
 
     const parts = v.split(":");
 
-    return `${parts[0].padStart(2,"0")}:${parts[1]}`;
+    if(parts.length < 2){
+        return null;
+    }
+
+    return `
+        ${parts[0].padStart(2,"0")}
+        :
+        ${parts[1]}
+    `.replace(/\s/g,'');
 }
 
 function validateConflict(row){
 
     const subject =
         subjects.find(s =>
-            Number(s.id) === Number(row.subject_id)
+            Number(s.id) ===
+            Number(row.subject_id)
         );
 
     if(!subject){
-        return null;
+        return false;
     }
-
-    const programId =
-        subject.program_id;
-
-    const semester =
-        subject.semester;
 
     const existingConflict =
         events.find(e => {
@@ -268,13 +296,16 @@ function validateConflict(row){
 
             const sameProgram =
                 String(e.program_id) ===
-                String(programId);
+                String(subject.program_id);
 
             const sameSemester =
                 String(e.semester) ===
-                String(semester);
+                String(subject.semester);
 
-            if(!sameProgram || !sameSemester){
+            if(
+                !sameProgram ||
+                !sameSemester
+            ){
                 return false;
             }
 
@@ -288,7 +319,224 @@ function validateConflict(row){
             return true;
         });
 
-    return existingConflict;
+    return !!existingConflict;
+}
+
+function parseCSV(text){
+
+    const clean =
+        text.replace(/\r/g,'');
+
+    const lines =
+        clean
+        .split('\n')
+        .filter(l => l.trim());
+
+    const header =
+        lines[0]
+        .replace(/^\uFEFF/, '')
+        .split(";");
+
+    const rows = [];
+
+    for(let i=1; i<lines.length; i++){
+
+        const cols =
+            lines[i].split(";");
+
+        const obj = {};
+
+        header.forEach((h,index)=>{
+
+            obj[h.trim()] =
+                cols[index]?.trim() || "";
+        });
+
+        rows.push(obj);
+    }
+
+    return rows;
+}
+
+function validateRows(rows){
+
+    validatedRows = [];
+
+    const csvDuplicates =
+        new Set();
+
+    rows.forEach((raw,index)=>{
+
+        const errors = [];
+        const warnings = [];
+
+        const normalized = {
+
+            event_date:
+                normalizeDate(
+                    raw.event_date
+                ),
+
+            event_time:
+                normalizeTime(
+                    raw.event_time
+                ),
+
+            type:
+                raw.type?.trim(),
+
+            subject_id:
+                Number(raw.subject_id),
+
+            professor_id:
+                raw.professor_id
+                ? Number(raw.professor_id)
+                : null,
+
+            room_id:
+                Number(raw.room_id)
+        };
+
+        // REQUIRED
+
+        if(!normalized.event_date){
+            errors.push("Invalid date");
+        }
+
+        if(!normalized.event_time){
+            errors.push("Invalid time");
+        }
+
+        if(!normalized.type){
+            errors.push("Missing type");
+        }
+
+        if(!normalized.subject_id){
+            errors.push("Missing subject_id");
+        }
+
+        if(!normalized.room_id){
+            errors.push("Missing room_id");
+        }
+
+        // SUBJECT
+
+        const subject =
+            subjects.find(s =>
+                Number(s.id) ===
+                normalized.subject_id
+            );
+
+        if(!subject){
+            errors.push("Invalid subject_id");
+        }
+
+        // ROOM
+
+        const room =
+            rooms.find(r =>
+                Number(r.id) ===
+                normalized.room_id
+            );
+
+        if(!room){
+            errors.push("Invalid room_id");
+        }
+
+        // PROFESSOR
+
+        if(normalized.professor_id){
+
+            const prof =
+                professors.find(p =>
+                    Number(p.id) ===
+                    normalized.professor_id
+                );
+
+            if(!prof){
+                errors.push(
+                    "Invalid professor_id"
+                );
+            }
+        }
+
+        // DUPLICATE INSIDE CSV
+
+        const dupKey = `
+            ${normalized.event_date}
+            |
+            ${normalized.event_time}
+            |
+            ${normalized.room_id}
+        `;
+
+        if(csvDuplicates.has(dupKey)){
+
+            errors.push(
+                "Duplicate inside CSV"
+            );
+        }
+
+        csvDuplicates.add(dupKey);
+
+        // DUPLICATE IN DB
+
+        const dbDuplicate =
+            events.find(e =>
+
+                e.event_date ===
+                normalized.event_date &&
+
+                e.event_time ===
+                normalized.event_time &&
+
+                Number(e.room_id) ===
+                Number(normalized.room_id)
+            );
+
+        if(dbDuplicate){
+
+            errors.push(
+                "Room already occupied"
+            );
+        }
+
+        // BUSINESS RULES
+
+        if(
+            validateConflict(normalized)
+        ){
+            errors.push(
+                "Program/Semester conflict"
+            );
+        }
+
+        // STATUS
+
+        let status = "VALID";
+
+        if(errors.length){
+            status = "ERROR";
+        }
+        else if(warnings.length){
+            status = "WARNING";
+        }
+
+        validatedRows.push({
+
+            status,
+
+            raw,
+
+            data: normalized,
+
+            errors,
+
+            warnings
+        });
+    });
+
+    renderTable();
 }
 
 function renderTable(){
@@ -304,9 +552,17 @@ function renderTable(){
 
     validatedRows.forEach((r,index)=>{
 
-        if(r.status === "VALID") valid++;
-        if(r.status === "WARNING") warning++;
-        if(r.status === "ERROR") error++;
+        if(r.status === "VALID"){
+            valid++;
+        }
+
+        if(r.status === "WARNING"){
+            warning++;
+        }
+
+        if(r.status === "ERROR"){
+            error++;
+        }
 
         const cls =
             r.status === "VALID"
@@ -344,190 +600,34 @@ function renderTable(){
         </tr>`;
     });
 
-    document.getElementById("validCount").innerText =
-        valid;
+    document.getElementById("validCount")
+    .innerText = valid;
 
-    document.getElementById("warningCount").innerText =
-        warning;
+    document.getElementById("warningCount")
+    .innerText = warning;
 
-    document.getElementById("errorCount").innerText =
-        error;
+    document.getElementById("errorCount")
+    .innerText = error;
 
-    document.getElementById("importBtn").disabled =
-        valid === 0;
+    document.getElementById("importBtn")
+    .disabled = valid === 0;
 }
 
-function parseCSV(text){
+function chunkArray(array, size){
 
-    const lines =
-        text
-        .replace(/\r/g,'')
-        .split('\n')
-        .filter(l => l.trim());
+    const chunks = [];
 
-    const header =
-        lines[0].split(";");
-
-    const rows = [];
-
-    for(let i=1; i<lines.length; i++){
-
-        const cols =
-            lines[i].split(";");
-
-        const obj = {};
-
-        header.forEach((h,index)=>{
-
-            obj[h.trim()] =
-                cols[index]?.trim() || "";
-        });
-
-        rows.push(obj);
+    for(
+        let i=0;
+        i<array.length;
+        i += size
+    ){
+        chunks.push(
+            array.slice(i, i + size)
+        );
     }
 
-    return rows;
-}
-
-function validateRows(rows){
-
-    validatedRows = [];
-
-    const csvDuplicates = new Set();
-
-    rows.forEach((raw,index)=>{
-
-        const errors = [];
-        const warnings = [];
-
-        const normalized = {
-
-            event_date:
-                normalizeDate(raw.event_date),
-
-            event_time:
-                normalizeTime(raw.event_time),
-
-            type:
-                raw.type,
-
-            subject_id:
-                Number(raw.subject_id),
-
-            professor_id:
-                raw.professor_id
-                ? Number(raw.professor_id)
-                : null,
-
-            room_id:
-                Number(raw.room_id)
-        };
-
-        if(!normalized.event_date){
-            errors.push("Invalid date");
-        }
-
-        if(!normalized.event_time){
-            errors.push("Invalid time");
-        }
-
-        if(!normalized.type){
-            errors.push("Missing type");
-        }
-
-        const subject =
-            subjects.find(s =>
-                Number(s.id) ===
-                normalized.subject_id
-            );
-
-        if(!subject){
-            errors.push("Invalid subject_id");
-        }
-
-        const room =
-            rooms.find(r =>
-                Number(r.id) ===
-                normalized.room_id
-            );
-
-        if(!room){
-            errors.push("Invalid room_id");
-        }
-
-        if(normalized.professor_id){
-
-            const prof =
-                professors.find(p =>
-                    Number(p.id) ===
-                    normalized.professor_id
-                );
-
-            if(!prof){
-                errors.push("Invalid professor_id");
-            }
-        }
-
-        const dupKey = `
-            ${normalized.event_date}
-            ${normalized.event_time}
-            ${normalized.room_id}
-        `;
-
-        if(csvDuplicates.has(dupKey)){
-
-            errors.push("Duplicate inside CSV");
-        }
-
-        csvDuplicates.add(dupKey);
-
-        const dbDuplicate =
-            events.find(e =>
-
-                e.event_date === normalized.event_date &&
-                e.event_time === normalized.event_time &&
-                Number(e.room_id) === Number(normalized.room_id)
-            );
-
-        if(dbDuplicate){
-
-            errors.push("Room already occupied");
-        }
-
-        const businessConflict =
-            validateConflict(normalized);
-
-        if(businessConflict){
-
-            errors.push(
-                "Program/Semester conflict"
-            );
-        }
-
-        let status = "VALID";
-
-        if(errors.length){
-            status = "ERROR";
-        }
-        else if(warnings.length){
-            status = "WARNING";
-        }
-
-        validatedRows.push({
-
-            status,
-
-            raw,
-
-            data: normalized,
-
-            errors,
-
-            warnings
-        });
-    });
-
-    renderTable();
+    return chunks;
 }
 
 document.getElementById("validateBtn")
@@ -545,13 +645,25 @@ document.getElementById("validateBtn")
 
     await loadReferenceData();
 
+    document.getElementById("progress")
+    .innerText =
+        "Reading CSV...";
+
     const text =
         await file.text();
 
     const rows =
         parseCSV(text);
 
+    document.getElementById("progress")
+    .innerText =
+        `Parsed ${rows.length} rows`;
+
     validateRows(rows);
+
+    document.getElementById("progress")
+    .innerText =
+        `Validation complete`;
 };
 
 document.getElementById("importBtn")
@@ -589,20 +701,59 @@ document.getElementById("importBtn")
         return;
     }
 
-    const { error } =
-        await supabase
-        .from('events')
-        .insert(validRows);
+    const chunks =
+        chunkArray(validRows, 200);
 
-    if(error){
+    let inserted = 0;
 
-        console.error(error);
-        alert(error.message);
-        return;
+    for(let i=0; i<chunks.length; i++){
+
+        document.getElementById("progress")
+        .innerText = `
+            Importing chunk
+            ${i+1}
+            /
+            ${chunks.length}
+            ...
+        `;
+
+        const chunk =
+            chunks[i];
+
+        const { error } =
+            await supabase
+            .from('events')
+            .insert(chunk);
+
+        if(error){
+
+            console.error(error);
+
+            alert(
+                "Import failed: " +
+                error.message
+            );
+
+            return;
+        }
+
+        inserted += chunk.length;
+
+        document.getElementById("progress")
+        .innerText = `
+            Imported
+            ${inserted}
+            /
+            ${validRows.length}
+        `;
     }
 
+    document.getElementById("progress")
+    .innerText =
+        "Import complete";
+
     alert(
-        `Imported ${validRows.length} events`
+        `Successfully imported ${inserted} events`
     );
 
     location.reload();
