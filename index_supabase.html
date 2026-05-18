@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -464,49 +464,16 @@ function initFilters() {
 function render() {
 
 const tbody = document.getElementById("tbody");
+const dateF =    document.getElementById("dateFilter").value;
+    const selectedDate = dateF || todayISO();
 
-if (isLoading) {
+const progF =    document.getElementById("programFilter").value;
 
-    tbody.innerHTML = `
-    <tr>
-        <td colspan="11">
-            <div class="spinner-wrap">
-                <div class="spinner"></div>
-            </div>
-        </td>
-    </tr>`;
+const semF =    document.getElementById("semesterFilter").value;
 
-    return;
-}
-
-tbody.innerHTML = "";
-
-const dateF =
-    document.getElementById("dateFilter").value;
-
-const progF =
-    document.getElementById("programFilter").value;
-
-const semF =
-    document.getElementById("semesterFilter").value;
-
-const roomF =
-    document.getElementById("roomFilter").value;
+const roomF =    document.getElementById("roomFilter").value;
     
-const view =
-    document.getElementById("viewMode").value;
-
-// ================= EVENT MAP =================
-
-const map = {};
-
-events.forEach(e => {
-
-    map[`${e.date}_${e.time}_${e.room}`] = e;
-});
-
-const selectedDate =
-    dateF || todayISO();
+const view =    document.getElementById("viewMode").value;
 
 const holiday =
     getHoliday(selectedDate);
@@ -530,6 +497,48 @@ if(holiday){
         ? `Приказ: ${dateF}`
         : "Приказ за денес";
 }
+
+    
+if (isLoading) {
+
+    tbody.innerHTML = `
+    <tr>
+        <td colspan="11">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+        </td>
+    </tr>`;
+
+    return;
+}
+
+tbody.innerHTML = "";
+const colspan = document.querySelectorAll("#schedule thead th").length;
+
+if (holiday) {
+    tbody.innerHTML += `
+        <tr style="background:#ffebee;">
+            <td colspan="${colspan}" style="color:#c62828; font-weight:bold; text-align:center;">
+                ⚠️ ПРАЗНИК: ${holiday.title} (${holiday.type})
+            </td>
+        </tr>
+    `;
+}
+
+
+// ================= EVENT MAP =================
+
+const map = {};
+
+events.forEach(e => {
+
+    map[`${e.date}_${e.time}_${e.room}`] = e;
+});
+
+const selectedDate =
+    dateF || todayISO();
+
 
 // ================= DAY VIEW =================
 
