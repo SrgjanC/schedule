@@ -289,7 +289,32 @@ document.getElementById("importBtn").onclick = async ()=>{
 
     const valid = validatedRows
         .filter(r => r.status==="VALID")
-        .map(r => r.data);
+       .map(r => ({
+
+    event_date:
+        r.data.event_date,
+
+    event_time:
+        r.data.event_time,
+
+    type:
+        r.data.type,
+
+    subject_id:
+        Number(r.data.subject_id),
+
+    room_id:
+        Number(r.data.room_id),
+
+    professor_id:
+        (
+            r.data.professor_id === null ||
+            r.data.professor_id === "" ||
+            isNaN(r.data.professor_id)
+        )
+        ? null
+        : Number(r.data.professor_id)
+}));
 
     const chunks = [];
 
@@ -298,7 +323,7 @@ document.getElementById("importBtn").onclick = async ()=>{
     }
 
     for(let i=0;i<chunks.length;i++){
-
+console.log(chunks[i]);
         const { error } = await supabase
             .from('events')
             .insert(chunks[i]);
