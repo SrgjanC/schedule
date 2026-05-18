@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.5'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -130,7 +130,7 @@ let isLoading = true;
 let allDates = [];
 let fromDate = "";
 let toDate = "";
-
+let holidays = [];
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -226,6 +226,17 @@ function todayISO() {
     return `${y}-${m}-${d}`;
 }
 
+function getHoliday(date){
+
+    return holidays.find(h =>
+
+        String(h.holiday_date)
+        .substring(0,10)
+
+        === date
+    );
+}
+    
 function buildTimeSlots() {
 
     const slots = [];
@@ -375,6 +386,14 @@ async function loadData() {
         return;
     }
 
+
+ // LOAD HOLIDAYS
+    const { data: h } = await supabase
+        .from('holidays')
+        .select('*');
+
+    holidays = h || [];
+
     events = (data || []).map(e => ({
         id: e.id,
         date: e.event_date,
@@ -389,7 +408,7 @@ async function loadData() {
         groups: e.groups_text,
         day: getDayName(e.event_date)
     }));
-
+    
     rooms =
     [...new Set(events.map(e => e.room))]
     .filter(Boolean);
@@ -489,8 +508,28 @@ events.forEach(e => {
 const selectedDate =
     dateF || todayISO();
 
-document.getElementById("viewInfo").textContent =
-    dateF ? `Приказ: ${dateF}` : "Приказ за денес";
+const holiday =
+    getHoliday(selectedDate);
+
+if(holiday){
+
+    document.getElementById("viewInfo").innerHTML = `
+        <b>Приказ:</b> ${selectedDate}
+        <br>
+        ⚠️
+        <span style="color:#c62828;">
+            ${holiday.title}
+            (${holiday.type})
+        </span>
+    `;
+
+}else{
+
+    document.getElementById("viewInfo").textContent =
+        dateF
+        ? `Приказ: ${dateF}`
+        : "Приказ за денес";
+}
 
 // ================= DAY VIEW =================
 
@@ -536,7 +575,7 @@ if (view === "day") {
             </tr>`;
         }
     }
-
+    
     return;
 }
 
