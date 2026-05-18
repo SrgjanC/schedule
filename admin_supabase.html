@@ -135,6 +135,24 @@ th{
     color:#444;
 }
 
+.holiday-banner{
+    background:#ffebee;
+    border:1px solid #c62828;
+    color:#b71c1c;
+    padding:10px;
+    margin-bottom:15px;
+    border-radius:6px;
+    font-weight:bold;
+}
+
+.holiday-slot{
+    background:#fff3f3 !important;
+}
+
+.holiday-slot:hover{
+    background:#ffe0e0 !important;
+}
+    
 </style>
 </head>
 
@@ -231,7 +249,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -271,7 +289,7 @@ let subjects = [];
 let professors = [];
 let rooms = [];
 let lessonTypes = [];
-    
+    let holidays = [];
 let currentDate = "";
 let currentTime = "";
 let editingId = null;
@@ -633,6 +651,12 @@ const { data: p5, error } =
     .eq('event_date', selectedDate)
     .order('event_time', { ascending: true });
 
+const { data: h } =
+    await supabase
+    .from('holidays')
+    .select('*');
+
+holidays = h || [];
     
 console.log("ROOMS:", rooms);
 console.log("EVENTS:", p5);
@@ -689,7 +713,30 @@ function render(){
 
     const selectedDate =
         document.getElementById("datePicker").value;
+const holiday =
+    holidays.find(h =>
+        String(h.holiday_date).substring(0,10)
+        === selectedDate
+    );
 
+const info =
+    document.getElementById("info");
+
+if(holiday){
+
+    info.innerHTML = `
+        <div class="holiday-banner">
+            ⚠️ Неработен ден:
+            <b>${holiday.title}</b>
+            (${holiday.type})
+        </div>
+    `;
+
+}else{
+
+    info.innerHTML = "";
+}
+    
     TIMES.forEach(time=>{
 
         let row = `
@@ -741,7 +788,7 @@ function render(){
             }
 
             row += `
-            <td class="slot"
+<td class="slot ${holiday ? 'holiday-slot' : ''}"
                 data-room="${room.id}"
                 data-time="${time}"
                 onclick="openSlot(this)">
@@ -757,6 +804,21 @@ function render(){
 
 window.openSlot = function(cell){
 
+    const holiday =
+    holidays.find(h =>
+        String(h.holiday_date).substring(0,10)
+        === selectedDate
+    );
+
+if(holiday){
+
+    alert(
+        "Нема внесување настани на празници."
+    );
+
+    return;
+}
+    
     currentDate =
         document.getElementById("datePicker").value;
 
