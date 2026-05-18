@@ -7,7 +7,6 @@
 <style>
 body { font-family: Arial; padding: 20px; }
 h2 { margin-bottom: 10px; }
-
 .controls { margin-bottom: 15px; }
 select { padding: 5px; margin-right: 10px; }
 
@@ -16,31 +15,34 @@ table { border-collapse: collapse; width: 100%; }
 th, td {
     border: 1px solid #222;
     padding: 4px 6px;
+    text-align: left;
     font-size: 13px;
 }
 
 th {
     background: #3f69b1;
-    color: white;
+    color: #fff;
 }
 
 .spinner-wrap {
-    display:flex;
-    justify-content:center;
-    padding:25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
 }
 
 .spinner {
-    width:34px;height:34px;
-    border:4px solid #ddd;
-    border-top:4px solid #3f69b1;
-    border-radius:50%;
-    animation:spin 0.8s linear infinite;
+    width: 34px;
+    height: 34px;
+    border: 4px solid #ddd;
+    border-top: 4px solid #3f69b1;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform:rotate(0deg); }
-    100% { transform:rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
 </head>
@@ -50,12 +52,13 @@ th {
 <h2>Академски Распоред</h2>
 
 <div class="controls">
+
 <label>Преглед:</label>
 <select id="viewMode">
-<option value="day">Day</option>
-<option value="week">Week</option>
-<option value="month">Month</option>
-<option value="year">Year</option>
+    <option value="day">Day</option>
+    <option value="week">Week</option>
+    <option value="month">Month</option>
+    <option value="year">Year</option>
 </select>
 
 <label>Датум:</label>
@@ -69,154 +72,581 @@ th {
 
 <label>Просторија:</label>
 <select id="roomFilter"></select>
+
 </div>
 
-<div id="viewInfo"></div>
+<div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
 
-<table>
+<table id="schedule">
+
 <thead>
 <tr>
+
 <th>Ден</th>
 <th>Датум</th>
 <th>Час</th>
 <th>Просторија</th>
-<th>Програма</th>
+<th>Студиска програма</th>
 <th>Семестар</th>
 <th>Предмет</th>
-<th>Тип</th>
-<th>Проф</th>
+<th>Тип на настава</th>
+<th>Проф/асс</th>
 <th>Групи</th>
 </tr>
 </thead>
+
 <tbody id="tbody"></tbody>
+
 </table>
 
 <script type="module">
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
-  "https://elmxwpwhyewgjlvoadtb.supabase.co",
-  "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd"
-);
 
-// ================= STATE =================
+// ================= SUPABASE =================
+
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
+
+const supabaseUrl =
+'https://elmxwpwhyewgjlvoadtb.supabase.co';
+
+const supabaseKey =
+'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
+
+const supabase =
+    createClient(
+        supabaseUrl,
+        supabaseKey
+    );
+// ================= DATA =================
+
 let events = [];
-let holidays = [];
+let programs = [];
+let subjects = [];
+let rooms = [];
+let professors = [];
 let isLoading = true;
+let allDates = [];
+let fromDate = "";
+let toDate = "";
+let holidays = [];
+// ================= ROOMS =================
 
-// ================= HELPERS =================
-const todayISO = () => new Date().toISOString().split("T")[0];
+const DAY_ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред.",
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.","НФИЦ","Инст. за Физиологија","Инст. за Микробиологија","Инст. за Анатомија","ПМФ","Фак. за физичко образование","Кат. за Медицинска физика"
+];
 
-function normalizeDate(d) {
-    return new Date(d).toISOString().split("T")[0];
+// ================= COLORS =================
+
+const roomColorCache = {};
+
+function getRoomColor(room) {
+
+    if (!room) return "#ffffff";
+
+    if (roomColorCache[room])
+        return roomColorCache[room];
+
+    const palette = [
+        "#f1dfd3",
+        "#dde3ef",
+        "#cfe7b4",
+        "#f7e6b8",
+        "#e3d9f6",
+        "#d7eee8"
+    ];
+
+    let hash = 0;
+
+    for (let i = 0; i < room.length; i++) {
+        hash = room.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const color =
+        palette[Math.abs(hash) % palette.length];
+
+    roomColorCache[room] = color;
+
+    return color;
 }
 
-// ✅ FIXED HOLIDAY MATCH
-function getHoliday(date) {
-    return holidays.find(h => normalizeDate(h.holiday_date) === date);
+// ================= DATE =================
+function startOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0=Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
 }
+
+function endOfWeek(date) {
+    const start = startOfWeek(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end;
+}
+
+function startOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function endOfMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function toISO(d) {
+    return d.toISOString().split("T")[0];
+}
+function formatDate(dateStr) {
+
+    if (!dateStr) return "";
+
+    const d = new Date(dateStr);
+
+    if (Number.isNaN(d.getTime()))
+        return dateStr;
+
+    const months = [
+        "Јан","Фев","Мар","Апр","Мај","Јун",
+        "Јул","Авг","Сеп","Окт","Ное","Дек"
+    ];
+
+    return `${d.getDate()}-${months[d.getMonth()]}`;
+}
+
+function todayISO() {
+
+    const t = new Date();
+
+    const y = t.getFullYear();
+    const m = String(t.getMonth()+1).padStart(2,"0");
+    const d = String(t.getDate()).padStart(2,"0");
+
+    return `${y}-${m}-${d}`;
+}
+
+function getHoliday(date){
+
+    return holidays.find(h =>
+
+        String(h.holiday_date)
+        .substring(0,10)
+
+        === date
+    );
+}
+    
+function buildTimeSlots() {
+
+    const slots = [];
+
+    for (let h = 8; h <= 20; h++) {
+
+        slots.push(
+            String(h).padStart(2,"0") + ":00"
+        );
+    }
+
+    return slots;
+}
+
+const TIMES = buildTimeSlots();
+    function getDayName(dateStr){
+
+    if(!dateStr) return "";
+
+    const days = [
+        "недела",
+        "понеделник",
+        "вторник",
+        "среда",
+        "четврток",
+        "петок",
+        "сабота"
+    ];
+
+    const d = new Date(dateStr);
+
+    return days[d.getDay()];
+}
+
+// ================= FILTERS =================
+
+function fillSelect(id, values) {
+
+    const el = document.getElementById(id);
+
+    el.innerHTML =
+        "<option value=''>Сите</option>";
+
+    values.forEach(v => {
+
+        if (v !== undefined &&
+            v !== null &&
+            v !== "") {
+
+            el.innerHTML +=
+                `<option value="${v}">${v}</option>`;
+        }
+    });
+}
+
+function sortSemesters(values) {
+
+    return values
+        .map(v => Number(v))
+        .filter(v => !Number.isNaN(v))
+        .sort((a,b) => a - b);
+}
+function computeRange() {
+
+    const view = document.getElementById("viewMode").value;
+
+    const selectedDate =
+        document.getElementById("dateFilter").value || todayISO();
+
+    const baseDate = selectedDate
+        ? new Date(selectedDate)
+        : new Date();
+
+    if (view === "day") {
+
+        fromDate = selectedDate;
+        toDate = selectedDate;
+    }
+
+    else if (view === "week") {
+
+        fromDate = toISO(startOfWeek(baseDate));
+        toDate = toISO(endOfWeek(baseDate));
+    }
+
+    else if (view === "month") {
+
+        fromDate = toISO(startOfMonth(baseDate));
+        toDate = toISO(endOfMonth(baseDate));
+    }
+
+    else if (view === "year") {
+
+    let year = baseDate.getFullYear();
+
+    // Jan-Sep belong to previous academic year
+    if (baseDate.getMonth() < 9) {
+        year--;
+    }
+
+    fromDate = toISO(new Date(year, 9, 1));
+    toDate = toISO(new Date(year + 1, 8, 30));
+}
+}
+
 
 // ================= LOAD =================
+
 async function loadData() {
+
+    computeRange();
 
     isLoading = true;
     render();
 
     const { data, error } = await supabase
-        .from("events")
+        .from('events')
         .select(`
             *,
-            subjects(name, semester, programs(name)),
-            professors(name),
-            rooms(name)
-        `);
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
+                    id,
+                    name
+                )
+            ),
+            professors (
+                id,
+                name
+            ),
+            rooms (
+                id,
+                name,
+                type,
+                capacity
+            )
+        `)
+        .gte('event_date', fromDate)
+        .lte('event_date', toDate)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true });
 
     if (error) {
         alert(error.message);
         return;
     }
 
-    const { data: hData } = await supabase
-        .from("holidays")
-        .select("*");
 
-    holidays = hData || [];
+ // LOAD HOLIDAYS
+    const { data: h } = await supabase
+        .from('holidays')
+        .select('*');
+
+    holidays = h || [];
 
     events = (data || []).map(e => ({
+        id: e.id,
         date: e.event_date,
         time: e.event_time?.substring(0,5),
         room: e.rooms?.name || "",
         subject: e.subjects?.name,
-        semester: e.subjects?.semester,
-        program: e.subjects?.programs?.name,
-        type: e.type,
-        professor: e.professors?.name,
-        groups: e.groups_text
+        semester: e.subjects?.semester || "",
+        programId: e.subjects?.programs?.id || 0,
+        program: e.subjects?.programs?.name || "",
+        type: e.type || "",
+        professorName: e.professors?.name || "",
+        groups: e.groups_text,
+        day: getDayName(e.event_date)
     }));
-
+    
+    rooms =
+    [...new Set(events.map(e => e.room))]
+    .filter(Boolean);
     isLoading = false;
+    initFilters();
     render();
 }
 
-// ================= RENDER =================
-function render() {
+// ================= FILTER INIT =================
 
-    const tbody = document.getElementById("tbody");
+function initFilters() {
 
-    if (isLoading) {
-        tbody.innerHTML = `<tr><td colspan="10">Loading...</td></tr>`;
-        return;
-    }
+    
 
-    const dateF =
-        document.getElementById("dateFilter").value || todayISO();
+    const progs = [...new Map(
+    events
+        .filter(e => e.program)
+        .map(e => [
+            e.programId,
+            {
+                id: e.programId,
+                name: e.program
+            }
+        ])
 
-    const holiday = getHoliday(dateF);
+).values()]
+.sort((a, b) => a.id - b.id)
+.map(p => p.name);
 
-    tbody.innerHTML = "";
+    const semRaw =
+    [...new Set(events.map(e => e.semester))]
+        .filter(v => v !== null && v !== undefined && v !== "");
 
-    // ===== HOLIDAY ROW =====
-    if (holiday) {
-        tbody.innerHTML += `
-        <tr style="background:#ffebee;">
-            <td colspan="10" style="color:red;font-weight:bold;text-align:center;">
-                ⚠️ ПРАЗНИК: ${holiday.title} (${holiday.type})
-            </td>
-        </tr>`;
-    }
+    const semSorted =
+        sortSemesters(semRaw);
 
-    // ================= FIX: DO NOT OVER-FILTER =================
-    const filtered = events.filter(e => {
-        return normalizeDate(e.date) >= dateF;   // 👈 IMPORTANT CHANGE
-    });
+    const roomSorted =
+        [...new Set(rooms)].sort((a,b)=>
+            a.localeCompare(b,"mk")
+        );
 
-    if (filtered.length === 0) {
-        tbody.innerHTML += `<tr><td colspan="10">Нема податоци</td></tr>`;
-        return;
-    }
+    
+    fillSelect("programFilter", progs);
+    fillSelect("semesterFilter", semSorted);
+    fillSelect("roomFilter", roomSorted);
 
-    filtered.forEach(e => {
-        tbody.innerHTML += `
-        <tr>
-            <td></td>
-            <td>${e.date}</td>
-            <td>${e.time}</td>
-            <td>${e.room}</td>
-            <td>${e.program}</td>
-            <td>${e.semester}</td>
-            <td>${e.subject}</td>
-            <td>${e.type}</td>
-            <td>${e.professor}</td>
-            <td>${e.groups}</td>
-        </tr>`;
-    });
+   
+
 }
 
-// ================= EVENTS =================
-document.getElementById("dateFilter").value = todayISO();
-document.getElementById("dateFilter").addEventListener("change", render);
-console.log("EVENTS:", events);
+// ================= RENDER =================
+
+function render() {
+
+const tbody = document.getElementById("tbody");
+
+if (isLoading) {
+
+    tbody.innerHTML = `
+    <tr>
+        <td colspan="11">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+        </td>
+    </tr>`;
+
+    return;
+}
+
+tbody.innerHTML = "";
+
+const dateF =
+    document.getElementById("dateFilter").value;
+
+const progF =
+    document.getElementById("programFilter").value;
+
+const semF =
+    document.getElementById("semesterFilter").value;
+
+const roomF =
+    document.getElementById("roomFilter").value;
+    
+const view =
+    document.getElementById("viewMode").value;
+
+// ================= EVENT MAP =================
+
+const map = {};
+
+events.forEach(e => {
+
+    map[`${e.date}_${e.time}_${e.room}`] = e;
+});
+
+const selectedDate =
+    dateF || todayISO();
+
+const holiday =
+    getHoliday(selectedDate);
+
+if(holiday){
+
+    document.getElementById("viewInfo").innerHTML = `
+        <b>Приказ:</b> ${selectedDate}
+        <br>
+        ⚠️
+        <span style="color:#c62828;">
+            ${holiday.title}
+            (${holiday.type})
+        </span>
+    `;
+
+}else{
+
+    document.getElementById("viewInfo").textContent =
+        dateF
+        ? `Приказ: ${dateF}`
+        : "Приказ за денес";
+}
+
+// ================= DAY VIEW =================
+
+if (view === "day") {
+
+    for (const room of DAY_ROOMS) {
+
+        if (roomF && room !== roomF)
+            continue;
+
+        const bg =
+            getRoomColor(room);
+
+        for (const time of TIMES) {
+
+            const key =
+                `${selectedDate}_${time}_${room}`;
+
+            const e = map[key];
+
+            if (e) {
+
+                if (progF && e.program !== progF)
+                    continue;
+
+                if (semF && String(e.semester) !== String(semF))
+                    continue;
+            }
+
+            tbody.innerHTML += `
+            <tr style="background:${bg}; opacity:${e ? 1 : 0.55}">
+                
+                <td>${e?.day || ""}</td>
+                <td>${formatDate(selectedDate)}</td>
+                <td>${time}</td>
+                <td>${room}</td>
+                <td>${e?.program || ""}</td>
+                <td>${e?.semester || ""}</td>
+                <td>${e?.subject || ""}</td>
+                <td>${e?.type || ""}</td>
+                <td>${e?.professorName  || ""}</td>
+                <td>${e?.groups || ""}</td>
+            </tr>`;
+        }
+    }
+    
+    return;
+}
+
+// ================= NORMAL VIEW =================
+
+const sorted = [...events].sort((a, b) =>
+
+    (a.date || "").localeCompare(b.date || "") ||
+
+    (a.room || "").localeCompare(
+        b.room || "",
+        "mk"
+    ) ||
+
+    (a.time || "").localeCompare(b.time || "")
+);
+
+sorted.forEach(e => {
+
+    if (view === "day" && dateF && e.date !== dateF)
+    return;
+
+    if (progF && e.program !== progF)
+        return;
+
+    if (semF && String(e.semester) !== String(semF))
+        return;
+
+    if (roomF && e.room !== roomF)
+        return;
+
+    tbody.innerHTML += `
+    <tr style="background:${getRoomColor(e.room)}">
+        
+        <td>${e?.day || ""}</td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.time || ""}</td>
+        <td>${e.room || ""}</td>
+        <td>${e.program || ""}</td>
+        <td>${e.semester || ""}</td>
+        <td>${e.subject || ""}</td>
+        <td>${e.type || ""}</td>
+        <td>${e.professorName  || ""}</td>
+        <td>${e.groups || ""}</td>
+    </tr>`;
+});
+
+}
+
+document.getElementById("dateFilter").value =
+    todayISO();
+document.getElementById("viewMode")
+    .addEventListener("change", loadData);
+
+document.getElementById("dateFilter")
+    .addEventListener("change", loadData);
+
+document.getElementById("programFilter")
+    .addEventListener("change", render);
+
+document.getElementById("semesterFilter")
+    .addEventListener("change", render);
+
+document.getElementById("roomFilter")
+    .addEventListener("change", render);
+
+document.getElementById("dateFilter").value =
+    todayISO();
+
+
+initFilters();
 loadData();
 
 </script>
