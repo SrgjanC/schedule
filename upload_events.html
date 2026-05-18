@@ -99,7 +99,7 @@ th{ background:#3f69b1; color:white; }
 
 <script type="module">
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.1";
 
 const supabase = createClient(
     "https://elmxwpwhyewgjlvoadtb.supabase.co",
@@ -185,14 +185,31 @@ function validateRows(rows){
 
     rows.forEach((raw,index)=>{
 
-        const normalized = {
-            event_date: normalizeDate(raw.event_date),
-            event_time: normalizeTime(raw.event_time),
-            type: raw.type?.trim(),
-            subject_id: toNumber(raw.subject_id),
-            professor_id: raw.professor_id ? toNumber(raw.professor_id) : null,
-            room_id: toNumber(raw.room_id)
-        };
+        const profRaw =
+    String(raw.professor_id || "").trim();
+
+const normalized = {
+
+    event_date:
+        normalizeDate(raw.event_date),
+
+    event_time:
+        normalizeTime(raw.event_time),
+
+    type:
+        raw.type?.trim(),
+
+    subject_id:
+        toNumber(raw.subject_id),
+
+    professor_id:
+        profRaw === ""
+            ? null
+            : toNumber(profRaw),
+
+    room_id:
+        toNumber(raw.room_id)
+};
 
         const errors = [];
 
@@ -210,13 +227,26 @@ function validateRows(rows){
 
         if(!room) errors.push("Room not found");
 
-        if(normalized.professor_id !== null){
-            const prof = professors.find(p => Number(p.id) === normalized.professor_id);
-            if(!prof){
-                errors.push("Professor not found");
-                normalized.professor_id = null;
-            }
-        }
+        if(
+    normalized.professor_id !== null &&
+    normalized.professor_id !== undefined
+){
+
+    const prof =
+        professors.find(p =>
+            Number(p.id) ===
+            Number(normalized.professor_id)
+        );
+
+    if(!prof){
+
+        errors.push(
+            "Professor not found"
+        );
+
+        normalized.professor_id = null;
+    }
+}
 
         // CSV duplicate RULE (ALLOW same time+room+subject different types)
         const key = `${normalized.event_date}|${normalized.event_time}|${normalized.room_id}|${normalized.subject_id}`;
@@ -288,8 +318,8 @@ function render(){
 document.getElementById("importBtn").onclick = async ()=>{
 
     const valid = validatedRows
-        .filter(r => r.status==="VALID")
-       .map(r => ({
+.filter(r => r.status==="VALID")
+.map(r => ({
 
     event_date:
         r.data.event_date,
@@ -309,8 +339,9 @@ document.getElementById("importBtn").onclick = async ()=>{
     professor_id:
         (
             r.data.professor_id === null ||
+            r.data.professor_id === undefined ||
             r.data.professor_id === "" ||
-            isNaN(r.data.professor_id)
+            isNaN(Number(r.data.professor_id))
         )
         ? null
         : Number(r.data.professor_id)
