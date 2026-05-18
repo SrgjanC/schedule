@@ -350,44 +350,19 @@ async function loadData() {
     computeRange();
 
     isLoading = true;
-    render();
+    render(); // shows spinner only (safe)
 
     const { data, error } = await supabase
         .from('events')
-        .select(`
-            *,
-            subjects (
-                id,
-                name,
-                semester,
-                programs (
-                    id,
-                    name
-                )
-            ),
-            professors (
-                id,
-                name
-            ),
-            rooms (
-                id,
-                name,
-                type,
-                capacity
-            )
-        `)
+        .select(`...`)
         .gte('event_date', fromDate)
-        .lte('event_date', toDate)
-        .order('event_date', { ascending: true })
-        .order('event_time', { ascending: true });
+        .lte('event_date', toDate);
 
     if (error) {
         alert(error.message);
         return;
     }
 
-
- // LOAD HOLIDAYS
     const { data: h } = await supabase
         .from('holidays')
         .select('*');
@@ -408,13 +383,13 @@ async function loadData() {
         groups: e.groups_text,
         day: getDayName(e.event_date)
     }));
-    
-    rooms =
-    [...new Set(events.map(e => e.room))]
-    .filter(Boolean);
+
+    rooms = [...new Set(events.map(e => e.room))].filter(Boolean);
+
     isLoading = false;
+
     initFilters();
-    render();
+    render(); // ✅ ONLY NOW real render happens
 }
 
 // ================= FILTER INIT =================
@@ -463,21 +438,27 @@ function initFilters() {
 
 function render() {
 
-const tbody = document.getElementById("tbody");
+    const tbody = document.getElementById("tbody");
 
-if (isLoading) {
-    tbody.innerHTML = `
-    <tr>
-        <td colspan="11">
-            <div class="spinner-wrap">
-                <div class="spinner"></div>
-            </div>
-        </td>
-    </tr>`;
-    return;
-}
+    if (isLoading) {
+        tbody.innerHTML = `
+        <tr>
+            <td colspan="11">
+                <div class="spinner-wrap">
+                    <div class="spinner"></div>
+                </div>
+            </td>
+        </tr>`;
+        return;
+    }
 
-tbody.innerHTML = "";
+    tbody.innerHTML = "";
+
+    // 👇 SAFE: create map here (AFTER events exist)
+    const map = {};
+    events.forEach(e => {
+        map[`${e.date}_${e.time}_${e.room}`] = e;
+    });
 
 // ================= GET FILTERS FIRST =================
 const dateF = document.getElementById("dateFilter").value;
