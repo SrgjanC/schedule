@@ -169,7 +169,9 @@ function render() {
         return;
     }
 
-    const dateF = document.getElementById("dateFilter").value || todayISO();
+    const dateF =
+        document.getElementById("dateFilter").value || todayISO();
+
     const holiday = getHoliday(dateF);
 
     tbody.innerHTML = "";
@@ -184,17 +186,16 @@ function render() {
         </tr>`;
     }
 
-    // ===== FILTER EVENTS =====
-    const filtered = events.filter(e =>
-        normalizeDate(e.date) === dateF
-    );
+    // ================= FIX: DO NOT OVER-FILTER =================
+    const filtered = events.filter(e => {
+        return normalizeDate(e.date) >= dateF;   // 👈 IMPORTANT CHANGE
+    });
 
     if (filtered.length === 0) {
         tbody.innerHTML += `<tr><td colspan="10">Нема податоци</td></tr>`;
         return;
     }
 
-    // ===== ROWS =====
     filtered.forEach(e => {
         tbody.innerHTML += `
         <tr>
@@ -215,7 +216,7 @@ function render() {
 // ================= EVENTS =================
 document.getElementById("dateFilter").value = todayISO();
 document.getElementById("dateFilter").addEventListener("change", render);
-
+console.log("EVENTS:", events);
 loadData();
 
 </script>
