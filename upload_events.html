@@ -99,7 +99,7 @@ th{ background:#3f69b1; color:white; }
 
 <script type="module">
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.1";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.2";
 
 const supabase = createClient(
     "https://elmxwpwhyewgjlvoadtb.supabase.co",
@@ -203,9 +203,9 @@ const normalized = {
         toNumber(raw.subject_id),
 
     professor_id:
-        profRaw === ""
-            ? null
-            : toNumber(profRaw),
+    raw.professor_id
+    ? raw.professor_id.trim()
+    : null,
 
     room_id:
         toNumber(raw.room_id)
@@ -227,15 +227,13 @@ const normalized = {
 
         if(!room) errors.push("Room not found");
 
-        if(
-    normalized.professor_id !== null &&
-    normalized.professor_id !== undefined
-){
+        if(normalized.professor_id !== null){
 
     const prof =
         professors.find(p =>
-            Number(p.id) ===
-            Number(normalized.professor_id)
+
+            String(p.id).trim() ===
+            String(normalized.professor_id).trim()
         );
 
     if(!prof){
@@ -337,14 +335,9 @@ document.getElementById("importBtn").onclick = async ()=>{
         Number(r.data.room_id),
 
     professor_id:
-        (
-            r.data.professor_id === null ||
-            r.data.professor_id === undefined ||
-            r.data.professor_id === "" ||
-            isNaN(Number(r.data.professor_id))
-        )
-        ? null
-        : Number(r.data.professor_id)
+    r.data.professor_id
+    ? String(r.data.professor_id).trim()
+    : null
 }));
 
     const chunks = [];
