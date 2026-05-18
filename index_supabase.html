@@ -376,8 +376,8 @@ async function loadData() {
                 capacity
             )
         `)
-        .gte('event_date', fromDate)
-        .lte('event_date', toDate)
+       // .gte('event_date', fromDate)
+     //   .lte('event_date', toDate)
         .order('event_date', { ascending: true })
         .order('event_time', { ascending: true });
 
@@ -412,8 +412,9 @@ async function loadData() {
     rooms =
     [...new Set(events.map(e => e.room))]
     .filter(Boolean);
-    isLoading = false;
+    
     initFilters();
+    isLoading = false;
     render();
 }
 
@@ -478,6 +479,21 @@ const view =    document.getElementById("viewMode").value;
 const holiday =
     getHoliday(selectedDate);
 
+    if (isLoading) {
+
+    tbody.innerHTML = `
+    <tr>
+        <td colspan="11">
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
+            </div>
+        </td>
+    </tr>`;
+
+    return;
+}
+    
+    
 if(holiday){
 
     document.getElementById("viewInfo").innerHTML = `
@@ -499,19 +515,7 @@ if(holiday){
 }
 
     
-if (isLoading) {
 
-    tbody.innerHTML = `
-    <tr>
-        <td colspan="11">
-            <div class="spinner-wrap">
-                <div class="spinner"></div>
-            </div>
-        </td>
-    </tr>`;
-
-    return;
-}
 
 tbody.innerHTML = "";
 const colspan = document.querySelectorAll("#schedule thead th").length;
@@ -631,7 +635,7 @@ sorted.forEach(e => {
         <td>${e.groups || ""}</td>
     </tr>`;
 });
-
+console.log("EVENTS:", events.length);
 }
 
 document.getElementById("dateFilter").value =
