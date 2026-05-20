@@ -231,7 +231,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -708,37 +708,42 @@ function render(){
         return;
     }
 
-            const event =
-                events.find(e=>
+const slotEvents =
+    events.filter(e =>
 
-                    e.date === selectedDate &&
-                    e.time === time &&
-                    Number(e.room_id) === Number(room.id)
-                );
+        e.date === selectedDate &&
+        e.time === time &&
+        Number(e.room_id) === Number(room.id)
+    );
 
-            let content = "";
+let content = "";
 
-            if(event){
+if(slotEvents.length){
 
-                const subject =
-                    subjects.find(s=>
-                        s.id == event.subjectId
-                    );
+    content = slotEvents.map(event => {
 
-                const program =
-                    programs.find(p=>
-                        p.id == event.programId
-                    );
+        const subject =
+            subjects.find(s =>
+                s.id == event.subjectId
+            );
 
-                content = `
-                <div class="event">
-                    <b>${subject?.name || ""}</b><br>
-                    ${program?.name || ""}<br>
-                    Сем. ${event.semester}<br>
-                    ${event.type}<br>
-                    ${event.professor}
-                </div>`;
-            }
+        const program =
+            programs.find(p =>
+                p.id == event.programId
+            );
+
+        return `
+        <div class="event" style="margin-bottom:4px;">
+            <b>${subject?.name || ""}</b><br>
+            ${program?.name || ""}<br>
+            Сем. ${event.semester}<br>
+            ${event.type}<br>
+            ${event.professor}
+        </div>
+        `;
+
+    }).join("");
+}
 
             row += `
             <td class="slot"
@@ -766,12 +771,14 @@ window.openSlot = function(cell){
     const roomId =
         Number(cell.dataset.room);
 
-    const existing =
-        events.find(e =>
-            e.date === currentDate &&
-            e.time === currentTime &&
-            Number(e.room_id) === roomId
-        );
+    const existingList =
+    events.filter(e =>
+        e.date === currentDate &&
+        e.time === currentTime &&
+        Number(e.room_id) === roomId
+    );
+
+const existing = existingList[0];
 
     editingId = existing?.id || null;
 
