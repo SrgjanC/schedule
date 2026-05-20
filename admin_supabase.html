@@ -232,7 +232,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7.1'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7.2'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -1001,21 +1001,42 @@ if (sameGroupConflict) {
     return;
 }
     
-    const roomConflict =
-        events.find(e=>
+    const roomParallelAllowed = [
+    "Испит",
+    "Практичен испит",
+    "Колоквиум 1",
+    "Колоквиум 2"
+];
 
-            e.date === currentDate &&
-            e.time === currentTime &&
-            Number(e.room_id) === selectedRoomId &&
-            String(e.id) !== String(editingId)
-        );
+const roomConflict =
+    events.find(e => {
 
-    if(roomConflict){
+        if (
+            e.date !== currentDate ||
+            e.time !== currentTime ||
+            Number(e.room_id) !== Number(selectedRoomId) ||
+            String(e.id) === String(editingId)
+        ) {
+            return false;
+        }
 
-        alert("Просторијата е зафатена.");
+        // allow parallel exam-like events
+        if (
+            roomParallelAllowed.includes(type) &&
+            roomParallelAllowed.includes(e.type)
+        ) {
+            return false;
+        }
 
-        return;
-    }
+        return true;
+    });
+
+if(roomConflict){
+
+    alert("Просторијата е зафатена.");
+
+    return;
+}
 
     const payload = {
 
