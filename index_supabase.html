@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.72'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -533,49 +533,95 @@ if(holiday){
 
 // ================= DAY VIEW =================
 
+// ================= DAY VIEW =================
+
 if (view === "day") {
+
+    // BUILD MULTI-EVENT MAP
+    const map = {};
+
+    events.forEach(e => {
+
+        const key = `${e.date}_${e.time}_${e.room}`;
+
+        if (!map[key]) {
+            map[key] = [];
+        }
+
+        map[key].push(e);
+    });
 
     for (const room of DAY_ROOMS) {
 
         if (roomF && room !== roomF)
             continue;
 
-        const bg =
-            getRoomColor(room);
+        const bg = getRoomColor(room);
 
         for (const time of TIMES) {
 
             const key =
                 `${selectedDate}_${time}_${room}`;
 
-            const e = map[key];
+            const eventList = map[key] || [];
 
-            if (e) {
+            // FILTER EVENTS
+            const filteredEvents = eventList.filter(e => {
 
                 if (progF && e.program !== progF)
-                    continue;
+                    return false;
 
                 if (semF && String(e.semester) !== String(semF))
-                    continue;
+                    return false;
+
+                return true;
+            });
+
+            // EMPTY SLOT
+            if (filteredEvents.length === 0) {
+
+                tbody.innerHTML += `
+                <tr style="background:${bg}; opacity:0.55">
+                    
+                    <td></td>
+                    <td>${formatDate(selectedDate)}</td>
+                    <td>${time}</td>
+                    <td>${room}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>`;
+
+                continue;
             }
 
-            tbody.innerHTML += `
-            <tr style="background:${bg}; opacity:${e ? 1 : 0.55}">
-                
-                <td>${e?.day || ""}</td>
-                <td>${formatDate(selectedDate)}</td>
-                <td>${time}</td>
-                <td>${room}</td>
-                <td>${e?.program || ""}</td>
-                <td>${e?.semester || ""}</td>
-                <td>${e?.subject || ""}</td>
-                <td>${e?.type || ""}</td>
-                <td>${e?.professorName  || ""}</td>
-                <td>${e?.groups || ""}</td>
-            </tr>`;
+            // SHOW ALL EVENTS
+            filteredEvents.forEach((e, index) => {
+
+                tbody.innerHTML += `
+                <tr style="
+                    background:${bg};
+                    ${index > 0 ? 'border-top:3px solid #333;' : ''}
+                ">
+                    
+                    <td>${e?.day || ""}</td>
+                    <td>${formatDate(selectedDate)}</td>
+                    <td>${time}</td>
+                    <td>${room}</td>
+                    <td>${e?.program || ""}</td>
+                    <td>${e?.semester || ""}</td>
+                    <td>${e?.subject || ""}</td>
+                    <td>${e?.type || ""}</td>
+                    <td>${e?.professorName || ""}</td>
+                    <td>${e?.groups || ""}</td>
+                </tr>`;
+            });
         }
     }
-    
+
     return;
 }
 
