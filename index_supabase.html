@@ -602,10 +602,7 @@ if (view === "day") {
             filteredEvents.forEach((e, index) => {
 
                 tbody.innerHTML += `
-                <tr style="
-                    background:${bg};
-                    ${index > 0 ? 'border-top:3px solid #333;' : ''}
-                ">
+                <tr style="background:${bg}; opacity:1">
                     
                     <td>${e?.day || ""}</td>
                     <td>${formatDate(selectedDate)}</td>
