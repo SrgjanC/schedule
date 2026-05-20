@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.1'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -563,7 +563,16 @@ if (view === "day") {
             const key =
                 `${selectedDate}_${time}_${room}`;
 
-            const eventList = map[key] || [];
+           const eventList =
+    (map[key] || [])
+    .sort((a,b) =>
+
+        (a.subject || "")
+        .localeCompare(
+            (b.subject || ""),
+            "mk"
+        )
+    );
 
             // FILTER EVENTS
             const filteredEvents = eventList.filter(e => {
