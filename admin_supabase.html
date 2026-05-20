@@ -232,7 +232,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7.2'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -710,12 +710,23 @@ function render(){
     }
 
 const slotEvents =
-    events.filter(e =>
+    events
+    .filter(e =>
 
         e.date === selectedDate &&
         e.time === time &&
         Number(e.room_id) === Number(room.id)
-    );
+    )
+    .sort((a,b) => {
+
+        const subjectA =
+            subjects.find(s => s.id == a.subjectId)?.name || "";
+
+        const subjectB =
+            subjects.find(s => s.id == b.subjectId)?.name || "";
+
+        return subjectA.localeCompare(subjectB, "mk");
+    });
 
 let content = "";
 
