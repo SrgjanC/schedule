@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.6'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.71'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -593,10 +593,13 @@ const sorted = [...events].sort((a, b) =>
     (a.time || "").localeCompare(b.time || "")
 );
 
+// TRACK DISPLAYED HOLIDAYS
+const shownHolidays = {};
+
 sorted.forEach(e => {
 
     if (view === "day" && dateF && e.date !== dateF)
-    return;
+        return;
 
     if (progF && e.program !== progF)
         return;
@@ -606,6 +609,32 @@ sorted.forEach(e => {
 
     if (roomF && e.room !== roomF)
         return;
+
+    // ================= HOLIDAY ROW =================
+
+    const holiday = getHoliday(e.date);
+
+    if (holiday && !shownHolidays[e.date]) {
+
+        shownHolidays[e.date] = true;
+
+        tbody.innerHTML += `
+        <tr style="background:#ffebee;">
+            <td colspan="10"
+                style="
+                    color:#c62828;
+                    font-weight:bold;
+                    text-align:center;
+                    font-size:14px;
+                ">
+                ⚠️ ПРАЗНИК:
+                ${holiday.title}
+                (${holiday.type})
+            </td>
+        </tr>`;
+    }
+
+    // ================= EVENT ROW =================
 
     tbody.innerHTML += `
     <tr style="background:${getRoomColor(e.room)}">
@@ -618,7 +647,7 @@ sorted.forEach(e => {
         <td>${e.semester || ""}</td>
         <td>${e.subject || ""}</td>
         <td>${e.type || ""}</td>
-        <td>${e.professorName  || ""}</td>
+        <td>${e.professorName || ""}</td>
         <td>${e.groups || ""}</td>
     </tr>`;
 });
