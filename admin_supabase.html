@@ -190,7 +190,8 @@ th{
 <div class="modal-content">
 
 <h3>Распоред</h3>
-
+<label>Избери настан</label>
+<select id="eventSelect"></select>
 <label>Програма</label>
 <select id="programSelect"></select>
 
@@ -231,7 +232,7 @@ th{
 <script type="module">
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.7.1'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -759,7 +760,94 @@ if(slotEvents.length){
         tbody.innerHTML += row;
     });
 }
+function fillEventSelect(eventList){
 
+    const sel =
+        document.getElementById("eventSelect");
+
+    sel.innerHTML = `
+        <option value="">Нов настан</option>
+    `;
+
+    eventList.forEach(e => {
+
+        const subject =
+            subjects.find(s =>
+                s.id == e.subjectId
+            );
+
+        sel.innerHTML += `
+        <option value="${e.id}">
+            ${subject?.name || ""}
+            | ${e.type}
+            | ${e.groups || ""}
+        </option>`;
+    });
+
+    sel.onchange = () => {
+
+        const selectedId = sel.value;
+
+        if(!selectedId){
+
+            editingId = null;
+
+            formState = {
+                programId: "",
+                semester: "",
+                subjectId: "",
+                type: "Предавање",
+                roomId:
+                    formState.roomId,
+                professorId: "",
+                groups: "",
+                comment: ""
+            };
+
+            renderForm();
+
+            return;
+        }
+
+        const existing =
+            eventList.find(e =>
+                String(e.id) === String(selectedId)
+            );
+
+        if(!existing) return;
+
+        editingId = existing.id;
+
+        formState = {
+
+            programId:
+                existing.programId,
+
+            semester:
+                existing.semester,
+
+            subjectId:
+                existing.subjectId,
+
+            type:
+                existing.type,
+
+            roomId:
+                existing.room_id,
+
+            professorId:
+                existing.professor_id || "",
+
+            groups:
+                existing.groups || "",
+
+            comment:
+                existing.comment || ""
+        };
+
+        renderForm();
+    };
+}
 window.openSlot = function(cell){
 
     currentDate =
@@ -772,17 +860,16 @@ window.openSlot = function(cell){
         Number(cell.dataset.room);
 
     const existingList =
-    events.filter(e =>
-        e.date === currentDate &&
-        e.time === currentTime &&
-        Number(e.room_id) === roomId
-    );
+        events.filter(e =>
+            e.date === currentDate &&
+            e.time === currentTime &&
+            Number(e.room_id) === roomId
+        );
 
-const existing = existingList[0];
+    const existing = existingList[0];
 
     editingId = existing?.id || null;
 
-    // LOAD STATE
     if(existing){
 
         formState.programId = existing.programId;
@@ -797,8 +884,8 @@ const existing = existingList[0];
     } else {
 
         formState.programId = "";
-        formState.semester = existing?.semester || "";
-        formState.subjectId = existing?.subjectId || "";
+        formState.semester = "";
+        formState.subjectId = "";
         formState.type = "Предавање";
         formState.roomId = roomId;
         formState.professorId = "";
@@ -806,9 +893,17 @@ const existing = existingList[0];
         formState.comment = "";
     }
 
+    fillEventSelect(existingList);
+
+    if(existing){
+        document.getElementById("eventSelect").value =
+            existing.id;
+    }
+
     renderForm();
 
-    document.getElementById("modal").style.display = "flex";
+    document.getElementById("modal").style.display =
+        "flex";
 };
 
 document.getElementById("closeBtn")
