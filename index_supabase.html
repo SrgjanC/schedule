@@ -689,7 +689,81 @@ holidays.forEach(h => {
         });
     }
 });
+// YEAR BY MOUNTHS
 
+    if (view === "year") {
+
+    const months = {};
+
+    events.forEach(e => {
+
+        const monthKey = e.date.substring(0,7); // YYYY-MM
+
+        if (!months[monthKey]) {
+            months[monthKey] = [];
+        }
+
+        months[monthKey].push(e);
+    });
+
+    const sortedMonths = Object.keys(months).sort();
+
+    sortedMonths.forEach(month => {
+
+        // MONTH HEADER ROW
+        tbody.innerHTML += `
+        <tr style="background:#3f69b1; color:white;">
+            <td colspan="10"
+                style="padding:10px; font-weight:bold;">
+                📅 ${month}
+            </td>
+        </tr>`;
+
+        const monthEvents = months[month].sort((a,b) =>
+            (a.date || "").localeCompare(b.date || "") ||
+            (a.time || "").localeCompare(b.time || "") ||
+            (a.room || "").localeCompare(b.room || "")
+        );
+
+        monthEvents.forEach(e => {
+
+            if (progF && e.program !== progF) return;
+            if (semF && String(e.semester) !== String(semF)) return;
+            if (roomF && e.room !== roomF) return;
+
+            const holiday = getHoliday(e.date);
+
+            if (holiday) {
+
+                tbody.innerHTML += `
+                <tr style="background:#ffebee;">
+                    <td colspan="10"
+                        style="color:#c62828;font-weight:bold;text-align:center;">
+                        ⚠️ ${formatDate(e.date)} — ${holiday.title}
+                    </td>
+                </tr>`;
+            }
+
+            tbody.innerHTML += `
+            <tr style="background:${getRoomColor(e.room)}">
+                <td>${e?.day || ""}</td>
+                <td>${formatDate(e.date)}</td>
+                <td>${e.time || ""}</td>
+                <td>${e.room || ""}</td>
+                <td>${e.program || ""}</td>
+                <td>${e.semester || ""}</td>
+                <td>${e.subject || ""}</td>
+                <td>${e.type || ""}</td>
+                <td>${e.professorName || ""}</td>
+                <td>${e.groups || ""}</td>
+            </tr>`;
+        });
+    });
+
+    return;
+}
+
+    
 // SORT EVERYTHING TOGETHER
 rows.sort((a, b) =>
 
