@@ -498,11 +498,20 @@ const view =
 
 // ================= EVENT MAP =================
 
+// ================= EVENT MAP =================
+
 const map = {};
 
 events.forEach(e => {
 
-    map[`${e.date}_${e.time}_${e.room}`] = e;
+    const key =
+        `${e.date}_${e.time}_${e.room}`;
+
+    if (!map[key]) {
+        map[key] = [];
+    }
+
+    map[key].push(e);
 });
 
 const selectedDate =
@@ -638,14 +647,28 @@ if (view === "day") {
 const rows = [];
 
 // ADD EVENTS
-events.forEach(e => {
+// ADD EVENTS
+Object.values(map).forEach(eventList => {
 
-    rows.push({
-        type: "event",
-        date: e.date,
-        room: e.room || "",
-        time: e.time || "",
-        data: e
+    const sorted =
+        eventList.sort((a,b) =>
+
+            (a.subject || "")
+            .localeCompare(
+                (b.subject || ""),
+                "mk"
+            )
+        );
+
+    sorted.forEach(e => {
+
+        rows.push({
+            type: "event",
+            date: e.date,
+            room: e.room || "",
+            time: e.time || "",
+            data: e
+        });
     });
 });
 
