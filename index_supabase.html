@@ -465,7 +465,10 @@ function initFilters() {
 // ================= RENDER =================
 
 function render() {
-
+console.log("RENDER START", {
+    events: events.length,
+    view: document.getElementById("viewMode").value
+});
 const tbody = document.getElementById("tbody");
 
 if (isLoading) {
@@ -855,7 +858,7 @@ rows.forEach(row => {
         <td>${e.groups || ""}</td>
     </tr>`;
 });
-
+console.log("RENDER END");
 }
 
 document.getElementById("dateFilter").value =
