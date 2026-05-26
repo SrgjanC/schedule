@@ -243,6 +243,34 @@ const supabaseKey =
 const supabase =
 createClient(supabaseUrl, supabaseKey);
 
+const {
+    data: { session }
+} = await supabase.auth.getSession();
+
+if (!session) {
+
+    const email =
+        prompt("Email");
+
+    const password =
+        prompt("Password");
+
+    const { error } =
+        await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+    if (error) {
+
+        alert(error.message);
+
+        throw error;
+    }
+
+    location.reload();
+}
+    
 const LAB_ROOMS = [
 "08 лаб.","09 лаб.","10 лаб.",
 "11 лаб.","12 лаб.","14 лаб.","НФИЦ"
