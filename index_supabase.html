@@ -70,6 +70,14 @@ th {
 <label>Семестар:</label>
 <select id="semesterFilter"></select>
 
+    <label>Предмет:</label>
+<input
+    type="text"
+    id="subjectFilter"
+    placeholder="Внеси предмет..."
+    style="padding:5px;"
+>
+    
 <label>Просторија:</label>
 <select id="roomFilter"></select>
 
@@ -106,7 +114,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.9'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.9.1'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -361,7 +369,19 @@ function updateDateInputMode() {
 }
     
 function computeRange() {
+const subjectSearch =
+    document.getElementById("subjectFilter")
+    .value
+    .trim();
 
+if (subjectSearch !== "") {
+
+    // entire academic year
+    fromDate = "2025-09-01";
+    toDate   = "2026-08-31";
+
+    return;
+}
     const view =
         document.getElementById("viewMode").value;
 
@@ -595,8 +615,18 @@ const progF =
 const semF =
     document.getElementById("semesterFilter").value;
 
+const subjectF =
+    document.getElementById("subjectFilter")
+    .value
+    .trim()
+    .toLowerCase();
+    
 const roomF =
     document.getElementById("roomFilter").value;
+
+
+    const subjectSearchActive =
+    subjectF !== "";
     
 const view =
     document.getElementById("viewMode").value;
@@ -637,7 +667,12 @@ if(holiday){
         </span>
     `;
 
-}else{
+}elseif (subjectSearchActive) {
+
+    document.getElementById("viewInfo").textContent =
+        `Пребарување предмет: "${subjectF}"`;
+
+} else {
 
     document.getElementById("viewInfo").textContent =
         dateF
@@ -649,7 +684,7 @@ if(holiday){
 
 // ================= DAY VIEW =================
 
-if (view === "day") {
+if (view === "day" && !subjectSearchActive) {
 
     // BUILD MULTI-EVENT MAP
     const map = {};
@@ -697,6 +732,10 @@ if (view === "day") {
                 if (semF && String(e.semester) !== String(semF))
                     return false;
 
+
+                if (subjectF && !String(e.subject || "").toLowerCase().includes(subjectF))
+                    return false;
+                
                 return true;
             });
 
@@ -887,6 +926,9 @@ document.getElementById("programFilter")
 document.getElementById("semesterFilter")
     .addEventListener("change", render);
 
+document.getElementById("subjectFilter")
+    .addEventListener("input", loadData);
+    
 document.getElementById("roomFilter")
     .addEventListener("change", render);
 
