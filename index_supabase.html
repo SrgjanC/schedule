@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.6'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.7'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -334,12 +334,19 @@ function computeRange() {
 
     else if (view === "year") {
 
+    let year = baseDate.getFullYear();
+
+    // Jan-Sep belong to previous academic year
+    if (baseDate.getMonth() < 9) {
+        year--;
+    }
+
     fromDate = toISO(
-        startOfMonth(baseDate)
+        new Date(year, 9, 1)
     );
 
     toDate = toISO(
-        endOfMonth(baseDate)
+        new Date(year + 1, 8, 30)
     );
 }
 }
@@ -354,40 +361,6 @@ async function loadData() {
     isLoading = true;
     render();
 
-    const { data, error } = await supabase
-        .from('events')
-        .select(`
-            *,
-            subjects (
-                id,
-                name,
-                semester,
-                programs (
-                    id,
-                    name
-                )
-            ),
-            professors (
-                id,
-                name
-            ),
-            rooms (
-                id,
-                name,
-                type,
-                capacity
-            )
-        `)
-        .gte('event_date', fromDate)
-        .lte('event_date', toDate)
-        .order('event_date', { ascending: true })
-        .order('event_time', { ascending: true })
-        .range(0, 50000);
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
 let allData = [];
 let from = 0;
 let to = 999;
