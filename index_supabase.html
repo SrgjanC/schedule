@@ -58,7 +58,7 @@ th {
     <option value="day">Day</option>
     <option value="week">Week</option>
     <option value="month">Month</option>
-    <option value="year">Year</option>
+    
 </select>
 
 <label>Датум:</label>
@@ -74,7 +74,7 @@ th {
 <select id="roomFilter"></select>
 
 </div>
-
+<div id="monthNav" style="margin-bottom:10px;"></div>
 <div id="viewInfo" style="margin: 8px 0 14px; font-size: 14px; color: #444;"></div>
 
 <table id="schedule">
@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.7'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.8'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -132,9 +132,8 @@ let fromDate = "";
 let toDate = "";
 let holidays = [];
 
-let yearMonths = [];
-let currentYearMonthIndex = 0;
-    let yearModeDate = null;
+// ================= NEW WAY ===============
+    let currentMonthDate = new Date();
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -274,7 +273,16 @@ const TIMES = buildTimeSlots();
 
     return days[d.getDay()];
 }
+// ================= NEW WAY ================
+    function getMonthRange(date) {
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
+    return {
+        from: toISO(start),
+        to: toISO(end)
+    };
+}
 // ================= FILTERS =================
 
 function fillSelect(id, values) {
@@ -327,30 +335,46 @@ function computeRange() {
     }
 
     else if (view === "month") {
+    const baseDate =
+        document.getElementById("dateFilter").value
+        ? new Date(document.getElementById("dateFilter").value)
+        : currentMonthDate;
 
-        fromDate = toISO(startOfMonth(baseDate));
-        toDate = toISO(endOfMonth(baseDate));
-    }
+    const r = getMonthRange(baseDate);
+    fromDate = r.from;
+    toDate = r.to;
 
-    else if (view === "year") {
-
-    let year = baseDate.getFullYear();
-
-    // Jan-Sep belong to previous academic year
-    if (baseDate.getMonth() < 9) {
-        year--;
-    }
-
-    fromDate = toISO(
-        new Date(year, 9, 1)
-    );
-
-    toDate = toISO(
-        new Date(year + 1, 8, 30)
-    );
-}
+    
 }
 
+
+}
+// ================ NEW WAY ==============
+function prevMonth() {
+    currentMonthDate = new Date(
+        currentMonthDate.getFullYear(),
+        currentMonthDate.getMonth() - 1,
+        1
+    );
+
+    document.getElementById("dateFilter").value =
+        toISO(currentMonthDate);
+
+    loadData();
+}
+
+function nextMonth() {
+    currentMonthDate = new Date(
+        currentMonthDate.getFullYear(),
+        currentMonthDate.getMonth() + 1,
+        1
+    );
+
+    document.getElementById("dateFilter").value =
+        toISO(currentMonthDate);
+
+    loadData();
+}
 
 // ================= LOAD =================
 
@@ -535,8 +559,25 @@ const roomF =
 const view =
     document.getElementById("viewMode").value;
 
-// ================= EVENT MAP =================
+// ================= NEW WAY =================
+if (view === "month") {
 
+    document.getElementById("monthNav").innerHTML = `
+        <button id="prevMonthBtn">◀</button>
+        <b style="margin:0 10px;">
+            ${currentMonthDate.getFullYear()} - ${String(currentMonthDate.getMonth()+1).padStart(2,'0')}
+        </b>
+        <button id="nextMonthBtn">▶</button>
+    `;
+
+    setTimeout(() => {
+        document.getElementById("prevMonthBtn").onclick = prevMonth;
+        document.getElementById("nextMonthBtn").onclick = nextMonth;
+    }, 0);
+
+} else {
+    document.getElementById("monthNav").innerHTML = "";
+}
 // ================= EVENT MAP =================
 
 const map = {};
@@ -728,175 +769,7 @@ holidays.forEach(h => {
         });
     }
 });
-// YEAR BY MOUNTHS
 
-// ================= YEAR VIEW =================
-
-if (view === "year") {
-
-    const monthMap = {};
-
-    // GROUP EVENTS BY MONTH
-    events.forEach(e => {
-
-        if (!e.date) return;
-
-        const key = e.date.substring(0,7);
-
-        if (!monthMap[key]) {
-            monthMap[key] = [];
-        }
-
-        monthMap[key].push(e);
-    });
-
-    yearMonths = Object.keys(monthMap).sort();
-
-    // SAFETY
-    if (currentYearMonthIndex >= yearMonths.length) {
-        currentYearMonthIndex = 0;
-    }
-
-    const currentMonth =
-        yearMonths[currentYearMonthIndex];
-
-    console.log("Months:", yearMonths);
-    console.log("Current index:", currentYearMonthIndex);
-    console.log("Current month:", currentMonth);
-
-    const monthRows = [];
-
-    // FILTER CURRENT MONTH EVENTS
-    (monthMap[currentMonth] || []).forEach(e => {
-
-        if (progF && e.program !== progF)
-            return;
-
-        if (semF &&
-            String(e.semester) !== String(semF))
-            return;
-
-        if (roomF && e.room !== roomF)
-            return;
-
-        monthRows.push(e);
-    });
-
-    // SORT DATE + ROOM + TIME
-    monthRows.sort((a,b) =>
-
-        (a.date || "").localeCompare(b.date || "") ||
-
-        (a.room || "").localeCompare(
-            b.room || "",
-            "mk"
-        ) ||
-
-        (a.time || "").localeCompare(
-            b.time || ""
-        )
-    );
-
-    // HEADER
-    tbody.innerHTML = `
-    <tr>
-        <td colspan="10"
-            style="
-                background:#3f69b1;
-                color:white;
-                padding:10px;
-                font-weight:bold;
-            ">
-            
-            <button type="button"
-                id="prevMonth">
-                ◀
-            </button>
-
-            ${currentMonth}
-
-            <button type="button"
-                id="nextMonth">
-                ▶
-            </button>
-
-        </td>
-    </tr>`;
-
-    // EVENTS
-    monthRows.forEach(e => {
-
-        tbody.innerHTML += `
-        <tr style="
-            background:${getRoomColor(e.room)}
-        ">
-            <td>${e.day || ""}</td>
-            <td>${formatDate(e.date)}</td>
-            <td>${e.time || ""}</td>
-            <td>${e.room || ""}</td>
-            <td>${e.program || ""}</td>
-            <td>${e.semester || ""}</td>
-            <td>${e.subject || ""}</td>
-            <td>${e.type || ""}</td>
-            <td>${e.professorName || ""}</td>
-            <td>${e.groups || ""}</td>
-        </tr>`;
-    });
-
-    // BUTTONS
-    setTimeout(() => {
-
-        const prevBtn =
-            document.getElementById("prevMonth");
-
-        const nextBtn =
-            document.getElementById("nextMonth");
-
-prevBtn.onclick = () => {
-
-    console.log("PREV CLICK");
-
-    if (currentYearMonthIndex > 0) {
-
-        currentYearMonthIndex--;
-
-        isLoading = true;
-
-render();
-
-setTimeout(() => {
-    loadData();
-}, 10);
-        
-    }
-};
-
-nextBtn.onclick = () => {
-
-    console.log("NEXT CLICK");
-
-    if (
-        currentYearMonthIndex
-        < yearMonths.length - 1
-    ) {
-
-        currentYearMonthIndex++;
-
-        isLoading = true;
-
-render();
-
-setTimeout(() => {
-    loadData();
-}, 10);
-        
-    }
-};
-
-    }, 0);
-
-    return;
-}
 
     
 // SORT EVERYTHING TOGETHER
@@ -991,6 +864,7 @@ document.getElementById("dateFilter").value =
     todayISO();
 
 
+currentMonthDate = new Date();
 initFilters();
 loadData();
 
