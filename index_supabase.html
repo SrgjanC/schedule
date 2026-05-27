@@ -667,7 +667,7 @@ if(holiday){
         </span>
     `;
 
-}elseif (subjectSearchActive) {
+}else if (subjectSearchActive) {
 
     document.getElementById("viewInfo").textContent =
         `Пребарување предмет: "${subjectF}"`;
@@ -885,7 +885,14 @@ rows.forEach(row => {
 
     if (semF && String(e.semester) !== String(semF))
         return;
-
+if (
+    subjectF &&
+    !String(e.subject || "")
+        .toLowerCase()
+        .includes(subjectF)
+)
+    return;
+    
     if (roomF && e.room !== roomF)
         return;
 
