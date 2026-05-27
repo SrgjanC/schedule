@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.1'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.2'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -131,6 +131,9 @@ let allDates = [];
 let fromDate = "";
 let toDate = "";
 let holidays = [];
+
+let yearMonths = [];
+let currentYearMonthIndex = 0;
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -691,74 +694,94 @@ holidays.forEach(h => {
 });
 // YEAR BY MOUNTHS
 
-    if (view === "year") {
+if (view === "year") {
 
-    const months = {};
+    const monthMap = {};
 
     events.forEach(e => {
 
-        const monthKey = e.date.substring(0,7); // YYYY-MM
+        const key = e.date.substring(0,7); // YYYY-MM
 
-        if (!months[monthKey]) {
-            months[monthKey] = [];
+        if (!monthMap[key]) {
+            monthMap[key] = [];
         }
 
-        months[monthKey].push(e);
+        monthMap[key].push(e);
     });
 
-    const sortedMonths = Object.keys(months).sort();
+    yearMonths = Object.keys(monthMap).sort();
 
-    sortedMonths.forEach(month => {
+    const currentMonth = yearMonths[currentYearMonthIndex];
 
-        // MONTH HEADER ROW
-        tbody.innerHTML += `
-        <tr style="background:#3f69b1; color:white;">
-            <td colspan="10"
-                style="padding:10px; font-weight:bold;">
-                📅 ${month}
-            </td>
-        </tr>`;
+    const rows = [];
 
-        const monthEvents = months[month].sort((a,b) =>
-            (a.date || "").localeCompare(b.date || "") ||
-            (a.time || "").localeCompare(b.time || "") ||
-            (a.room || "").localeCompare(b.room || "")
-        );
+// ONLY EVENTS FOR CURRENT MONTH
+    (monthMap[currentMonth] || []).forEach(e => {
 
-        monthEvents.forEach(e => {
-
-            if (progF && e.program !== progF) return;
-            if (semF && String(e.semester) !== String(semF)) return;
-            if (roomF && e.room !== roomF) return;
-
-            const holiday = getHoliday(e.date);
-
-            if (holiday) {
-
-                tbody.innerHTML += `
-                <tr style="background:#ffebee;">
-                    <td colspan="10"
-                        style="color:#c62828;font-weight:bold;text-align:center;">
-                        ⚠️ ${formatDate(e.date)} — ${holiday.title}
-                    </td>
-                </tr>`;
-            }
-
-            tbody.innerHTML += `
-            <tr style="background:${getRoomColor(e.room)}">
-                <td>${e?.day || ""}</td>
-                <td>${formatDate(e.date)}</td>
-                <td>${e.time || ""}</td>
-                <td>${e.room || ""}</td>
-                <td>${e.program || ""}</td>
-                <td>${e.semester || ""}</td>
-                <td>${e.subject || ""}</td>
-                <td>${e.type || ""}</td>
-                <td>${e.professorName || ""}</td>
-                <td>${e.groups || ""}</td>
-            </tr>`;
+        rows.push({
+            type: "event",
+            date: e.date,
+            room: e.room || "",
+            time: e.time || "",
+            data: e
         });
     });
+
+// SORT EXACTLY LIKE BEFORE
+    rows.sort((a,b) =>
+        (a.date || "").localeCompare(b.date || "") ||
+        (a.room || "").localeCompare(b.room || "") ||
+        (a.time || "").localeCompare(b.time || "")
+    );
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="10"
+                style="background:#3f69b1;color:white;padding:8px;">
+                📅 ${currentMonth}
+                <button id="prevMonth">◀</button>
+                <button id="nextMonth">▶</button>
+            </td>
+        </tr>
+    `;
+
+    rows.forEach(r => {
+
+        const e = r.data;
+
+        tbody.innerHTML += `
+        <tr style="background:${getRoomColor(e.room)}">
+            <td>${e.day || ""}</td>
+            <td>${formatDate(e.date)}</td>
+            <td>${e.time || ""}</td>
+            <td>${e.room || ""}</td>
+            <td>${e.program || ""}</td>
+            <td>${e.semester || ""}</td>
+            <td>${e.subject || ""}</td>
+            <td>${e.type || ""}</td>
+            <td>${e.professorName || ""}</td>
+            <td>${e.groups || ""}</td>
+        </tr>`;
+    });
+
+    // navigation
+    setTimeout(() => {
+
+        document.getElementById("prevMonth").onclick = () => {
+            if (currentYearMonthIndex > 0) {
+                currentYearMonthIndex--;
+                render();
+            }
+        };
+
+        document.getElementById("nextMonth").onclick = () => {
+            if (currentYearMonthIndex < yearMonths.length - 1) {
+                currentYearMonthIndex++;
+                render();
+            }
+        };
+
+    }, 0);
 
     return;
 }
