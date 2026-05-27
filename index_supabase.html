@@ -396,7 +396,8 @@ async function loadData() {
         .select('*');
 
     holidays = h || [];
-
+    
+// LOAD EVENTS
     events = (data || []).map(e => ({
         id: e.id,
         date: e.event_date,
@@ -411,7 +412,17 @@ async function loadData() {
         groups: e.groups_text,
         day: getDayName(e.event_date)
     }));
-    
+
+    console.log(
+    "Loaded events:",
+    events.length
+);
+
+console.log(
+    [...new Set(events.map(e => e.date.substring(0,7)))]
+);
+
+// LOAD ROOMS
     rooms =
     [...new Set(events.map(e => e.room))]
     .filter(Boolean);
