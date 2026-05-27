@@ -889,9 +889,12 @@ prevBtn.onclick = () => {
 
         isLoading = true;
 
-        render();
+render();
 
-        loadData();
+setTimeout(() => {
+    loadData();
+}, 10);
+        
     }
 };
 
@@ -908,9 +911,12 @@ nextBtn.onclick = () => {
 
         isLoading = true;
 
-        render();
+render();
 
-        loadData();
+setTimeout(() => {
+    loadData();
+}, 10);
+        
     }
 };
 
