@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.5'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.6'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -388,7 +388,59 @@ async function loadData() {
         alert(error.message);
         return;
     }
+let allData = [];
+let from = 0;
+let to = 999;
+let finished = false;
 
+while (!finished) {
+
+    const { data, error } = await supabase
+        .from('events')
+        .select(`
+            *,
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
+                    id,
+                    name
+                )
+            ),
+            professors (
+                id,
+                name
+            ),
+            rooms (
+                id,
+                name,
+                type,
+                capacity
+            )
+        `)
+        .gte('event_date', fromDate)
+        .lte('event_date', toDate)
+        .order('event_date', { ascending: true })
+        .order('event_time', { ascending: true })
+        .range(from, to);
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    allData = allData.concat(data);
+
+    if (data.length < 1000) {
+        finished = true;
+    } else {
+        from += 1000;
+        to += 1000;
+    }
+}
+
+console.log("Loaded events:", allData.length);
 
  // LOAD HOLIDAYS
     const { data: h } = await supabase
@@ -398,7 +450,7 @@ async function loadData() {
     holidays = h || [];
     
 // LOAD EVENTS
-    events = (data || []).map(e => ({
+    events = (allData  || []).map(e => ({
         id: e.id,
         date: e.event_date,
         time: e.event_time?.substring(0,5),
@@ -705,57 +757,106 @@ holidays.forEach(h => {
 });
 // YEAR BY MOUNTHS
 
+// ================= YEAR VIEW =================
+
 if (view === "year") {
 
-    let current;
+    const monthMap = {};
 
-    if (yearModeDate) {
+    // GROUP EVENTS BY MONTH
+    events.forEach(e => {
 
-        current = new Date(yearModeDate);
+        if (!e.date) return;
 
-    } else {
+        const key = e.date.substring(0,7);
 
-        current = new Date(dateF || todayISO());
+        if (!monthMap[key]) {
+            monthMap[key] = [];
+        }
+
+        monthMap[key].push(e);
+    });
+
+    yearMonths = Object.keys(monthMap).sort();
+
+    // SAFETY
+    if (currentYearMonthIndex >= yearMonths.length) {
+        currentYearMonthIndex = 0;
     }
 
     const currentMonth =
-        current.toISOString().substring(0,7);
+        yearMonths[currentYearMonthIndex];
 
+    console.log("Months:", yearMonths);
+    console.log("Current index:", currentYearMonthIndex);
+    console.log("Current month:", currentMonth);
+
+    const monthRows = [];
+
+    // FILTER CURRENT MONTH EVENTS
+    (monthMap[currentMonth] || []).forEach(e => {
+
+        if (progF && e.program !== progF)
+            return;
+
+        if (semF &&
+            String(e.semester) !== String(semF))
+            return;
+
+        if (roomF && e.room !== roomF)
+            return;
+
+        monthRows.push(e);
+    });
+
+    // SORT DATE + ROOM + TIME
+    monthRows.sort((a,b) =>
+
+        (a.date || "").localeCompare(b.date || "") ||
+
+        (a.room || "").localeCompare(
+            b.room || "",
+            "mk"
+        ) ||
+
+        (a.time || "").localeCompare(
+            b.time || ""
+        )
+    );
+
+    // HEADER
     tbody.innerHTML = `
-        <tr>
-            <td colspan="10"
-                style="
-                    background:#3f69b1;
-                    color:white;
-                    padding:8px;
-                ">
+    <tr>
+        <td colspan="10"
+            style="
+                background:#3f69b1;
+                color:white;
+                padding:10px;
+                font-weight:bold;
+            ">
+            
+            <button type="button"
+                id="prevMonth">
+                ◀
+            </button>
 
-                <button type="button" id="prevMonth">
-                    ◀
-                </button>
+            ${currentMonth}
 
-                📅 ${currentMonth}
+            <button type="button"
+                id="nextMonth">
+                ▶
+            </button>
 
-                <button type="button" id="nextMonth">
-                    ▶
-                </button>
+        </td>
+    </tr>`;
 
-            </td>
-        </tr>
-    `;
-
-    rows.forEach(r => {
-
-        const e = r.data;
-
-        if (
-            e.date.substring(0,7)
-            !== currentMonth
-        ) return;
+    // EVENTS
+    monthRows.forEach(e => {
 
         tbody.innerHTML += `
-        <tr style="background:${getRoomColor(e.room)}">
-
+        <tr style="
+            background:${getRoomColor(e.room)}
+        ">
             <td>${e.day || ""}</td>
             <td>${formatDate(e.date)}</td>
             <td>${e.time || ""}</td>
@@ -766,51 +867,56 @@ if (view === "year") {
             <td>${e.type || ""}</td>
             <td>${e.professorName || ""}</td>
             <td>${e.groups || ""}</td>
-
         </tr>`;
     });
 
-    const prevBtn =
-        document.getElementById("prevMonth");
+    // BUTTONS
+    setTimeout(() => {
 
-    const nextBtn =
-        document.getElementById("nextMonth");
+        const prevBtn =
+            document.getElementById("prevMonth");
 
-    prevBtn.onclick = () => {
+        const nextBtn =
+            document.getElementById("nextMonth");
 
-        current.setMonth(
-            current.getMonth() - 1
-        );
+        prevBtn.onclick = () => {
 
-        yearModeDate =
-            current.toISOString();
+            console.log("PREV CLICK");
 
-        document.getElementById(
-            "dateFilter"
-        ).value =
-            current.toISOString()
-            .substring(0,10);
+            if (currentYearMonthIndex > 0) {
 
-        loadData();
-    };
+                currentYearMonthIndex--;
 
-    nextBtn.onclick = () => {
+                console.log(
+                    "NEW INDEX:",
+                    currentYearMonthIndex
+                );
 
-        current.setMonth(
-            current.getMonth() + 1
-        );
+                render();
+            }
+        };
 
-        yearModeDate =
-            current.toISOString();
+        nextBtn.onclick = () => {
 
-        document.getElementById(
-            "dateFilter"
-        ).value =
-            current.toISOString()
-            .substring(0,10);
+            console.log("NEXT CLICK");
 
-        loadData();
-    };
+            if (
+                currentYearMonthIndex
+                < yearMonths.length - 1
+            ) {
+
+                currentYearMonthIndex++;
+
+                console.log(
+                    "NEW INDEX:",
+                    currentYearMonthIndex
+                );
+
+                render();
+            }
+        };
+
+    }, 0);
 
     return;
 }
