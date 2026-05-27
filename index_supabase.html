@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.8'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.9'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -199,8 +199,20 @@ function endOfMonth(date) {
 }
 
 function toISO(d) {
-    return d.toISOString().split("T")[0];
+
+    const y = d.getFullYear();
+
+    const m =
+        String(d.getMonth() + 1)
+        .padStart(2, "0");
+
+    const day =
+        String(d.getDate())
+        .padStart(2, "0");
+
+    return `${y}-${m}-${day}`;
 }
+    
 function formatDate(dateStr) {
 
     if (!dateStr) return "";
@@ -283,6 +295,13 @@ const TIMES = buildTimeSlots();
         to: toISO(end)
     };
 }
+    function parseLocalDate(str) {
+
+    const [y, m, d] =
+        str.split("-").map(Number);
+
+    return new Date(y, m - 1, d);
+}
 // ================= FILTERS =================
 
 function fillSelect(id, values) {
@@ -311,62 +330,93 @@ function sortSemesters(values) {
         .filter(v => !Number.isNaN(v))
         .sort((a,b) => a - b);
 }
+
+function updateDateInputMode() {
+
+    const view =
+        document.getElementById("viewMode").value;
+
+    const input =
+        document.getElementById("dateFilter");
+
+    // MONTH VIEW
+    if (view === "month") {
+
+        input.type = "month";
+
+        input.value =
+            `${currentMonthDate.getFullYear()}-${String(currentMonthDate.getMonth()+1).padStart(2,"0")}`;
+    }
+
+    // DAY / WEEK VIEW
+    else {
+
+        input.type = "date";
+
+        // keep current selected date if possible
+        if (!input.value || input.value.length < 10) {
+            input.value = todayISO();
+        }
+    }
+}
+    
 function computeRange() {
 
-    const view = document.getElementById("viewMode").value;
+    const view =
+        document.getElementById("viewMode").value;
 
-    const selectedDate =
-        document.getElementById("dateFilter").value || todayISO();
+    const input =
+        document.getElementById("dateFilter");
 
-    const baseDate = selectedDate
-        ? new Date(selectedDate)
-        : new Date();
+    // ================= DAY =================
 
     if (view === "day") {
+
+        const selectedDate =
+            input.value || todayISO();
 
         fromDate = selectedDate;
         toDate = selectedDate;
     }
 
+    // ================= WEEK =================
+
     else if (view === "week") {
 
-        fromDate = toISO(startOfWeek(baseDate));
-        toDate = toISO(endOfWeek(baseDate));
+        const selectedDate =
+            input.value || todayISO();
+
+        const baseDate =
+            parseLocalDate(selectedDate);
+
+        fromDate =
+            toISO(startOfWeek(baseDate));
+
+        toDate =
+            toISO(endOfWeek(baseDate));
     }
 
+    // ================= MONTH =================
+
     else if (view === "month") {
-    fromDate = toISO(startOfMonth(currentMonthDate));
-    toDate = toISO(endOfMonth(currentMonthDate));
+
+        const monthValue = input.value;
+
+        const [year, month] =
+            monthValue.split("-").map(Number);
+
+        currentMonthDate =
+            new Date(year, month - 1, 1);
+
+        const r =
+            getMonthRange(currentMonthDate);
+
+        fromDate = r.from;
+        toDate = r.to;
+    }
 }
 
 
-}
-// ================ NEW WAY ==============
-function prevMonth() {
-    currentMonthDate = new Date(
-        currentMonthDate.getFullYear(),
-        currentMonthDate.getMonth() - 1,
-        1
-    );
-
-    document.getElementById("dateFilter").value =
-        toISO(currentMonthDate);
-
-    loadData();
-}
-
-function nextMonth() {
-    currentMonthDate = new Date(
-        currentMonthDate.getFullYear(),
-        currentMonthDate.getMonth() + 1,
-        1
-    );
-
-    document.getElementById("dateFilter").value =
-        toISO(currentMonthDate);
-
-    loadData();
-}
 
 // ================= LOAD =================
 
@@ -552,24 +602,7 @@ const view =
     document.getElementById("viewMode").value;
 
 // ================= NEW WAY =================
-if (view === "month") {
-
-    document.getElementById("monthNav").innerHTML = `
-        <button id="prevMonthBtn">◀</button>
-        <b style="margin:0 10px;">
-            ${currentMonthDate.getFullYear()} - ${String(currentMonthDate.getMonth()+1).padStart(2,'0')}
-        </b>
-        <button id="nextMonthBtn">▶</button>
-    `;
-
-    setTimeout(() => {
-        document.getElementById("prevMonthBtn").onclick = prevMonth;
-        document.getElementById("nextMonthBtn").onclick = nextMonth;
-    }, 0);
-
-} else {
-    document.getElementById("monthNav").innerHTML = "";
-}
+document.getElementById("monthNav").innerHTML = "";
 // ================= EVENT MAP =================
 
 const map = {};
@@ -837,8 +870,13 @@ rows.forEach(row => {
 
 document.getElementById("dateFilter").value =
     todayISO();
+    
 document.getElementById("viewMode")
-    .addEventListener("change", loadData);
+    .addEventListener("change", () => {
+
+        updateDateInputMode();
+        loadData();
+    });
 
 document.getElementById("dateFilter")
     .addEventListener("change", loadData);
@@ -858,6 +896,7 @@ document.getElementById("dateFilter").value =
 
 currentMonthDate = new Date();
 initFilters();
+    updateDateInputMode();
 loadData();
 
 </script>
