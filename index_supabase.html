@@ -879,42 +879,40 @@ if (view === "year") {
         const nextBtn =
             document.getElementById("nextMonth");
 
-        prevBtn.onclick = () => {
+prevBtn.onclick = () => {
 
-            console.log("PREV CLICK");
+    console.log("PREV CLICK");
 
-            if (currentYearMonthIndex > 0) {
+    if (currentYearMonthIndex > 0) {
 
-                currentYearMonthIndex--;
+        currentYearMonthIndex--;
 
-                console.log(
-                    "NEW INDEX:",
-                    currentYearMonthIndex
-                );
+        isLoading = true;
 
-                render();
-            }
-        };
+        render();
 
-        nextBtn.onclick = () => {
+        loadData();
+    }
+};
 
-            console.log("NEXT CLICK");
+nextBtn.onclick = () => {
 
-            if (
-                currentYearMonthIndex
-                < yearMonths.length - 1
-            ) {
+    console.log("NEXT CLICK");
 
-                currentYearMonthIndex++;
+    if (
+        currentYearMonthIndex
+        < yearMonths.length - 1
+    ) {
 
-                console.log(
-                    "NEW INDEX:",
-                    currentYearMonthIndex
-                );
+        currentYearMonthIndex++;
 
-                render();
-            }
-        };
+        isLoading = true;
+
+        render();
+
+        loadData();
+    }
+};
 
     }, 0);
 
