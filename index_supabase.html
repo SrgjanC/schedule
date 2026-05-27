@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.4'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.5'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -134,6 +134,7 @@ let holidays = [];
 
 let yearMonths = [];
 let currentYearMonthIndex = 0;
+    let yearModeDate = null;
 // ================= ROOMS =================
 
 const DAY_ROOMS = [
@@ -333,15 +334,13 @@ function computeRange() {
 
     else if (view === "year") {
 
-    let year = baseDate.getFullYear();
+    fromDate = toISO(
+        startOfMonth(baseDate)
+    );
 
-    // Jan-Sep belong to previous academic year
-    if (baseDate.getMonth() < 9) {
-        year--;
-    }
-
-    fromDate = toISO(new Date(year, 9, 1));
-    toDate = toISO(new Date(year + 1, 8, 30));
+    toDate = toISO(
+        endOfMonth(baseDate)
+    );
 }
 }
 
@@ -708,82 +707,55 @@ holidays.forEach(h => {
 
 if (view === "year") {
 
-    const monthMap = {};
+    let current;
 
-    events.forEach(e => {
+    if (yearModeDate) {
 
-        const key = e.date.substring(0,7); // YYYY-MM
+        current = new Date(yearModeDate);
 
-        if (!monthMap[key]) {
-            monthMap[key] = [];
-        }
+    } else {
 
-        monthMap[key].push(e);
-    });
+        current = new Date(dateF || todayISO());
+    }
 
-    if (yearMonths.length === 0) {
-
-    yearMonths =
-        Object.keys(monthMap).sort();
-}
-
-    const currentMonth = yearMonths[currentYearMonthIndex];
-console.log(
-    "Months:",
-    yearMonths
-);
-
-console.log(
-    "Current index:",
-    currentYearMonthIndex
-);
-
-console.log(
-    "Current month:",
-    currentMonth
-);
-    const rows = [];
-
-// ONLY EVENTS FOR CURRENT MONTH
-    (monthMap[currentMonth] || []).forEach(e => {
-
-        rows.push({
-            type: "event",
-            date: e.date,
-            room: e.room || "",
-            time: e.time || "",
-            data: e
-        });
-    });
-
-// SORT EXACTLY LIKE BEFORE
-    rows.sort((a,b) =>
-        (a.date || "").localeCompare(b.date || "") ||
-        (a.room || "").localeCompare(b.room || "") ||
-        (a.time || "").localeCompare(b.time || "")
-    );
+    const currentMonth =
+        current.toISOString().substring(0,7);
 
     tbody.innerHTML = `
-    <tr>
-        <td colspan="10"
-            style="background:#3f69b1;color:white;padding:8px;">
+        <tr>
+            <td colspan="10"
+                style="
+                    background:#3f69b1;
+                    color:white;
+                    padding:8px;
+                ">
 
-            <button type="button" id="prevMonth">◀</button>
+                <button type="button" id="prevMonth">
+                    ◀
+                </button>
 
-            📅 ${currentMonth}
+                📅 ${currentMonth}
 
-            <button type="button" id="nextMonth">▶</button>
+                <button type="button" id="nextMonth">
+                    ▶
+                </button>
 
-        </td>
-    </tr>
-`;
+            </td>
+        </tr>
+    `;
 
     rows.forEach(r => {
 
         const e = r.data;
 
+        if (
+            e.date.substring(0,7)
+            !== currentMonth
+        ) return;
+
         tbody.innerHTML += `
         <tr style="background:${getRoomColor(e.room)}">
+
             <td>${e.day || ""}</td>
             <td>${formatDate(e.date)}</td>
             <td>${e.time || ""}</td>
@@ -794,68 +766,51 @@ console.log(
             <td>${e.type || ""}</td>
             <td>${e.professorName || ""}</td>
             <td>${e.groups || ""}</td>
+
         </tr>`;
     });
 
-// navigation
+    const prevBtn =
+        document.getElementById("prevMonth");
 
-const prevBtn = document.getElementById("prevMonth");
-const nextBtn = document.getElementById("nextMonth");
-
-console.log("Buttons found:", prevBtn, nextBtn);
-
-if (prevBtn) {
+    const nextBtn =
+        document.getElementById("nextMonth");
 
     prevBtn.onclick = () => {
 
-        console.log("PREV CLICK");
-
-        console.log(
-            "Before:",
-            currentYearMonthIndex
+        current.setMonth(
+            current.getMonth() - 1
         );
 
-        if (currentYearMonthIndex > 0) {
+        yearModeDate =
+            current.toISOString();
 
-            currentYearMonthIndex--;
+        document.getElementById(
+            "dateFilter"
+        ).value =
+            current.toISOString()
+            .substring(0,10);
 
-            console.log(
-                "After:",
-                currentYearMonthIndex
-            );
-
-            render();
-        }
+        loadData();
     };
-}
-
-if (nextBtn) {
 
     nextBtn.onclick = () => {
 
-        console.log("NEXT CLICK");
-
-        console.log(
-            "Before:",
-            currentYearMonthIndex
+        current.setMonth(
+            current.getMonth() + 1
         );
 
-        if (
-            currentYearMonthIndex
-            < yearMonths.length - 1
-        ) {
+        yearModeDate =
+            current.toISOString();
 
-            currentYearMonthIndex++;
+        document.getElementById(
+            "dateFilter"
+        ).value =
+            current.toISOString()
+            .substring(0,10);
 
-            console.log(
-                "After:",
-                currentYearMonthIndex
-            );
-
-            render();
-        }
+        loadData();
     };
-}
 
     return;
 }
