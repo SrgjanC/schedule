@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.2'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.3'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -735,15 +735,19 @@ if (view === "year") {
     );
 
     tbody.innerHTML = `
-        <tr>
-            <td colspan="10"
-                style="background:#3f69b1;color:white;padding:8px;">
-                📅 ${currentMonth}
-                <button id="prevMonth">◀</button>
-                <button id="nextMonth">▶</button>
-            </td>
-        </tr>
-    `;
+    <tr>
+        <td colspan="10"
+            style="background:#3f69b1;color:white;padding:8px;">
+
+            <button type="button" id="prevMonth">◀</button>
+
+            📅 ${currentMonth}
+
+            <button type="button" id="nextMonth">▶</button>
+
+        </td>
+    </tr>
+`;
 
     rows.forEach(r => {
 
@@ -764,24 +768,36 @@ if (view === "year") {
         </tr>`;
     });
 
-    // navigation
-    setTimeout(() => {
+// navigation
 
-        document.getElementById("prevMonth").onclick = () => {
-            if (currentYearMonthIndex > 0) {
-                currentYearMonthIndex--;
-                render();
-            }
-        };
+const prevBtn = document.getElementById("prevMonth");
+const nextBtn = document.getElementById("nextMonth");
 
-        document.getElementById("nextMonth").onclick = () => {
-            if (currentYearMonthIndex < yearMonths.length - 1) {
-                currentYearMonthIndex++;
-                render();
-            }
-        };
+if (prevBtn) {
 
-    }, 0);
+    prevBtn.addEventListener("click", () => {
+
+        if (currentYearMonthIndex > 0) {
+
+            currentYearMonthIndex--;
+
+            render();
+        }
+    });
+}
+
+if (nextBtn) {
+
+    nextBtn.addEventListener("click", () => {
+
+        if (currentYearMonthIndex < yearMonths.length - 1) {
+
+            currentYearMonthIndex++;
+
+            render();
+        }
+    });
+}
 
     return;
 }
