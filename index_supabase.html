@@ -335,13 +335,8 @@ function computeRange() {
     }
 
     else if (view === "month") {
-    const baseDate = currentMonthDate;
-
-    const r = getMonthRange(baseDate);
-    fromDate = r.from;
-    toDate = r.to;
-
-    
+    fromDate = toISO(startOfMonth(currentMonthDate));
+    toDate = toISO(endOfMonth(currentMonthDate));
 }
 
 
@@ -351,7 +346,7 @@ function prevMonth() {
     currentMonthDate = new Date(
         currentMonthDate.getFullYear(),
         currentMonthDate.getMonth() - 1,
-        2
+        1
     );
 
     document.getElementById("dateFilter").value =
@@ -364,7 +359,7 @@ function nextMonth() {
     currentMonthDate = new Date(
         currentMonthDate.getFullYear(),
         currentMonthDate.getMonth() + 1,
-        2
+        1
     );
 
     document.getElementById("dateFilter").value =
