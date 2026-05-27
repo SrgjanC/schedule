@@ -382,7 +382,8 @@ async function loadData() {
         .gte('event_date', fromDate)
         .lte('event_date', toDate)
         .order('event_date', { ascending: true })
-        .order('event_time', { ascending: true });
+        .order('event_time', { ascending: true })
+        .range(0, 50000);
 
     if (error) {
         alert(error.message);
