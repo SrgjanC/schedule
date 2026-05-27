@@ -106,7 +106,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.3'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.8.4'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -709,7 +709,11 @@ if (view === "year") {
         monthMap[key].push(e);
     });
 
-    yearMonths = Object.keys(monthMap).sort();
+    if (yearMonths.length === 0) {
+
+    yearMonths =
+        Object.keys(monthMap).sort();
+}
 
     const currentMonth = yearMonths[currentYearMonthIndex];
 
@@ -773,30 +777,59 @@ if (view === "year") {
 const prevBtn = document.getElementById("prevMonth");
 const nextBtn = document.getElementById("nextMonth");
 
+console.log("Buttons found:", prevBtn, nextBtn);
+
 if (prevBtn) {
 
-    prevBtn.addEventListener("click", () => {
+    prevBtn.onclick = () => {
+
+        console.log("PREV CLICK");
+
+        console.log(
+            "Before:",
+            currentYearMonthIndex
+        );
 
         if (currentYearMonthIndex > 0) {
 
             currentYearMonthIndex--;
 
+            console.log(
+                "After:",
+                currentYearMonthIndex
+            );
+
             render();
         }
-    });
+    };
 }
 
 if (nextBtn) {
 
-    nextBtn.addEventListener("click", () => {
+    nextBtn.onclick = () => {
 
-        if (currentYearMonthIndex < yearMonths.length - 1) {
+        console.log("NEXT CLICK");
+
+        console.log(
+            "Before:",
+            currentYearMonthIndex
+        );
+
+        if (
+            currentYearMonthIndex
+            < yearMonths.length - 1
+        ) {
 
             currentYearMonthIndex++;
 
+            console.log(
+                "After:",
+                currentYearMonthIndex
+            );
+
             render();
         }
-    });
+    };
 }
 
     return;
