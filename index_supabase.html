@@ -114,7 +114,7 @@ th {
 // ================= SUPABASE =================
 
 import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.9.1'
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.9.2'
 
 const supabaseUrl =
 'https://elmxwpwhyewgjlvoadtb.supabase.co';
@@ -877,8 +877,8 @@ rows.forEach(row => {
 
     const e = row.data;
 
-    if (view === "day" && dateF && e.date !== dateF)
-        return;
+    if (!subjectSearchActive && view === "day" && dateF && e.date !== dateF)
+    return;
 
     if (progF && e.program !== progF)
         return;
@@ -933,8 +933,18 @@ document.getElementById("programFilter")
 document.getElementById("semesterFilter")
     .addEventListener("change", render);
 
+let searchTimer;
+
 document.getElementById("subjectFilter")
-    .addEventListener("input", loadData);
+.addEventListener("input", () => {
+
+    clearTimeout(searchTimer);
+
+    searchTimer = setTimeout(() => {
+        loadData();
+    }, 400);
+
+});
     
 document.getElementById("roomFilter")
     .addEventListener("change", render);
