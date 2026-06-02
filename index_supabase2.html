@@ -100,25 +100,27 @@ async function load() {
     const { data, error } = await supabase
         .from("events")
         .select(`
-            *,
-            subjects (
-                id,
-                name,
-                semester,
-                programs (
-                    id,
-                    name
-                ),
-                professors (
-                    id,
-                    name
-                )
-            ),
-            rooms (
-                id,
-                name
-            )
-        `)
+    *,
+    subjects (
+        id,
+        name,
+        semester,
+        programs (
+            id,
+            name
+        )
+    ),
+    professors (
+        id,
+        name
+    ),
+    rooms (
+        id,
+        name,
+        type,
+        capacity
+    )
+`)
         .eq("event_date", today);
 
     if (error) {
@@ -126,21 +128,24 @@ async function load() {
         return;
     }
 
-    const events = (data || []).map(e => ({
-        id: e.id,
-        date: e.event_date,
-        time: e.event_time?.substring(0,5),
+    events = (data || []).map(e => ({
+    id: e.id,
+    date: e.event_date,
+    time: e.event_time?.substring(0,5),
 
-        room: e.rooms?.name || "",
+    room: e.rooms?.name || "",
 
-        subject: e.subjects?.name || "",
-        semester: e.subjects?.semester || "",
-        program: e.subjects?.programs?.name || "",
-        professorName: e.subjects?.professors?.name || "",
+    subject: e.subjects?.name || "",
+    semester: e.subjects?.semester || "",
 
-        type: e.type || "",
-        groups: e.groups_text
-    }));
+    program: e.subjects?.programs?.name || "",
+
+    professorName: e.professors?.name || "",   // ✅ FIXED HERE
+
+    type: e.type || "",
+    groups: e.groups_text,
+    day: getDayName(e.event_date)
+}));
 
     render(events);
 }
