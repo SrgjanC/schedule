@@ -93,6 +93,8 @@ function getDayName(dateStr){
 
     return days[new Date(dateStr).getDay()];
 }
+
+    let events = [];
 // ================= LOAD =================
 
 async function load() {
@@ -100,27 +102,25 @@ async function load() {
     const { data, error } = await supabase
         .from("events")
         .select(`
-    *,
-    subjects (
-        id,
-        name,
-        semester,
-        programs (
-            id,
-            name
-        )
-    ),
-    professors (
-        id,
-        name
-    ),
-    rooms (
-        id,
-        name,
-        type,
-        capacity
-    )
-`)
+            *,
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
+                    id,
+                    name
+                )
+            ),
+            professors (
+                id,
+                name
+            ),
+            rooms (
+                id,
+                name
+            )
+        `)
         .eq("event_date", today);
 
     if (error) {
@@ -129,23 +129,23 @@ async function load() {
     }
 
     events = (data || []).map(e => ({
-    id: e.id,
-    date: e.event_date,
-    time: e.event_time?.substring(0,5),
+        id: e.id,
+        date: e.event_date,
+        time: e.event_time?.substring(0,5),
 
-    room: e.rooms?.name || "",
+        room: e.rooms?.name || "",
 
-    subject: e.subjects?.name || "",
-    semester: e.subjects?.semester || "",
+        subject: e.subjects?.name || "",
+        semester: e.subjects?.semester || "",
+        program: e.subjects?.programs?.name || "",
 
-    program: e.subjects?.programs?.name || "",
+        // ⚠️ ONLY WORKS IF FK EXISTS
+        professorName: e.professors?.name || "",
 
-    professorName: e.professors?.name || "",   // ✅ FIXED HERE
-
-    type: e.type || "",
-    groups: e.groups_text,
-    day: getDayName(e.event_date)
-}));
+        type: e.type || "",
+        groups: e.groups_text,
+        day: getDayName(e.event_date)
+    }));
 
     render(events);
 }
@@ -161,7 +161,7 @@ function render(events) {
     events.forEach(e => {
 
         const room = e.room || "";
-        const hour = (e.time || "").substring(0,2);
+        const hour = e.time ? e.time.split(":")[0] : "";
 
         const key = `${room}_${hour}`;
 
