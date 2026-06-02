@@ -51,7 +51,11 @@ th {
 
 <h2>Денешен Распоред (Matrix View)</h2>
 
-<table id="table"></table>
+<h3>Предавални</h3>
+<table id="table-lecture"></table>
+
+<h3>Лаборатории / НФИЦ</h3>
+<table id="table-labs"></table>
 
 <script type="module">
 
@@ -64,10 +68,14 @@ const supabase = createClient(
 );
 
 // ================= CONFIG =================
-
-const ROOMS = [
+const ROOMS_LECTURE = [
 "01 пред.","02 пред.","03 пред.","04 пред."
 ];
+
+const ROOMS_LABS = [
+"08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.","НФИЦ"
+];
+
 
 const HOURS = Array.from({length: 12}, (_,i) => i + 8); // 8–19
 
@@ -154,14 +162,15 @@ async function load() {
 
 function render(events) {
 
-    const table = document.getElementById("table");
+    const tableLecture = document.getElementById("table-lecture");
+    const tableLabs = document.getElementById("table-labs");
 
     const map = {};
 
     events.forEach(e => {
 
         const room = e.room || "";
-        const hour = e.time ? e.time.split(":")[0] : "";
+        const hour = (e.time || "").substring(0,2);
 
         const key = `${room}_${hour}`;
 
@@ -170,54 +179,56 @@ function render(events) {
         map[key].push(e);
     });
 
-    // HEADER
-    let html = "<tr><th>Просторија</th>";
+    function buildTable(rooms, tableEl) {
 
-    HOURS.forEach(h => {
-        html += `<th>${h}:00</th>`;
-    });
+        let html = "<tr><th>Просторија</th>";
 
-    html += "</tr>";
-
-    // ROWS
-    ROOMS.forEach(room => {
-
-        html += `<tr>`;
-
-        html += `<td class="room-cell">${room}</td>`;
-
-        HOURS.forEach(hour => {
-
-            const key = `${room}_${String(hour).padStart(2,"0")}`;
-
-            const items = map[key] || [];
-
-            html += `<td>`;
-
-            items.forEach(e => {
-
-                html += `
-                    <div class="event">
-
-                        <b>${e.subject}</b><br>
-
-<small>
-    ${e.program}<br>
-    Сем: ${e.semester}<br>
-    ${e.professorName}
-</small>
-
-                    </div>
-                `;
-            });
-
-            html += `</td>`;
+        HOURS.forEach(h => {
+            html += `<th>${h}:00</th>`;
         });
 
-        html += `</tr>`;
-    });
+        html += "</tr>";
 
-    table.innerHTML = html;
+        rooms.forEach(room => {
+
+            html += `<tr>`;
+            html += `<td class="room-cell">${room}</td>`;
+
+            HOURS.forEach(hour => {
+
+                const key = `${room}_${String(hour).padStart(2,"0")}`;
+                const items = map[key] || [];
+
+                html += `<td>`;
+
+                items.forEach(e => {
+
+                    html += `
+                        <div class="event">
+
+                            <b>${e.subject}</b><br>
+
+                            <small>
+                                ${e.program}<br>
+                                Сем: ${e.semester}<br>
+                                ${e.professorName}
+                            </small>
+
+                        </div>
+                    `;
+                });
+
+                html += `</td>`;
+            });
+
+            html += `</tr>`;
+        });
+
+        tableEl.innerHTML = html;
+    }
+
+    buildTable(ROOMS_LECTURE, tableLecture);
+    buildTable(ROOMS_LABS, tableLabs);
 }
 
 load();
