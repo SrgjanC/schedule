@@ -205,13 +205,13 @@ async function load() {
         program: e.subjects?.programs?.name || "",
 
         // ⚠️ ONLY WORKS IF FK EXISTS
-        professorName: e.professors?.name || "",
+        professorName: e.professor?.name || "",
 
         type: e.type || "",
         groups: e.groups_text,
         day: getDayName(e.event_date)
     }));
-
+console.log("SAMPLE EVENT:", data[0]);
     render(events);
 }
 
