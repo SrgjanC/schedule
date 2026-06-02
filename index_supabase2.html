@@ -79,7 +79,20 @@ function todayISO() {
 }
 
 const today = todayISO();
+function getDayName(dateStr){
 
+    const days = [
+        "недела",
+        "понеделник",
+        "вторник",
+        "среда",
+        "четврток",
+        "петок",
+        "сабота"
+    ];
+
+    return days[new Date(dateStr).getDay()];
+}
 // ================= LOAD =================
 
 async function load() {
@@ -88,8 +101,23 @@ async function load() {
         .from("events")
         .select(`
             *,
-            subjects(name),
-            rooms(name)
+            subjects (
+                id,
+                name,
+                semester,
+                programs (
+                    id,
+                    name
+                ),
+                professors (
+                    id,
+                    name
+                )
+            ),
+            rooms (
+                id,
+                name
+            )
         `)
         .eq("event_date", today);
 
@@ -98,7 +126,21 @@ async function load() {
         return;
     }
 
-    const events = data || [];
+    const events = (data || []).map(e => ({
+        id: e.id,
+        date: e.event_date,
+        time: e.event_time?.substring(0,5),
+
+        room: e.rooms?.name || "",
+
+        subject: e.subjects?.name || "",
+        semester: e.subjects?.semester || "",
+        program: e.subjects?.programs?.name || "",
+        professorName: e.subjects?.professors?.name || "",
+
+        type: e.type || "",
+        groups: e.groups_text
+    }));
 
     render(events);
 }
@@ -113,8 +155,8 @@ function render(events) {
 
     events.forEach(e => {
 
-        const room = e.rooms?.name || "";
-        const hour = (e.event_time || "").substring(0,2);
+        const room = e.room || "";
+        const hour = (e.time || "").substring(0,2);
 
         const key = `${room}_${hour}`;
 
@@ -152,13 +194,13 @@ function render(events) {
                 html += `
                     <div class="event">
 
-                        <b>${e.subjects?.name || ""}</b><br>
+                        <b>${e.subject}</b><br>
 
-                        <small>
-                            ${e.subjects?.programs?.name || ""}<br>
-                            Сем: ${e.subjects?.semester || ""}<br>
-                            ${e.professors?.name || ""}
-                        </small>
+<small>
+    ${e.program}<br>
+    Сем: ${e.semester}<br>
+    ${e.professorName}
+</small>
 
                     </div>
                 `;
