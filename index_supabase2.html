@@ -57,6 +57,9 @@ th {
 <h3>Лаборатории / НФИЦ</h3>
 <table id="table-labs"></table>
 
+<h3>Институти / Факултети</h3>
+<table id="table-inst"></table>
+
 <script type="module">
 
 import { createClient }
@@ -75,7 +78,14 @@ const ROOMS_LECTURE = [
 const ROOMS_LABS = [
 "08 лаб.","09 лаб.","10 лаб.","11 лаб.","12 лаб.","14 лаб.","НФИЦ"
 ];
-
+const ROOMS_INST = [
+"Инст. за Физиологија",
+"Инст. за Микробиологија",
+"Инст. за Анатомија",
+"ПМФ",
+"Фак. за физичко образование",
+"Кат. за Медицинска физика"
+];
 
 const HOURS = Array.from({length: 12}, (_,i) => i + 8); // 8–19
 
@@ -164,6 +174,7 @@ function render(events) {
 
     const tableLecture = document.getElementById("table-lecture");
     const tableLabs = document.getElementById("table-labs");
+    const tableInst = document.getElementById("table-inst");
 
     const map = {};
 
@@ -205,15 +216,12 @@ function render(events) {
 
                     html += `
                         <div class="event">
-
                             <b>${e.subject}</b><br>
-
                             <small>
                                 ${e.program}<br>
                                 Сем: ${e.semester}<br>
                                 ${e.professorName}
                             </small>
-
                         </div>
                     `;
                 });
@@ -229,6 +237,7 @@ function render(events) {
 
     buildTable(ROOMS_LECTURE, tableLecture);
     buildTable(ROOMS_LABS, tableLabs);
+    buildTable(ROOMS_INST, tableInst);
 }
 
 load();
