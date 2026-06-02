@@ -211,8 +211,7 @@ async function load() {
         groups: e.groups_text,
         day: getDayName(e.event_date)
     }));
-console.log("RAW SUPABASE DATA:", data);
-console.log("FIRST EVENT:", data?.[0]);
+
     render(events);
 }
 
