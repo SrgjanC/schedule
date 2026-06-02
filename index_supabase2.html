@@ -182,7 +182,7 @@ async function load() {
 // ================= RENDER MATRIX =================
 
 function render(events) {
-
+    const currentHour = getCurrentHour(); // ✅ only once
     const tableLecture = document.getElementById("table-lecture");
     const tableLabs = document.getElementById("table-labs");
     const tableInst = document.getElementById("table-inst");
@@ -205,13 +205,17 @@ function render(events) {
 
         let html = "<tr><th>Просторија</th>";
 
-       const currentHour = getCurrentHour();
+       
 
 HOURS.forEach(h => {
 
     const isNow = h === currentHour;
 
-    html += `<th class="${isNow ? 'now-hour-header' : ''}">`;
+    html += `
+        <th class="${isNow ? 'now-hour-header' : ''}">
+            ${h}:00
+        </th>
+    `;
 });
 
         html += "</tr>";
@@ -221,7 +225,7 @@ HOURS.forEach(h => {
             html += `<tr>`;
             html += `<td class="room-cell">${room}</td>`;
 
-const currentHour = getCurrentHour();
+
 
 HOURS.forEach(hour => {
 
