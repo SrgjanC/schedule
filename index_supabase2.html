@@ -109,7 +109,6 @@ function render(events) {
 
     const table = document.getElementById("table");
 
-    // index events: room + hour
     const map = {};
 
     events.forEach(e => {
@@ -152,8 +151,15 @@ function render(events) {
 
                 html += `
                     <div class="event">
+
                         <b>${e.subjects?.name || ""}</b><br>
-                        ${e.event_time?.substring(0,5) || ""}
+
+                        <small>
+                            ${e.subjects?.programs?.name || ""}<br>
+                            Сем: ${e.subjects?.semester || ""}<br>
+                            ${e.professors?.name || ""}
+                        </small>
+
                     </div>
                 `;
             });
