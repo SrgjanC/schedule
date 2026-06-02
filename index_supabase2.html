@@ -90,7 +90,10 @@ const ROOMS_INST = [
 const HOURS = Array.from({length: 12}, (_,i) => i + 8); // 8–19
 
 // ================= TODAY =================
-
+function getCurrentHour() {
+    return new Date().getHours();
+}
+    
 function todayISO() {
     const d = new Date();
     return d.toISOString().slice(0,10);
@@ -194,9 +197,18 @@ function render(events) {
 
         let html = "<tr><th>Просторија</th>";
 
-        HOURS.forEach(h => {
-            html += `<th>${h}:00</th>`;
-        });
+       const currentHour = getCurrentHour();
+
+HOURS.forEach(h => {
+
+    const isNow = h === currentHour;
+
+    html += `
+        <th style="${isNow ? 'background:#ffcc00;color:#000;' : ''}">
+            ${h}:00
+        </th>
+    `;
+});
 
         html += "</tr>";
 
@@ -205,12 +217,18 @@ function render(events) {
             html += `<tr>`;
             html += `<td class="room-cell">${room}</td>`;
 
-            HOURS.forEach(hour => {
+const currentHour = getCurrentHour();
 
-                const key = `${room}_${String(hour).padStart(2,"0")}`;
-                const items = map[key] || [];
+HOURS.forEach(hour => {
 
-                html += `<td>`;
+    const isNow = hour === currentHour;
+
+    const key = `${room}_${String(hour).padStart(2,"0")}`;
+    const items = map[key] || [];
+
+    html += `
+        <td style="${isNow ? 'background:#fff3a0;' : ''}">
+    `;
 
                 items.forEach(e => {
 
