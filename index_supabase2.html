@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+<meta charset="UTF-8">
+<title>Денешен Распоред - Matrix View</title>
+
+<style>
+body {
+    font-family: Arial;
+    padding: 20px;
+}
+
+h2 {
+    margin-bottom: 10px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+}
+
+th, td {
+    border: 1px solid #222;
+    padding: 6px;
+    text-align: center;
+    vertical-align: top;
+}
+
+th {
+    background: #3f69b1;
+    color: white;
+}
+
+.room-cell {
+    background: #f5f5f5;
+    font-weight: bold;
+    text-align: left;
+}
+
+.event {
+    background: #dbeafe;
+    border-radius: 4px;
+    padding: 2px;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Денешен Распоред (Matrix View)</h2>
+
+<table id="table"></table>
+
+<script type="module">
+
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+    'https://elmxwpwhyewgjlvoadtb.supabase.co',
+    'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
+);
+
+// ================= CONFIG =================
+
+const ROOMS = [
+"01 пред.","02 пред.","03 пред.","04 пред."
+];
+
+const HOURS = Array.from({length: 12}, (_,i) => i + 8); // 8–19
+
+// ================= TODAY =================
+
+function todayISO() {
+    const d = new Date();
+    return d.toISOString().slice(0,10);
+}
+
+const today = todayISO();
+
+// ================= LOAD =================
+
+async function load() {
+
+    const { data, error } = await supabase
+        .from("events")
+        .select(`
+            *,
+            subjects(name),
+            rooms(name)
+        `)
+        .eq("event_date", today);
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    const events = data || [];
+
+    render(events);
+}
+
+// ================= RENDER MATRIX =================
+
+function render(events) {
+
+    const table = document.getElementById("table");
+
+    // index events: room + hour
+    const map = {};
+
+    events.forEach(e => {
+
+        const room = e.rooms?.name || "";
+        const hour = (e.event_time || "").substring(0,2);
+
+        const key = `${room}_${hour}`;
+
+        if (!map[key]) map[key] = [];
+
+        map[key].push(e);
+    });
+
+    // HEADER
+    let html = "<tr><th>Просторија</th>";
+
+    HOURS.forEach(h => {
+        html += `<th>${h}:00</th>`;
+    });
+
+    html += "</tr>";
+
+    // ROWS
+    ROOMS.forEach(room => {
+
+        html += `<tr>`;
+
+        html += `<td class="room-cell">${room}</td>`;
+
+        HOURS.forEach(hour => {
+
+            const key = `${room}_${String(hour).padStart(2,"0")}`;
+
+            const items = map[key] || [];
+
+            html += `<td>`;
+
+            items.forEach(e => {
+
+                html += `
+                    <div class="event">
+                        <b>${e.subjects?.name || ""}</b><br>
+                        ${e.event_time?.substring(0,5) || ""}
+                    </div>
+                `;
+            });
+
+            html += `</td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    table.innerHTML = html;
+}
+
+load();
+
+</script>
+
+</body>
+</html>
