@@ -205,7 +205,7 @@ async function load() {
         program: e.subjects?.programs?.name || "",
 
         // ⚠️ ONLY WORKS IF FK EXISTS
-        professorName: e.professor?.name || "",
+        professorName: e.professors?.name || "",
 
         type: e.type || "",
         groups: e.groups_text,
