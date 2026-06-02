@@ -211,11 +211,7 @@ HOURS.forEach(h => {
 
     const isNow = h === currentHour;
 
-    html += `
-        <th style="${isNow ? 'now-hour-header' : ''}">
-            ${h}:00
-        </th>
-    `;
+    html += `<th class="${isNow ? 'now-hour-header' : ''}">`;
 });
 
         html += "</tr>";
@@ -234,9 +230,7 @@ HOURS.forEach(hour => {
     const key = `${room}_${String(hour).padStart(2,"0")}`;
     const items = map[key] || [];
 
-    html += `
-        <td style="${isNow ? 'now-hour' : ''}">
-    `;
+    html += `<td class="${isNow ? 'now-hour' : ''}">`;
 
                 items.forEach(e => {
 
