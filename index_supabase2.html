@@ -97,6 +97,38 @@ const ROOMS_INST = [
 
 const HOURS = Array.from({length: 12}, (_,i) => i + 8); // 8–19
 
+    const programColorMap = {};
+function getProgramColor(program) {
+
+    if (!program) return "#ffffff";
+
+    if (programColorMap[program]) {
+        return programColorMap[program];
+    }
+
+    const palette = [
+        "#dbeafe", // blue
+        "#dcfce7", // green
+        "#fef9c3", // yellow
+        "#ffe4e6", // pink
+        "#ede9fe", // purple
+        "#e0f2fe", // cyan
+        "#f3e8ff", // violet
+        "#fef3c7"
+    ];
+
+    let hash = 0;
+
+    for (let i = 0; i < program.length; i++) {
+        hash = program.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const color = palette[Math.abs(hash) % palette.length];
+
+    programColorMap[program] = color;
+
+    return color;
+}
 // ================= TODAY =================
 function getCurrentHour() {
     return new Date().getHours();
@@ -238,16 +270,18 @@ HOURS.forEach(hour => {
 
                 items.forEach(e => {
 
-                    html += `
-                        <div class="event">
-                            <b>${e.subject}</b><br>
-                            <small>
-                                ${e.program}<br>
-                                Сем: ${e.semester}<br>
-                                ${e.professorName}
-                            </small>
-                        </div>
-                    `;
+                    const bg = getProgramColor(e.program);
+
+html += `
+    <div class="event" style="background:${bg}">
+        <b>${e.subject}</b><br>
+        <small>
+            ${e.program}<br>
+            Сем: ${e.semester}<br>
+            ${e.professorName}
+        </small>
+    </div>
+`;
                 });
 
                 html += `</td>`;
