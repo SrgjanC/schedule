@@ -233,12 +233,7 @@ async function load() {
 
     const view =
         document.getElementById("viewMode").value;
-if (view === "week") {
 
-    renderWeek(events);
-
-    return;
-}
     const selectedDate =
     document.getElementById("dateFilter").value
     || todayISO();
@@ -330,7 +325,12 @@ if (view === "week") {
     
     console.log("Loaded events:", events.length);
 
-render(events);
+if (view === "week") {
+    renderWeek(events);
+}
+else {
+    render(events);
+}
 }
 
 // ================= RENDER MATRIX =================
