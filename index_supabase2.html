@@ -223,7 +223,11 @@ function formatMKDate(dateStr) {
         }
     );
 }
+function capitalize(text) {
 
+    return text.charAt(0).toUpperCase() +
+           text.slice(1);
+}
 
     
     let events = [];
@@ -358,13 +362,12 @@ function renderWeek(events) {
         lecture.innerHTML += `
             <tr>
                 <th colspan="${HOURS.length + 1}" style="
-                background:#1e3a8a;
+                background:#3f69b1;
                 color:white;
-                text-align:left;
-                font-size:15px;
-                padding:8px;
+                font-weight:bold;
+                font-size:16px;
             ">
-                     ${getDayName(date)}
+                     ${capitalize(getDayName(date))}
             •
                     ${formatMKDate(date)}
                 </th>
@@ -383,13 +386,12 @@ function renderWeek(events) {
         labs.innerHTML += `
             <tr>
                 <th colspan="${HOURS.length + 1}" style="
-                background:#1e3a8a;
+                background:#3f69b1;
                 color:white;
-                text-align:left;
-                font-size:15px;
-                padding:8px;
+                font-weight:bold;
+                font-size:16px;
             ">
-                    ${getDayName(date)}
+                    ${capitalize(getDayName(date))}
             •
                     ${formatMKDate(date)}
                 </th>
@@ -408,13 +410,12 @@ function renderWeek(events) {
         inst.innerHTML += `
             <tr>
                 <th colspan="${HOURS.length + 1}" style="
-                background:#1e3a8a;
+                background:#3f69b1;
                 color:white;
-                text-align:left;
-                font-size:15px;
-                padding:8px;
+                font-weight:bold;
+                font-size:16px;
             ">
-                    ${getDayName(date)}
+                    ${capitalize(getDayName(date))}
             •
                     ${formatMKDate(date)}
                 </th>
