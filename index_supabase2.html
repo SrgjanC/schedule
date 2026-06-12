@@ -149,7 +149,12 @@ function todayISO() {
     const d = new Date();
     return d.toISOString().slice(0,10);
 }
+document.addEventListener("DOMContentLoaded", () => {
 
+    document.getElementById("dateFilter").value =
+        todayISO();
+
+});
 const today = todayISO();
 function getDayName(dateStr){
 
@@ -165,12 +170,41 @@ function getDayName(dateStr){
 
     return days[new Date(dateStr).getDay()];
 }
+function startOfWeek(date) {
 
+    const d = new Date(date);
+
+    const day = d.getDay();
+
+    const diff =
+        d.getDate() - day + (day === 0 ? -6 : 1);
+
+    return new Date(d.setDate(diff));
+}
+
+function endOfWeek(date) {
+
+    const start = startOfWeek(date);
+
+    const end = new Date(start);
+
+    end.setDate(start.getDate() + 6);
+
+    return end;
+}
+
+
+
+    
     let events = [];
 // ================= LOAD =================
 
 async function load() {
-
+document.getElementById("viewInfo").innerHTML =
+    `Датум: ${selectedDate}`;
+document.getElementById("viewInfo").innerHTML =
+    `Недела: ${from} → ${to}`;
+    
     const { data, error } = await supabase
         .from("events")
         .select(`
@@ -192,8 +226,42 @@ async function load() {
                 id,
                 name
             )
-        `)
-        .eq("event_date", today);
+        `);
+
+    const view =
+    document.getElementById("viewMode").value;
+
+const selectedDate =
+    document.getElementById("dateFilter").value;
+
+if (view === "day") {
+
+    query =
+        query.eq(
+            "event_date",
+            selectedDate
+        );
+}
+else {
+
+    const from =
+        toISO(
+            startOfWeek(
+                new Date(selectedDate)
+            )
+        );
+
+    const to =
+        toISO(
+            endOfWeek(
+                new Date(selectedDate)
+            )
+        );
+
+    query =
+        query.gte("event_date", from)
+             .lte("event_date", to);
+}
 
     if (error) {
         alert(error.message);
@@ -220,6 +288,14 @@ async function load() {
     }));
 
     render(events);
+document
+    .getElementById("viewMode")
+    .addEventListener("change", load);
+
+document
+    .getElementById("dateFilter")
+    .addEventListener("change", load);
+
 }
 
 // ================= RENDER MATRIX =================
