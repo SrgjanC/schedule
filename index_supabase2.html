@@ -62,7 +62,14 @@ th {
 <body>
 
 <h2>Денешен Распоред (Matrix View)</h2>
+<label>Преглед:</label>
+<select id="viewMode">
+    <option value="day">Ден</option>
+    <option value="week">Недела</option>
+</select>
 
+<label>Датум:</label>
+<input type="date" id="dateFilter">
 <h3>Предавални</h3>
 <table id="table-lecture"></table>
 
