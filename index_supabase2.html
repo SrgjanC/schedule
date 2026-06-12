@@ -210,6 +210,20 @@ function toISO(d) {
 
     return `${y}-${m}-${day}`;
 }
+function formatMKDate(dateStr) {
+
+    const d = new Date(dateStr);
+
+    return d.toLocaleDateString(
+        "mk-MK",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
+}
+
 
     
     let events = [];
@@ -219,7 +233,12 @@ async function load() {
 
     const view =
         document.getElementById("viewMode").value;
+if (view === "week") {
 
+    renderWeek(events);
+
+    return;
+}
     const selectedDate =
     document.getElementById("dateFilter").value
     || todayISO();
@@ -315,13 +334,175 @@ render(events);
 }
 
 // ================= RENDER MATRIX =================
+function renderWeek(events) {
 
+    const lecture =
+        document.getElementById("table-lecture");
+
+    const labs =
+        document.getElementById("table-labs");
+
+    const inst =
+        document.getElementById("table-inst");
+
+    lecture.innerHTML = "";
+    labs.innerHTML = "";
+    inst.innerHTML = "";
+
+    const dates =
+        [...new Set(events.map(e => e.date))]
+        .sort();
+
+    dates.forEach(date => {
+
+        lecture.innerHTML += `
+            <tr>
+                <th colspan="${HOURS.length + 1}">
+                    ${formatMKDate(date)}
+                </th>
+            </tr>
+        `;
+
+        buildWeekRows(
+            lecture,
+            events.filter(e => e.date === date),
+            ROOMS_LECTURE
+        );
+    });
+
+    dates.forEach(date => {
+
+        labs.innerHTML += `
+            <tr>
+                <th colspan="${HOURS.length + 1}">
+                    ${formatMKDate(date)}
+                </th>
+            </tr>
+        `;
+
+        buildWeekRows(
+            labs,
+            events.filter(e => e.date === date),
+            ROOMS_LABS
+        );
+    });
+
+    dates.forEach(date => {
+
+        inst.innerHTML += `
+            <tr>
+                <th colspan="${HOURS.length + 1}">
+                    ${formatMKDate(date)}
+                </th>
+            </tr>
+        `;
+
+        buildWeekRows(
+            inst,
+            events.filter(e => e.date === date),
+            ROOMS_INST
+        );
+    });
+}
+
+function buildWeekRows(
+    tableEl,
+    dayEvents,
+    rooms
+) {
+
+    const map = {};
+
+    dayEvents.forEach(e => {
+
+        const room = e.room || "";
+
+        const hour =
+            (e.time || "")
+            .substring(0,2);
+
+        const key =
+            `${room}_${hour}`;
+
+        if (!map[key]) {
+            map[key] = [];
+        }
+
+        map[key].push(e);
+    });
+
+    let html = `
+        <tr>
+            <th>Просторија</th>
+    `;
+
+    HOURS.forEach(h => {
+
+        html += `
+            <th>${h}:00</th>
+        `;
+    });
+
+    html += `</tr>`;
+
+    rooms.forEach(room => {
+
+        html += `
+            <tr>
+                <td class="room-cell">
+                    ${room}
+                </td>
+        `;
+
+        HOURS.forEach(hour => {
+
+            const key =
+                `${room}_${String(hour).padStart(2,"0")}`;
+
+            const items =
+                map[key] || [];
+
+            html += `<td>`;
+
+            items.forEach(e => {
+
+                const bg =
+                    getProgramColor(
+                        e.program
+                    );
+
+                html += `
+                    <div class="event"
+                         style="background:${bg}">
+                        <b>${e.subject}</b><br>
+
+                        <small>
+                            ${e.program}<br>
+                            Сем: ${e.semester}<br>
+                            ${e.type || ""}<br>
+                            ${e.professorName || ""}
+                        </small>
+                    </div>
+                `;
+            });
+
+            html += `</td>`;
+        });
+
+        html += `</tr>`;
+    });
+
+    tableEl.innerHTML += html;
+}
+
+    
 function render(events) {
     const currentHour = getCurrentHour(); // ✅ only once
     const tableLecture = document.getElementById("table-lecture");
     const tableLabs = document.getElementById("table-labs");
     const tableInst = document.getElementById("table-inst");
-
+const view =
+    document.getElementById("viewMode").value;
     const map = {};
 
     events.forEach(e => {
