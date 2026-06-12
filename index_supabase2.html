@@ -357,7 +357,15 @@ function renderWeek(events) {
 
         lecture.innerHTML += `
             <tr>
-                <th colspan="${HOURS.length + 1}">
+                <th colspan="${HOURS.length + 1}" style="
+                background:#1e3a8a;
+                color:white;
+                text-align:left;
+                font-size:15px;
+                padding:8px;
+            ">
+                     ${getDayName(date)}
+            •
                     ${formatMKDate(date)}
                 </th>
             </tr>
@@ -374,7 +382,15 @@ function renderWeek(events) {
 
         labs.innerHTML += `
             <tr>
-                <th colspan="${HOURS.length + 1}">
+                <th colspan="${HOURS.length + 1}" style="
+                background:#1e3a8a;
+                color:white;
+                text-align:left;
+                font-size:15px;
+                padding:8px;
+            ">
+                    ${getDayName(date)}
+            •
                     ${formatMKDate(date)}
                 </th>
             </tr>
@@ -391,7 +407,15 @@ function renderWeek(events) {
 
         inst.innerHTML += `
             <tr>
-                <th colspan="${HOURS.length + 1}">
+                <th colspan="${HOURS.length + 1}" style="
+                background:#1e3a8a;
+                color:white;
+                text-align:left;
+                font-size:15px;
+                padding:8px;
+            ">
+                    ${getDayName(date)}
+            •
                     ${formatMKDate(date)}
                 </th>
             </tr>
