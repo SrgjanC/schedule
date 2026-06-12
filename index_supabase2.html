@@ -200,12 +200,14 @@ function endOfWeek(date) {
 // ================= LOAD =================
 
 async function load() {
-document.getElementById("viewInfo").innerHTML =
-    `Датум: ${selectedDate}`;
-document.getElementById("viewInfo").innerHTML =
-    `Недела: ${from} → ${to}`;
-    
-    const { data, error } = await supabase
+
+    const view =
+        document.getElementById("viewMode").value;
+
+    const selectedDate =
+        document.getElementById("dateFilter").value;
+
+    let query = supabase
         .from("events")
         .select(`
             *,
@@ -228,74 +230,50 @@ document.getElementById("viewInfo").innerHTML =
             )
         `);
 
-    const view =
-    document.getElementById("viewMode").value;
+    if (view === "day") {
 
-const selectedDate =
-    document.getElementById("dateFilter").value;
+        query =
+            query.eq(
+                "event_date",
+                selectedDate
+            );
 
-if (view === "day") {
+        document.getElementById("viewInfo").innerHTML =
+            `Датум: ${selectedDate}`;
+    }
+    else {
 
-    query =
-        query.eq(
-            "event_date",
-            selectedDate
-        );
-}
-else {
+        const from =
+            toISO(
+                startOfWeek(
+                    new Date(selectedDate)
+                )
+            );
 
-    const from =
-        toISO(
-            startOfWeek(
-                new Date(selectedDate)
-            )
-        );
+        const to =
+            toISO(
+                endOfWeek(
+                    new Date(selectedDate)
+                )
+            );
 
-    const to =
-        toISO(
-            endOfWeek(
-                new Date(selectedDate)
-            )
-        );
+        query =
+            query.gte("event_date", from)
+                 .lte("event_date", to);
 
-    query =
-        query.gte("event_date", from)
-             .lte("event_date", to);
-}
+        document.getElementById("viewInfo").innerHTML =
+            `Недела: ${from} → ${to}`;
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         alert(error.message);
         return;
     }
 
-    events = (data || []).map(e => ({
-        id: e.id,
-        date: e.event_date,
-        time: e.event_time?.substring(0,5),
-
-        room: e.rooms?.name || "",
-
-        subject: e.subjects?.name || "",
-        semester: e.subjects?.semester || "",
-        program: e.subjects?.programs?.name || "",
-
-        // ⚠️ ONLY WORKS IF FK EXISTS
-        professorName: e.professors?.name || "",
-
-        type: e.type || "",
-        groups: e.groups_text,
-        day: getDayName(e.event_date)
-    }));
-
+    // map events...
     render(events);
-document
-    .getElementById("viewMode")
-    .addEventListener("change", load);
-
-document
-    .getElementById("dateFilter")
-    .addEventListener("change", load);
-
 }
 
 // ================= RENDER MATRIX =================
@@ -386,6 +364,17 @@ html += `
     buildTable(ROOMS_INST, tableInst);
 }
 
+
+
+
+document
+    .getElementById("viewMode")
+    .addEventListener("change", load);
+
+document
+    .getElementById("dateFilter")
+    .addEventListener("change", load);
+    
 load();
 
 </script>
