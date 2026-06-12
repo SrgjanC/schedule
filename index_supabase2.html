@@ -231,6 +231,19 @@ function capitalize(text) {
 
     
     let events = [];
+    let holidays = [];
+
+
+    function getHoliday(date) {
+
+    return holidays.find(h =>
+
+        String(h.holiday_date)
+            .substring(0,10)
+
+        === date
+    );
+}
 // ================= LOAD =================
 
 async function load() {
@@ -264,7 +277,16 @@ async function load() {
                 name
             )
         `);
+const { data: h } = await supabase
+    .from("holidays")
+    .select("*");
 
+holidays = h || [];
+
+
+
+
+    
     if (view === "day") {
 
         query =
@@ -273,8 +295,28 @@ async function load() {
                 selectedDate
             );
 
-        document.getElementById("viewInfo").innerHTML =
-            `Датум: ${selectedDate}`;
+        const holiday =
+    getHoliday(selectedDate);
+
+if (holiday) {
+
+    document.getElementById("viewInfo").innerHTML = `
+        <b>Датум:</b> ${selectedDate}
+        <br>
+        <span style="
+            color:#c62828;
+            font-weight:bold;
+        ">
+            ⚠️ ${holiday.title}
+            (${holiday.type})
+        </span>
+    `;
+}
+else {
+
+    document.getElementById("viewInfo").innerHTML =
+        `Датум: ${selectedDate}`;
+}
     }
     else {
 
@@ -373,6 +415,29 @@ function renderWeek(events) {
                 </th>
             </tr>
         `;
+        const holiday =
+    getHoliday(date);
+
+if (holiday) {
+
+    lecture.innerHTML += `
+        <tr>
+            <td
+                colspan="${HOURS.length + 1}"
+                style="
+                    background:#ffebee;
+                    color:#c62828;
+                    font-weight:bold;
+                    text-align:left;
+                    padding:8px;
+                "
+            >
+                ⚠️ ${holiday.title}
+                (${holiday.type})
+            </td>
+        </tr>
+    `;
+}
 
         buildWeekRows(
             lecture,
