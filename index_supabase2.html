@@ -196,7 +196,20 @@ function endOfWeek(date) {
     return end;
 }
 
+function toISO(d) {
 
+    const y = d.getFullYear();
+
+    const m =
+        String(d.getMonth() + 1)
+        .padStart(2, "0");
+
+    const day =
+        String(d.getDate())
+        .padStart(2, "0");
+
+    return `${y}-${m}-${day}`;
+}
 
     
     let events = [];
@@ -277,7 +290,28 @@ async function load() {
     }
 
     // map events...
-    render(events);
+    events = (data || []).map(e => ({
+    id: e.id,
+    date: e.event_date,
+    time: e.event_time?.substring(0,5),
+
+    room: e.rooms?.name || "",
+
+    subject: e.subjects?.name || "",
+    semester: e.subjects?.semester || "",
+
+    program: e.subjects?.programs?.name || "",
+
+    professorName: e.professors?.name || "",
+
+    type: e.type || "",
+    groups: e.groups_text,
+    day: getDayName(e.event_date)
+}));
+    
+    onsole.log("Loaded events:", events.length);
+
+render(events);
 }
 
 // ================= RENDER MATRIX =================
@@ -385,7 +419,7 @@ document
     .getElementById("dateFilter")
     .addEventListener("change", load);
     
-load();
+
 
 </script>
 
