@@ -395,9 +395,24 @@ function renderWeek(events) {
     labs.innerHTML = "";
     inst.innerHTML = "";
 
-    const dates =
-        [...new Set(events.map(e => e.date))]
-        .sort();
+    const selectedDate =
+    document.getElementById("dateFilter").value;
+
+const start =
+    startOfWeek(
+        new Date(selectedDate)
+    );
+
+const dates = [];
+
+for (let i = 0; i < 7; i++) {
+
+    const d = new Date(start);
+
+    d.setDate(start.getDate() + i);
+
+    dates.push(toISO(d));
+}
 
     dates.forEach(date => {
 
