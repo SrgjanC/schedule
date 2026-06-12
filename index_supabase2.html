@@ -208,7 +208,8 @@ async function load() {
         document.getElementById("viewMode").value;
 
     const selectedDate =
-        document.getElementById("dateFilter").value;
+    document.getElementById("dateFilter").value
+    || todayISO();
 
     let query = supabase
         .from("events")
@@ -368,7 +369,13 @@ html += `
 }
 
 
+document.addEventListener("DOMContentLoaded", () => {
 
+    document.getElementById("dateFilter").value =
+        todayISO();
+
+    load();
+});
 
 document
     .getElementById("viewMode")
