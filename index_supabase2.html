@@ -826,40 +826,83 @@ html += `
 };
     window.showSubjectHistory =
 async function(subjectId) {
+const today = new Date();
 
+let academicStart;
+let academicEnd;
+
+if (today.getMonth() >= 9) {
+
+    academicStart =
+        `${today.getFullYear()}-10-01`;
+
+    academicEnd =
+        `${today.getFullYear()+1}-09-30`;
+
+} else {
+
+    academicStart =
+        `${today.getFullYear()-1}-10-01`;
+
+    academicEnd =
+        `${today.getFullYear()}-09-30`;
+}
+
+
+    
     const { data, error } =
-        await supabase
-        .from("events")
-        .select(`
-            *,
-            subjects (
-            id,
-                name
-            ),
-            professors (
-                name
-            ),
-            rooms (
-                name
-            )
-        `);
+    await supabase
+    .from("events")
+    .select(`
+        *,
+        subjects (      id,            name        ),
+        semester,
+        programs (        name    ),
+        professors (            name        ),
+        rooms (            name        )
+    `)
+    .eq("subject_id", subjectId)
+.gte("event_date", academicStart)
+.lte("event_date", academicEnd)
+.order("event_date");
 
     if (error) {
         alert(error.message);
         return;
     }
 
-    const rows =
-    data.filter(e =>
-        Number(e.subjects?.id) === Number(subjectId)
-    );
+    const rows = data || [];
 console.log("Subject ID:", subjectId);
 console.log("Found rows:", rows.length);
 console.table(rows);
+
+    const futureRows =
+    rows.filter(r =>
+        r.event_date >= todayISO()
+    );
     document.getElementById(
     "subjectTitle"
+).innerHTML = `
+    ${rows[0].subjects?.name}
+    <br>
+    <small>
+        Вкупно термини: ${rows.length}
+        |
+        Преостанати: ${futureRows.length}
+    </small>
+`;
+    
+    if (rows.length === 0) {
+
+    alert("Нема пронајдени термини.");
+
+    return;
+}
+
+document.getElementById(
+    "subjectTitle"
 ).textContent =
-    rows[0]?.subjects?.name || "";
+    rows[0].subjects?.name || "";
 
     document.getElementById(
         "subjectBody"
