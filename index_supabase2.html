@@ -82,6 +82,49 @@ th {
 <h3>Институти / Факултети</h3>
 <table id="table-inst"></table>
 
+    <!-- SUBJECT POPUP -->
+<div id="subjectModal"
+     style="
+        display:none;
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,.4);
+        z-index:9999;
+     ">
+
+    <div style="
+        background:white;
+        width:90%;
+        max-width:1000px;
+        margin:40px auto;
+        padding:20px;
+        max-height:80vh;
+        overflow:auto;
+    ">
+
+        <button onclick="closeSubjectModal()">
+            Close
+        </button>
+
+        <h3 id="subjectTitle"></h3>
+
+        <table style="width:100%;">
+            <thead>
+                <tr>
+                    <th>Датум</th>
+                    <th>Час</th>
+                    <th>Просторија</th>
+                    <th>Тип</th>
+                    <th>Професор</th>
+                </tr>
+            </thead>
+
+            <tbody id="subjectBody"></tbody>
+        </table>
+
+    </div>
+</div>
+    
 <script type="module">
 
 import { createClient }
@@ -633,7 +676,21 @@ function buildWeekRows(
                 html += `
                     <div class="event"
                          style="background:${bg}">
-                        <b>${e.subject}</b><br>
+                        <b
+    style="
+        cursor:pointer;
+        color:#0d47a1;
+        text-decoration:underline;
+    "
+    onclick="
+        showSubjectHistory(
+            '${e.subject.replace(/'/g,"\\'")}'
+        )
+    "
+>
+    ${e.subject}
+</b>
+                        <br>
 
                         <small>
                             ${e.program}<br>
@@ -721,7 +778,20 @@ HOURS.forEach(hour => {
 
 html += `
     <div class="event" style="background:${bg}">
-        <b>${e.subject}</b><br>
+        <b
+    style="
+        cursor:pointer;
+        color:#0d47a1;
+        text-decoration:underline;
+    "
+    onclick="
+        showSubjectHistory(
+            '${e.subject.replace(/'/g,"\\'")}'
+        )
+    "
+>
+    ${e.subject}
+</b><br>
         <small>
             ${e.program}<br>
             Сем: ${e.semester}<br>
@@ -746,7 +816,76 @@ html += `
     buildTable(ROOMS_INST, tableInst);
 }
 
+// SUBJECT POPUP FUNCTIONS HERE
+    
+    window.closeSubjectModal = function() {
 
+    document.getElementById(
+        "subjectModal"
+    ).style.display = "none";
+};
+    window.showSubjectHistory =
+async function(subjectName) {
+
+    const { data, error } =
+        await supabase
+        .from("events")
+        .select(`
+            *,
+            subjects (
+                name
+            ),
+            professors (
+                name
+            ),
+            rooms (
+                name
+            )
+        `);
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    const rows =
+        data.filter(e =>
+            e.subjects?.name === subjectName
+        );
+
+    document.getElementById(
+        "subjectTitle"
+    ).textContent =
+        subjectName;
+
+    document.getElementById(
+        "subjectBody"
+    ).innerHTML =
+        rows
+        .sort((a,b)=>
+            a.event_date.localeCompare(
+                b.event_date
+            )
+        )
+        .map(e => `
+            <tr>
+                <td>${e.event_date}</td>
+                <td>${e.event_time.substring(0,5)}</td>
+                <td>${e.rooms?.name || ""}</td>
+                <td>${e.type || ""}</td>
+                <td>${e.professors?.name || ""}</td>
+            </tr>
+        `)
+        .join("");
+
+    document.getElementById(
+        "subjectModal"
+    ).style.display = "block";
+};
+
+
+// PAGE STARTUP
+    
 document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("dateFilter").value =
@@ -766,6 +905,8 @@ document
 
 
 </script>
+
+
 
 </body>
 </html>
