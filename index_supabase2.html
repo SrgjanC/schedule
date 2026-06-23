@@ -192,7 +192,7 @@ if (program.includes("2018"))
 // fallback
 return palette[2];
 
-return palette[shadeIndex];
+
 }
 // ================= TODAY =================
 function getCurrentHour() {
@@ -625,9 +625,10 @@ function buildWeekRows(
             items.forEach(e => {
 
                 const bg =
-                    getProgramColor(
-                        e.program
-                    );
+    getProgramColor(
+        e.program,
+        e.institute
+    );
 
                 html += `
                     <div class="event"
