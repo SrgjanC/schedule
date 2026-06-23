@@ -852,7 +852,9 @@ async function(subjectName) {
         data.filter(e =>
             e.subjects?.name === subjectName
         );
-
+console.log("Subject:", subjectName);
+console.log("Found rows:", rows.length);
+console.table(rows);
     document.getElementById(
         "subjectTitle"
     ).textContent =
