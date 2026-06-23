@@ -966,10 +966,20 @@ document.getElementById(
     ).innerHTML =
         rows
         .sort((a,b)=>
-            a.event_date.localeCompare(
-                b.event_date
+            (a.event_date || "")
+            .localeCompare(b.event_date || "") ||
+
+        (a.rooms?.name || "")
+            .localeCompare(
+                b.rooms?.name || "",
+                "mk"
+            ) ||
+
+        (a.event_time || "")
+            .localeCompare(
+                b.event_time || ""
             )
-        )
+    )
         .map(e => {
 
     const isFuture =
