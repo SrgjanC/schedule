@@ -912,10 +912,54 @@ console.table(rows);
     return;
 }
 
+const totalClasses =
+    rows.length;
+
+const remainingClasses =
+    rows.filter(r =>
+        r.event_date >= todayISO()
+    ).length;
+
 document.getElementById(
     "subjectTitle"
-).textContent =
-    rows[0].subjects?.name || "";
+).innerHTML = `
+
+    <div style="
+        line-height:1.6;
+        margin-bottom:10px;
+    ">
+
+        <b>
+            Предмет:
+        </b>
+        ${rows[0].subjects?.name || ""}
+        <br>
+
+        <b>
+            Програма:
+        </b>
+        ${rows[0].subjects?.programs?.name || ""}
+        <br>
+
+        <b>
+            Семестар:
+        </b>
+        ${rows[0].subjects?.semester || ""}
+        <br>
+
+        <b>
+            Вкупно термини:
+        </b>
+        ${totalClasses}
+        <br>
+
+        <b>
+            Преостанати:
+        </b>
+        ${remainingClasses}
+
+    </div>
+`;
 
     document.getElementById(
         "subjectBody"
@@ -926,15 +970,26 @@ document.getElementById(
                 b.event_date
             )
         )
-        .map(e => `
-            <tr>
-                <td>${e.event_date}</td>
-                <td>${e.event_time.substring(0,5)}</td>
-                <td>${e.rooms?.name || ""}</td>
-                <td>${e.type || ""}</td>
-                <td>${e.professors?.name || ""}</td>
-            </tr>
-        `)
+        .map(e => {
+
+    const isFuture =
+        e.event_date >= todayISO();
+
+    return `
+        <tr style="
+            background:
+                ${isFuture
+                    ? '#e8f5e9'
+                    : '#f5f5f5'};
+        ">
+            <td>${e.event_date}</td>
+            <td>${e.event_time.substring(0,5)}</td>
+            <td>${e.rooms?.name || ""}</td>
+            <td>${e.type || ""}</td>
+            <td>${e.professors?.name || ""}</td>
+        </tr>
+    `;
+})
         .join("");
 
     document.getElementById(
