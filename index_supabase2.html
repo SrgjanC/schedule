@@ -855,9 +855,16 @@ if (today.getMonth() >= 9) {
     .from("events")
     .select(`
         *,
-        subjects (      id,            name        ),
-        semester,
-        professors (            name        ),
+        subjects (
+                id,
+                name,
+                semester,
+                institute,
+                programs (
+                    id,
+                    name
+                ),
+                professors (            name        ),
         rooms (            name        )
     `)
     .eq("subject_id", subjectId)
