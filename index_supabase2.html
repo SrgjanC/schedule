@@ -850,9 +850,9 @@ async function(subjectId) {
     }
 
     const rows =
-        data.filter(e =>
-            e.subjects?.id === subjectId
-        );
+    data.filter(e =>
+        Number(e.subjects?.id) === Number(subjectId)
+    );
 console.log("Subject ID:", subjectId);
 console.log("Found rows:", rows.length);
 console.table(rows);
