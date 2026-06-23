@@ -263,6 +263,7 @@ async function load() {
                 id,
                 name,
                 semester,
+                institute,
                 programs (
                     id,
                     name
@@ -359,6 +360,7 @@ else {
 
     subject: e.subjects?.name || "",
     semester: e.subjects?.semester || "",
+    institute: e.subjects?.institute || "",
 
     program: e.subjects?.programs?.name || "",
 
@@ -368,7 +370,7 @@ else {
     groups: e.groups_text,
     day: getDayName(e.event_date)
 }));
-    
+    console.log(events[0]);
     console.log("Loaded events:", events.length);
 
 if (view === "week") {
