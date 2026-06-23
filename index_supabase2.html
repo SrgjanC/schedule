@@ -853,9 +853,9 @@ if (today.getMonth() >= 9) {
     const { data, error } =
     await supabase
     .from("events")
-    .select(`
-        *,
-        subjects (
+        .select(`
+            *,
+            subjects (
                 id,
                 name,
                 semester,
@@ -863,10 +863,17 @@ if (today.getMonth() >= 9) {
                 programs (
                     id,
                     name
-                ),
-                professors (            name        ),
-        rooms (            name        )
-    `)
+                )
+            ),
+            professors (
+                id,
+                name
+            ),
+            rooms (
+                id,
+                name
+            )
+        `)
     .eq("subject_id", subjectId)
 .gte("event_date", academicStart)
 .lte("event_date", academicEnd)
