@@ -684,7 +684,7 @@ function buildWeekRows(
     "
     onclick="
         showSubjectHistory(
-            '${e.subject.replace(/'/g,"\\'")}'
+            '${e.subjectId}'
         )
     "
 >
@@ -786,7 +786,7 @@ html += `
     "
     onclick="
         showSubjectHistory(
-            '${e.subject.replace(/'/g,"\\'")}'
+            '${e.subjectId}'
         )
     "
 >
@@ -825,7 +825,7 @@ html += `
     ).style.display = "none";
 };
     window.showSubjectHistory =
-async function(subjectName) {
+async function(subjectId) {
 
     const { data, error } =
         await supabase
@@ -850,7 +850,7 @@ async function(subjectName) {
 
     const rows =
         data.filter(e =>
-            e.subjects?.name === subjectName
+            e.subjects?.id === subjectId
         );
 console.log("Subject:", subjectName);
 console.log("Found rows:", rows.length);
