@@ -169,21 +169,30 @@ function getProgramColor(program, institute) {
         palettes[institute] ||
         palettes.default;
 
-    let hash = 0;
+// PROGRAM YEAR -> SHADE
 
-    const key =
-        (program || "") +
-        (institute || "");
+if (program.includes("2025"))
+    return palette[4]; // darkest
 
-    for (let i = 0; i < key.length; i++) {
-        hash =
-            key.charCodeAt(i) +
-            ((hash << 5) - hash);
-    }
+if (program.includes("2024"))
+    return palette[3];
 
-    return palette[
-        Math.abs(hash) % palette.length
-    ];
+if (program.includes("2023"))
+    return palette[2];
+
+if (program.includes("2021"))
+    return palette[1];
+
+if (program.includes("2019"))
+    return palette[0];
+
+if (program.includes("2018"))
+    return palette[0];
+
+// fallback
+return palette[2];
+
+return palette[shadeIndex];
 }
 // ================= TODAY =================
 function getCurrentHour() {
