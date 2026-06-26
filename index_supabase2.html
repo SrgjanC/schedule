@@ -991,8 +991,29 @@ body{
     color:#222;
 }
 
+.header{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.faculty{
+
+    font-size:14px;
+
+    line-height:1.4;
+
+    margin-bottom:15px;
+
+}
+
 h2{
-    margin-bottom:6px;
+
+    margin:0;
+
+    font-size:22px;
+
+    letter-spacing:1px;
+
 }
 
 .info{
@@ -1027,36 +1048,99 @@ tr:nth-child(even){
     color:#666;
 }
 
+.infoTable{
+
+    width:55%;
+
+    margin-bottom:20px;
+
+    border-collapse:collapse;
+
+}
+
+.infoTable td{
+
+    border:1px solid #bbb;
+
+    padding:6px;
+
+}
+
+.infoTable td:first-child{
+
+    width:180px;
+
+    background:#f2f2f2;
+
+}
+
+.footer{
+
+    margin-top:25px;
+
+    text-align:center;
+
+    font-size:10pt;
+
+    color:#555;
+
+}
 </style>
 
 </head>
 
 <body>
 
-<h2>
-Распоред по предмет
-</h2>
+<div class="header">
+
+    <div class="faculty">
+
+        Универзитет „Св. Кирил и Методиј“ во Скопје<br>
+        <b>Фармацевтски факултет</b>
+
+    </div>
+
+    <h2>
+        РАСПОРЕД ПО ПРЕДМЕТ
+    </h2>
+
+</div>
 
 <div class="info">
 
-<b>Предмет:</b>
-${currentSubjectInfo.subject}<br>
+<table class="infoTable">
 
-<b>Програма:</b>
-${currentSubjectInfo.program}<br>
+<tr>
+<td><b>Предмет</b></td>
+<td>${currentSubjectInfo.subject}</td>
+</tr>
 
-<b>Семестар:</b>
-${currentSubjectInfo.semester}<br>
+<tr>
+<td><b>Програма</b></td>
+<td>${currentSubjectInfo.program}</td>
+</tr>
 
-<b>Институт:</b>
-${currentSubjectInfo.institute}<br>
+<tr>
+<td><b>Семестар</b></td>
+<td>${currentSubjectInfo.semester}</td>
+</tr>
 
-<b>Вкупно термини:</b>
-${currentSubjectRows.length}<br>
+<tr>
+<td><b>Институт</b></td>
+<td>${currentSubjectInfo.institute}</td>
+</tr>
 
-<b>Преостанати:</b>
-${remaining}
+<tr>
+<td><b>Вкупно термини</b></td>
+<td>${currentSubjectRows.length}</td>
+</tr>
 
+<tr>
+<td><b>Преостанати</b></td>
+<td>${remaining}</td>
+</tr>
+
+</table>
 </div>
 
 <table>
@@ -1075,7 +1159,12 @@ ${rows}
 
 <div class="footer">
 
-Генерирано:
+<hr>
+
+Генерирано од системот за распоред на наставата<br>
+
+Фармацевтски факултет - УКИМ<br>
+
 ${new Date().toLocaleString("mk-MK")}
 
 </div>
