@@ -216,19 +216,26 @@ function getProgramColor(program, institute) {
         palettes[institute] ||
         palettes.default;
 
-    const p =
-        (program || "").toLowerCase();
+    const p = (program || "").trim();
 
-    if (p.includes("диететика"))
+switch (p) {
+
+    case "Диететика и диетотерапија 2018":
+    case "Диететика и диетотерапија 2023":
         return palette[0];
 
-    if (p.includes("лабораториско"))
+    case "Лабораториско биоинженерство 2019":
+    case "Лабораториско биоинженерство 2024":
         return palette[1];
 
-    if (p.includes("магистер"))
+    case "Магистер по фармација 2015":
+    case "Магистер по фармација 2021":
+    case "Магистер по фармација 2025":
         return palette[2];
 
-    return palette[1];
+    default:
+        return palettes.default[1];
+}
 }
 // ================= TODAY =================
 function getCurrentHour() {
