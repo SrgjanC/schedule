@@ -450,7 +450,7 @@ else {
                  .lte("event_date", to);
 
         document.getElementById("viewInfo").innerHTML =
-            `Недела: ${from} → ${to}`;
+            `Недела: ${formatMKDate(from)} → ${formatMKDate(to)}`;
     }
 
     const { data, error } = await query;
