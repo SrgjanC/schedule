@@ -174,59 +174,61 @@ function getProgramColor(program, institute) {
 
     const palettes = {
 
-    "ИФГ": [
-        "#EEF8EC",   // Диететика
-        "#CDE8C8",   // Лабораториско
-        "#98C98E"    // Магистер
-    ],
+        "ИФГ": [
+            "#EEF8EC",
+            "#CDE8C8",
+            "#98C98E"
+        ],
 
-    "ИПХФА": [
-        "#EFF7FD",
-        "#C9E0F5",
-        "#8FBDE8"
-    ],
+        "ИПХФА": [
+            "#EFF7FD",
+            "#C9E0F5",
+            "#8FBDE8"
+        ],
 
-    "ИФТ": [
-        "#FFFCEB",
-        "#FFEFA8",
-        "#FFD966"
-    ],
+        "ИФТ": [
+            "#FFFCEB",
+            "#FFEFA8",
+            "#FFD966"
+        ],
 
-    "ИФХ": [
-        "#FFF3EA",
-        "#F8D1AA",
-        "#F4B183"
-    ],
+        "ИФХ": [
+            "#FFF3EA",
+            "#F8D1AA",
+            "#F4B183"
+        ],
 
-    "ИПБ": [
-        "#FDF0EE",
-        "#F4C7C3",
-        "#E6A19A"
-    ],
+        "ИПБ": [
+            "#FDF0EE",
+            "#F4C7C3",
+            "#E6A19A"
+        ],
 
-    "default": [
-        "#F5F5F5",
-        "#E5E5E5",
-        "#CCCCCC"
-    ]
-};
+        "default": [
+            "#F5F5F5",
+            "#E5E5E5",
+            "#CCCCCC"
+        ]
+    };
 
-// PROGRAM -> SHADE
+    // ← THIS WAS MISSING
+    const palette =
+        palettes[institute] ||
+        palettes.default;
 
-const p = (program || "").toLowerCase();
+    const p =
+        (program || "").toLowerCase();
 
-if (p.includes("диететика"))
-    return palette[0];
+    if (p.includes("диететика"))
+        return palette[0];
 
-if (p.includes("лабораториско"))
+    if (p.includes("лабораториско"))
+        return palette[1];
+
+    if (p.includes("магистер"))
+        return palette[2];
+
     return palette[1];
-
-if (p.includes("магистер"))
-    return palette[2];
-
-// fallback
-return palette[1];
-
 }
 // ================= TODAY =================
 function getCurrentHour() {
