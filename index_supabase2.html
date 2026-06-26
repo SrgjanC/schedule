@@ -933,7 +933,165 @@ window.exportSubjectExcel = function () {
 
 };
 
+window.printSubject = function () {
 
+    const remaining =
+        currentSubjectRows.filter(r =>
+            r.event_date >= todayISO()
+        ).length;
+
+    const rows =
+        currentSubjectRows
+        .sort((a,b)=>
+
+            (a.event_date || "")
+                .localeCompare(b.event_date || "") ||
+
+            (a.rooms?.name || "")
+                .localeCompare(
+                    b.rooms?.name || "",
+                    "mk"
+                ) ||
+
+            (a.event_time || "")
+                .localeCompare(
+                    b.event_time || ""
+                )
+
+        )
+        .map(r => `
+            <tr>
+                <td>${r.event_date}</td>
+                <td>${r.event_time.substring(0,5)}</td>
+                <td>${r.rooms?.name || ""}</td>
+                <td>${r.type || ""}</td>
+                <td>${r.professors?.name || ""}</td>
+            </tr>
+        `)
+        .join("");
+
+    const w = window.open("", "_blank");
+
+    w.document.write(`
+<html>
+<head>
+
+<title>${currentSubjectInfo.subject}</title>
+
+<style>
+
+@page{
+    size:A4 portrait;
+    margin:15mm;
+}
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    font-size:11pt;
+    color:#222;
+}
+
+h2{
+    margin-bottom:6px;
+}
+
+.info{
+    margin-bottom:20px;
+    line-height:1.6;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#3f69b1;
+    color:white;
+    padding:6px;
+    border:1px solid #777;
+}
+
+td{
+    padding:5px;
+    border:1px solid #999;
+}
+
+tr:nth-child(even){
+    background:#f8f8f8;
+}
+
+.footer{
+    margin-top:20px;
+    font-size:10pt;
+    color:#666;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>
+Распоред по предмет
+</h2>
+
+<div class="info">
+
+<b>Предмет:</b>
+${currentSubjectInfo.subject}<br>
+
+<b>Програма:</b>
+${currentSubjectInfo.program}<br>
+
+<b>Семестар:</b>
+${currentSubjectInfo.semester}<br>
+
+<b>Институт:</b>
+${currentSubjectInfo.institute}<br>
+
+<b>Вкупно термини:</b>
+${currentSubjectRows.length}<br>
+
+<b>Преостанати:</b>
+${remaining}
+
+</div>
+
+<table>
+
+<tr>
+<th>Датум</th>
+<th>Час</th>
+<th>Просторија</th>
+<th>Тип</th>
+<th>Професор</th>
+</tr>
+
+${rows}
+
+</table>
+
+<div class="footer">
+
+Генерирано:
+${new Date().toLocaleString("mk-MK")}
+
+</div>
+
+</body>
+
+</html>
+`);
+
+    w.document.close();
+
+    w.focus();
+
+    w.print();
+
+};
 
     
     window.showSubjectHistory =
