@@ -840,6 +840,102 @@ html += `
         "subjectModal"
     ).style.display = "none";
 };
+
+window.exportSubjectExcel = function () {
+
+    const wb = XLSX.utils.book_new();
+
+    const data = [];
+
+    // Subject information
+    data.push(["Предмет", currentSubjectInfo.subject]);
+    data.push(["Програма", currentSubjectInfo.program]);
+    data.push(["Семестар", currentSubjectInfo.semester]);
+    data.push(["Институт", currentSubjectInfo.institute]);
+    data.push([]);
+
+    // Statistics
+    data.push([
+        "Вкупно термини",
+        currentSubjectRows.length
+    ]);
+
+    const remaining =
+        currentSubjectRows.filter(r =>
+            r.event_date >= todayISO()
+        ).length;
+
+    data.push([
+        "Преостанати",
+        remaining
+    ]);
+
+    data.push([]);
+
+    // Table header
+    data.push([
+        "Датум",
+        "Час",
+        "Просторија",
+        "Тип",
+        "Професор"
+    ]);
+
+    // Events
+    currentSubjectRows
+        .sort((a,b)=>
+
+            (a.event_date || "")
+                .localeCompare(b.event_date || "") ||
+
+            (a.rooms?.name || "")
+                .localeCompare(
+                    b.rooms?.name || "",
+                    "mk"
+                ) ||
+
+            (a.event_time || "")
+                .localeCompare(
+                    b.event_time || ""
+                )
+        )
+        .forEach(r => {
+
+            data.push([
+
+                r.event_date,
+
+                r.event_time.substring(0,5),
+
+                r.rooms?.name || "",
+
+                r.type || "",
+
+                r.professors?.name || ""
+
+            ]);
+
+        });
+
+    const ws =
+        XLSX.utils.aoa_to_sheet(data);
+
+    XLSX.utils.book_append_sheet(
+        wb,
+        ws,
+        "Распоред"
+    );
+
+    XLSX.writeFile(
+        wb,
+        currentSubjectInfo.subject + ".xlsx"
+    );
+
+};
+
+
+
+    
     window.showSubjectHistory =
 async function(subjectId) {
 const today = new Date();
