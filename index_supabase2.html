@@ -1050,27 +1050,37 @@ tr:nth-child(even){
 
 .infoTable{
 
-    width:55%;
-
-    margin-bottom:20px;
+    width:auto;
 
     border-collapse:collapse;
+
+    margin-bottom:20px;
 
 }
 
 .infoTable td{
 
-    border:1px solid #bbb;
+    border:none;
 
-    padding:6px;
+    padding:3px 8px 3px 0;
+
+    vertical-align:top;
 
 }
 
 .infoTable td:first-child{
 
-    width:180px;
+    width:170px;
 
-    background:#f2f2f2;
+    font-weight:bold;
+
+    white-space:nowrap;
+
+}
+
+.infoTable td:last-child{
+
+    width:100%;
 
 }
 
@@ -1111,32 +1121,32 @@ tr:nth-child(even){
 <table class="infoTable">
 
 <tr>
-<td><b>Предмет</b></td>
+<td><b>Предмет:</b></td>
 <td>${currentSubjectInfo.subject}</td>
 </tr>
 
 <tr>
-<td><b>Програма</b></td>
+<td><b>Програма:</b></td>
 <td>${currentSubjectInfo.program}</td>
 </tr>
 
 <tr>
-<td><b>Семестар</b></td>
+<td><b>Семестар:</b></td>
 <td>${currentSubjectInfo.semester}</td>
 </tr>
 
 <tr>
-<td><b>Институт</b></td>
+<td><b>Институт:</b></td>
 <td>${currentSubjectInfo.institute}</td>
 </tr>
 
 <tr>
-<td><b>Вкупно термини</b></td>
+<td><b>Вкупно термини:</b></td>
 <td>${currentSubjectRows.length}</td>
 </tr>
 
 <tr>
-<td><b>Преостанати</b></td>
+<td><b>Преостанати:</b></td>
 <td>${remaining}</td>
 </tr>
 
