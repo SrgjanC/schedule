@@ -166,12 +166,8 @@ border-radius:8px;
 🟢 Google Calendar
 </button>
 
-<button onclick="shareICS()">
-📱 Phone / Tablet
-</button>
-
 <button onclick="downloadICS()">
-💾 PC / Mac
+💾 Download
 </button>
 
 </div>
@@ -1040,54 +1036,7 @@ END:VCALENDAR`;
 }
 
 
-window.shareICS = async function(){
 
-    const blob = createICSBlob();
-
-    const file = new File(
-        [blob],
-        currentCalendarEvent.subject + ".ics",
-        {
-            type: "text/plain"
-        }
-    );
-
-    console.log("navigator.share:", !!navigator.share);
-    console.log("navigator.canShare:", !!navigator.canShare);
-
-    if(navigator.canShare){
-
-        console.log(
-            "canShare(file):",
-            navigator.canShare({files:[file]})
-        );
-
-    }
-
-    try{
-
-        await navigator.share({
-
-            title: currentCalendarEvent.subject,
-
-            text: "Lecture",
-
-            files:[file]
-
-        });
-
-        console.log("SUCCESS");
-
-    }
-    catch(err){
-
-        console.error(err.name);
-        console.error(err.message);
-        console.error(err);
-
-    }
-
-}
 
     window.openGoogleCalendar = function(){
 
