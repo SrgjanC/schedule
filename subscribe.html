@@ -210,6 +210,22 @@ button:disabled{
     font-size:11px;
 
 }
+
+.subjectRow.selected{
+    background:#e8f2ff;
+    border-left:4px solid #3f69b1;
+    padding-left:6px;
+
+}
+
+.badgeSemester{
+    background:#eef2ff;
+    color:#4338ca;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
+    font-weight:bold;
+}
 </style>
 
 </head>
@@ -445,18 +461,27 @@ async function loadSubjects(){
 
     if(!programId || !semester) return;
 
-    const {data,error}=await supabase
-        .from("subjects")
-        .select(`
-            id,
-            name,
-            institute,
-            credits,
-            mandatory
-        `)
-        .eq("program_id",programId)
-        .eq("semester",semester)
-        .order("name");
+let query = supabase
+    .from("subjects")
+    .select(`
+        id,
+        name,
+        institute,
+        credits,
+        mandatory,
+        semester
+    `)
+    .eq("program_id", programId);
+
+if (semester) {
+
+    query = query.eq("semester", semester);
+
+}
+
+const { data, error } = await query
+    .order("semester")
+    .order("name");
 
     if(error){
 
@@ -525,7 +550,11 @@ list.innerHTML += `
     <div class="subjectName">
         ${subject.name}
     </div>
-
+    
+    <span class="badgeSemester">
+        Сем. ${subject.semester}
+    </span>
+    
     ${instituteBadge}
 
     <span class="badgeCredits">
@@ -579,7 +608,17 @@ function initSubjectSelection(){
         all.checked=
             selected===checks.length;
 
-    }
+        checks.forEach(c=>{
+
+            c.closest(".subjectRow")
+                .classList.toggle(
+                    "selected",
+                    c.checked
+                );
+
+        });
+
+    }    
 
     checks.forEach(c=>{
 
