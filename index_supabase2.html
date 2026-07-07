@@ -137,6 +137,40 @@ th {
     </div>
 </div>
 
+    <div id="calendarModal"
+style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.4);
+z-index:9999;
+">
+
+<div style="
+background:white;
+width:500px;
+margin:60px auto;
+padding:20px;
+border-radius:8px;
+">
+
+<h3 id="calendarTitle"></h3>
+
+<div id="calendarBody"></div>
+
+<br>
+
+<button onclick="downloadICS()">
+📅 Add to Calendar
+</button>
+
+<button onclick="closeCalendarModal()">
+Close
+</button>
+
+</div>
+
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     
@@ -327,7 +361,7 @@ function capitalize(text) {
            text.slice(1);
 }
 
-    
+    let currentCalendarEvent = null;
     let events = [];
     let holidays = [];
     let currentSubjectRows = [];
@@ -782,18 +816,10 @@ HOURS.forEach(hour => {
     );
 
 html += `
-    <div class="event" style="background:${bg}">
-        <b
-    style="
-        cursor:pointer;
-        color:#0d47a1;
-        text-decoration:underline;
-    "
-    onclick="
-        showSubjectHistory(
-            '${e.subjectId}'
-        )
-    "
+    <div     class="event"     style="background:${bg};cursor:pointer;"     onclick="showCalendarPopup(${e.id})">
+        <b    style="        cursor:pointer;        color:#0d47a1;        text-decoration:underline;    "
+    onclick="  event.stopPropagation();
+     showSubjectHistory(            '${e.subjectId}'        )    "
 >
     ${e.subject}
 </b><br>
@@ -829,6 +855,67 @@ html += `
         "subjectModal"
     ).style.display = "none";
 };
+
+
+// CALENDAR POPUP FUNCTIONS HERE
+window.showCalendarPopup = function(id){
+
+    currentCalendarEvent =
+        events.find(e=>e.id==id);
+
+    if(!currentCalendarEvent)
+        return;
+
+    document.getElementById(
+        "calendarTitle"
+    ).innerHTML =
+        currentCalendarEvent.subject;
+
+    document.getElementById(
+        "calendarBody"
+    ).innerHTML = `
+
+<b>Датум:</b>
+${formatMKDate(currentCalendarEvent.date)}
+
+<br><br>
+
+<b>Час:</b>
+${currentCalendarEvent.time}
+
+<br><br>
+
+<b>Просторија:</b>
+${currentCalendarEvent.room}
+
+<br><br>
+
+<b>Професор:</b>
+${currentCalendarEvent.professorName}
+
+<br><br>
+
+<b>Тип:</b>
+${currentCalendarEvent.type}
+
+`;
+
+    document.getElementById(
+        "calendarModal"
+    ).style.display="block";
+
+}
+
+
+
+window.closeCalendarModal=function(){
+
+document.getElementById(
+"calendarModal"
+).style.display="none";
+
+}
+    
 
 window.exportSubjectExcel = function () {
 
