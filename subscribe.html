@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+
+<meta charset="UTF-8">
+
+<title>Calendar Subscription</title>
+
+<style>
+
+body{
+
+    font-family:Arial;
+    background:#f4f6fb;
+    margin:30px;
+
+}
+
+.container{
+
+    max-width:900px;
+    margin:auto;
+
+    background:white;
+
+    padding:25px;
+
+    border-radius:10px;
+
+    box-shadow:0 0 10px rgba(0,0,0,.08);
+
+}
+
+h2{
+
+    margin-top:0;
+
+    color:#3f69b1;
+
+}
+
+.section{
+
+    margin-bottom:25px;
+
+}
+
+label{
+
+    display:block;
+
+    margin-bottom:6px;
+
+    font-weight:bold;
+
+}
+
+select{
+
+    width:100%;
+
+    padding:8px;
+
+    font-size:14px;
+
+}
+
+#subjects{
+
+    border:1px solid #ddd;
+
+    border-radius:6px;
+
+    padding:10px;
+
+    max-height:320px;
+
+    overflow:auto;
+
+    background:white;
+
+}
+
+.subject{
+
+    padding:6px;
+
+}
+
+button{
+
+    background:#3f69b1;
+
+    color:white;
+
+    border:none;
+
+    padding:12px 20px;
+
+    border-radius:6px;
+
+    font-size:15px;
+
+    cursor:pointer;
+
+}
+
+button:disabled{
+
+    background:#999;
+
+    cursor:not-allowed;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>📅 Calendar Subscription</h2>
+
+<div class="section">
+
+<label>Academic Year</label>
+
+<select id="yearFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Program</label>
+
+<select id="programFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Semester</label>
+
+<select id="semesterFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Subjects</label>
+
+<div id="subjects"></div>
+
+</div>
+
+<div class="section">
+
+<label>Professor (optional)</label>
+
+<select id="professorFilter"></select>
+
+</div>
+
+<button
+id="createBtn"
+disabled>
+
+📅 Create Subscription
+
+</button>
+
+</div>
+<script>
+  function loadAcademicYears(){
+
+    const select =
+        document.getElementById("yearFilter");
+
+    const now =
+        new Date();
+
+    const year =
+        now.getMonth() >= 9
+        ? now.getFullYear()
+        : now.getFullYear()-1;
+
+    for(let i=-1;i<=3;i++){
+
+        const start =
+            year+i;
+
+        const end =
+            start+1;
+
+        select.innerHTML +=
+        `<option value="${start}">
+            ${start}/${end}
+        </option>`;
+
+    }
+
+}
+  </script>
