@@ -18,7 +18,8 @@ body{
 
 .container{
 
-    max-width:900px;
+    max-width:1500px;
+
     margin:auto;
 
     background:white;
@@ -31,6 +32,58 @@ body{
 
 }
 
+.mainLayout{
+
+    display:grid;
+
+    grid-template-columns:420px 1fr;
+
+    gap:25px;
+
+    align-items:start;
+
+}
+
+.leftPanel{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.rightPanel{
+
+    border-left:1px solid #ddd;
+
+    padding-left:25px;
+
+}
+
+@media(max-width:1000px){
+
+.mainLayout{
+
+    grid-template-columns:1fr;
+
+}
+
+.rightPanel{
+
+    border-left:none;
+
+    border-top:1px solid #ddd;
+
+    padding-left:0;
+
+    padding-top:20px;
+
+}
+
+}
+    
 h2{
 
     margin-top:0;
@@ -244,53 +297,72 @@ button:disabled{
 
 <h2>📅 Calendar Subscription</h2>
 
-<div class="section">
+<div class="mainLayout">
 
-<label>Academic Year</label>
+<div class="leftPanel">
 
-<select id="yearFilter"></select>
-
-</div>
-
-<div class="section">
-
-<label>Program</label>
-
-<select id="programFilter"></select>
+    <!-- ALL YOUR EXISTING FILTERS -->
 
 </div>
 
-<div class="section">
+<div class="rightPanel">
 
-<label>Semester</label>
+    <h3>Live Preview</h3>
 
-<select id="semesterFilter"></select>
+    <div id="previewStats">
+
+        <div class="statCard">
+
+            📚
+            <strong>Subjects:</strong>
+
+            <span id="previewSubjects">
+                0
+            </span>
+
+        </div>
+
+        <div class="statCard">
+
+            👨‍🏫
+            <strong>Professor:</strong>
+
+            <span id="previewProfessor">
+
+                All
+
+            </span>
+
+        </div>
+
+        <div class="statCard">
+
+            📅
+            <strong>Events:</strong>
+
+            <span id="previewEvents">
+
+                0
+
+            </span>
+
+        </div>
+
+    </div>
+
+    <div id="previewList">
+
+        <div class="emptyPreview">
+
+            Select subjects or a professor to preview the calendar.
+
+        </div>
+
+    </div>
 
 </div>
 
-<div class="section">
-
-<label>Subjects</label>
-
-<div id="subjects"></div>
-
 </div>
-
-<div class="section">
-
-<label>Professor (optional)</label>
-
-<select id="professorFilter"></select>
-
-</div>
-
-<button
-id="createBtn"
-disabled>
-
-📅 Create Subscription
-
-</button>
 
 </div>
 
