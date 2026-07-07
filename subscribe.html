@@ -499,56 +499,50 @@ placeholder="🔍 Search subjects...">
 
     data.forEach(subject=>{
 
-        const color=
-            INSTITUTE_COLORS[subject.institute]
-            || "#666";
+        const hasInstitute =
+    subject.institute &&
+    subject.institute.trim() !== "";
 
-        list.innerHTML+=`
+const instituteBadge = hasInstitute
+    ? `
+        <span
+            class="subjectBadge"
+            style="background:${INSTITUTE_COLORS[subject.institute] || "#666"};">
+            ${subject.institute}
+        </span>
+      `
+    : "";
+
+list.innerHTML += `
 
 <label class="subjectRow">
 
-<input
-type="checkbox"
-class="subjectCheck"
-value="${subject.id}">
+    <input
+        type="checkbox"
+        class="subjectCheck"
+        value="${subject.id}">
 
-<div class="subjectName">
+    <div class="subjectName">
+        ${subject.name}
+    </div>
 
-${subject.name}
+    ${instituteBadge}
 
-</div>
+    <span class="badgeCredits">
+        ${subject.credits} ECTS
+    </span>
 
-<span
-class="subjectBadge"
-style="background:${color};">
-
-${subject.institute}
-
-</span>
-
-<span class="badgeCredits">
-
-${subject.credits} ECTS
-
-</span>
-
-<span class="${
-subject.mandatory
-?
-"badgeMandatory"
-:
-"badgeElective"
-}">
-
-${
-subject.mandatory
-?
-"Mandatory"
-:
-"Elective"
-}
-
-</span>
+    <span class="${
+        subject.mandatory
+            ? "badgeMandatory"
+            : "badgeElective"
+    }">
+        ${
+            subject.mandatory
+                ? "Mandatory"
+                : "Elective"
+        }
+    </span>
 
 </label>
 
