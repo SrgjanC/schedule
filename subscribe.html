@@ -306,6 +306,7 @@ const supabase = createClient(
 
 
 let professorSelect = null;
+        let professorRefreshTimer = null;
     
     const INSTITUTE_INFO = {
 
@@ -591,7 +592,17 @@ list.innerHTML += `
 
 }
 
+function refreshProfessorsDebounced(){
 
+    clearTimeout(professorRefreshTimer);
+
+    professorRefreshTimer = setTimeout(async ()=>{
+
+        await loadProfessors();
+
+    },250);
+
+}
         
 function initSubjectSelection(){
 
@@ -628,12 +639,18 @@ function initSubjectSelection(){
 
     checks.forEach(c=>{
 
-        c.addEventListener(
-            "change",
-            updateCounter
-        );
+    c.addEventListener(
+        "change",
+        async ()=>{
 
-    });
+            updateCounter();
+
+            refreshProfessorsDebounced();
+
+        }
+    );
+
+});
 
     all.addEventListener("change",()=>{
 
@@ -648,7 +665,7 @@ function initSubjectSelection(){
         });
 
         updateCounter();
-
+        refreshProfessorsDebounced();
     });
 
     search.addEventListener("input",()=>{
@@ -686,6 +703,8 @@ async function loadProfessors() {
 
     const select =
         document.getElementById("professorFilter");
+    const currentProfessor =
+    select.value;
 
     if (!programId)
         return;
@@ -778,7 +797,7 @@ async function loadProfessors() {
 ${p.name}
 </option>
 `;
-
+select.value = currentProfessor;
     });
 
     if (professorSelect) {
