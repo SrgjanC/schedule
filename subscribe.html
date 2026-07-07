@@ -315,11 +315,11 @@ const supabase = createClient(
 };
         const INSTITUTE_COLORS = {
 
-    "ИФТ":"#6D28D9",
-    "ИХ":"#16A34A",
-    "ИБ":"#0284C7",
-    "ИФ":"#DC2626",
-    "ИФК":"#D97706"
+    "ИФГ":"#4CAF50",   // Green
+    "ИПБ":"#2196F3",   // Blue
+    "ИФТ":"#F44336",   // Red
+    "ИФХ":"#FF9800",   // Orange
+    "ИПХФА":"#9C27B0"  // Purple
 
 };
         
@@ -529,7 +529,7 @@ list.innerHTML += `
     ${instituteBadge}
 
     <span class="badgeCredits">
-        ${subject.credits} ECTS
+        ${subject.credits} ЕКТС
     </span>
 
     <span class="${
@@ -539,9 +539,11 @@ list.innerHTML += `
     }">
         ${
             subject.mandatory
-                ? "Mandatory"
-                : "Elective"
-        }
+            ?
+            "Задолжителен"
+            :
+            "Изборен"
+       }
     </span>
 
 </label>
