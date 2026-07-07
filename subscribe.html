@@ -118,47 +118,7 @@ button:disabled{
 </head>
 
 <body>
-    <script type="module">
-
-import { createClient }
-from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabase = createClient(
-    'https://elmxwpwhyewgjlvoadtb.supabase.co',
-    'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
-);
-
-        
-  function loadAcademicYears(){
-
-    const select =
-        document.getElementById("yearFilter");
-
-    const now =
-        new Date();
-
-    const year =
-        now.getMonth() >= 9
-        ? now.getFullYear()
-        : now.getFullYear()-1;
-
-    for(let i=-1;i<=3;i++){
-
-        const start =
-            year+i;
-
-        const end =
-            start+1;
-
-        select.innerHTML +=
-        `<option value="${start}">
-            ${start}/${end}
-        </option>`;
-
-    }
-
-}
-  </script>
+    
 
 
 
@@ -218,3 +178,55 @@ disabled>
 
 </div>
 
+    <script type="module">
+
+import { createClient }
+from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabase = createClient(
+    'https://elmxwpwhyewgjlvoadtb.supabase.co',
+    'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
+);
+
+        
+  function loadAcademicYears(){
+
+    const select =
+        document.getElementById("yearFilter");
+
+    const now =
+        new Date();
+
+    const year =
+        now.getMonth() >= 9
+        ? now.getFullYear()
+        : now.getFullYear()-1;
+
+    for(let i=-1;i<=3;i++){
+
+        const start =
+            year+i;
+
+        const end =
+            start+1;
+
+        select.innerHTML +=
+        `<option value="${start}">
+            ${start}/${end}
+        </option>`;
+
+    }
+
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    loadAcademicYears();
+
+});
+
+        
+  </script>
