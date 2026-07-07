@@ -1043,6 +1043,21 @@ END:VCALENDAR`;
 
 }
 
+    window.openICS = function(){
+
+    const blob =
+        createICSBlob();
+
+    const url =
+        URL.createObjectURL(blob);
+
+    window.open(
+        url,
+        "_blank"
+    );
+
+}
+
 window.exportSubjectExcel = function () {
 
     const wb = XLSX.utils.book_new();
