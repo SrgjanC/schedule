@@ -167,11 +167,11 @@ border-radius:8px;
 </button>
 
 <button onclick="shareICS()">
-📱 Mobile Calendar
+📱 Phone / Tablet
 </button>
 
 <button onclick="downloadICS()">
-💾 Download (PC / Mac)
+💾 PC / Mac
 </button>
 
 </div>
@@ -1036,6 +1036,57 @@ END:VCALENDAR`;
         currentCalendarEvent.subject + ".ics";
 
     a.click();
+
+}
+
+
+    window.shareICS = async function(){
+
+    const blob =
+        createICSBlob();
+
+    const file =
+        new File(
+            [blob],
+            currentCalendarEvent.subject + ".ics",
+            {
+                type:"text/calendar"
+            }
+        );
+
+    if(
+        navigator.canShare &&
+        navigator.canShare({files:[file]})
+    ){
+
+        try{
+
+            await navigator.share({
+
+                title:
+                    currentCalendarEvent.subject,
+
+                text:
+                    "Add lecture to calendar",
+
+                files:[file]
+
+            });
+
+        }
+        catch(err){
+
+            console.log(err);
+
+        }
+
+    }
+    else{
+
+        // fallback
+        downloadICS();
+
+    }
 
 }
 
