@@ -194,6 +194,8 @@ const supabase = createClient(
     const select =
         document.getElementById("yearFilter");
 
+      select.innerHTML = "";
+
     const now =
         new Date();
 
@@ -219,12 +221,45 @@ const supabase = createClient(
 
 }
 
+async function loadPrograms(){
+
+    const select =
+        document.getElementById("programFilter");
+
+    select.innerHTML =
+        `<option value="">-- Select Program --</option>`;
+
+    const { data, error } =
+        await supabase
+        .from("programs")
+        .select("*")
+        .order("name");
+
+    if(error){
+
+        alert(error.message);
+        return;
+
+    }
+
+    data.forEach(program=>{
+
+        select.innerHTML += `
+            <option value="${program.id}">
+                ${program.name}
+            </option>
+        `;
+
+    });
+
+}
 
 
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     loadAcademicYears();
+
+    await loadPrograms();
 
 });
 
