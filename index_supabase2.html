@@ -1041,8 +1041,7 @@ END:VCALENDAR`;
 
 
     window.shareICS = async function(){
-console.log("navigator.share:", navigator.share);
-console.log("navigator.canShare:", navigator.canShare);
+
     const blob =
         createICSBlob();
 
@@ -1051,7 +1050,7 @@ console.log("navigator.canShare:", navigator.canShare);
             [blob],
             currentCalendarEvent.subject + ".ics",
             {
-                type:"text/calendar"
+                type:"application/ics"
             }
         );
 
