@@ -675,15 +675,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await loadPrograms();
 
-    document
+document
 .getElementById("programFilter")
 .addEventListener(
     "change",
-    async ()=>{
+    async () => {
 
         await loadSemesters();
 
-        document.getElementById("subjects").innerHTML="";
+        // Reset semester selection
+        document.getElementById("semesterFilter").value = "";
+
+        // Load all subjects for the selected program
+        await loadSubjects();
 
     }
 );
