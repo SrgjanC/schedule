@@ -166,16 +166,12 @@ border-radius:8px;
 🟢 Google Calendar
 </button>
 
-<button onclick="openICS()">
-🔵 Outlook / Apple Calendar
-</button>
-
 <button onclick="shareICS()">
-📱 Android / iPhone
+📱 Mobile Calendar
 </button>
 
 <button onclick="downloadICS()">
-💾 Download .ics
+💾 Download (PC / Mac)
 </button>
 
 </div>
@@ -1040,6 +1036,41 @@ END:VCALENDAR`;
         currentCalendarEvent.subject + ".ics";
 
     a.click();
+
+}
+
+    window.openGoogleCalendar = function(){
+
+    const lecture =
+        getLectureTimes(currentCalendarEvent);
+
+    const start =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        lecture.start.replace(":","") +
+        "00";
+
+    const end =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        lecture.end.replace(":","") +
+        "00";
+
+    const details =
+`Програма: ${currentCalendarEvent.program}
+
+Професор: ${currentCalendarEvent.professorName}
+
+Тип: ${currentCalendarEvent.type}`;
+
+    const url =
+`https://calendar.google.com/calendar/render?action=TEMPLATE
+&text=${encodeURIComponent(currentCalendarEvent.subject)}
+&dates=${start}/${end}
+&location=${encodeURIComponent(currentCalendarEvent.room)}
+&details=${encodeURIComponent(details)}`.replace(/\n/g,"");
+
+    window.open(url,"_blank");
 
 }
 
