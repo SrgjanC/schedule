@@ -976,20 +976,20 @@ document.getElementById(
     if(!currentCalendarEvent)
         return;
 
-    const start =
-        currentCalendarEvent.date.replace(/-/g,"") +
-        "T" +
-        currentCalendarEvent.time.replace(":","") +
-        "00";
+    const lecture =
+    getLectureTimes(currentCalendarEvent);
 
-    const end =
-        currentCalendarEvent.date.replace(/-/g,"") +
-        "T" +
-        addHours(
-            currentCalendarEvent.time,
-            2
-        ).replace(":","") +
-        "00";
+const start =
+    currentCalendarEvent.date.replace(/-/g,"") +
+    "T" +
+    lecture.start.replace(":","") +
+    "00";
+
+const end =
+    currentCalendarEvent.date.replace(/-/g,"") +
+    "T" +
+    lecture.end.replace(":","") +
+    "00";
 
     const text = `BEGIN:VCALENDAR
 VERSION:2.0
