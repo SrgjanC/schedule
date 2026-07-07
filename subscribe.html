@@ -112,7 +112,139 @@ button:disabled{
     cursor:not-allowed;
 
 }
+.selectAllBox{
 
+    margin-bottom:20px;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid #ddd;
+
+}
+
+.instituteHeader{
+
+    margin-top:18px;
+
+    margin-bottom:10px;
+
+    padding:10px 15px;
+
+    border-radius:8px;
+
+    color:white;
+
+    font-weight:bold;
+
+    font-size:15px;
+
+}
+
+.subjectCard{
+
+    display:flex;
+
+    gap:12px;
+
+    align-items:flex-start;
+
+    padding:12px;
+
+    margin-bottom:10px;
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+    background:white;
+
+}
+
+.subjectCard:hover{
+
+    background:#f8fbff;
+
+    border-color:#3f69b1;
+
+    transform:translateY(-2px);
+
+}
+
+.subjectCard input{
+
+    margin-top:6px;
+
+}
+
+.subjectInfo{
+
+    flex:1;
+
+}
+
+.subjectTitle{
+
+    font-weight:bold;
+
+    margin-bottom:8px;
+
+    color:#333;
+
+}
+
+.subjectMeta{
+
+    display:flex;
+
+    gap:10px;
+
+    flex-wrap:wrap;
+
+}
+
+.badgeMandatory{
+
+    background:#d1fae5;
+
+    color:#065f46;
+
+    padding:4px 10px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+}
+
+.badgeElective{
+
+    background:#dbeafe;
+
+    color:#1e40af;
+
+    padding:4px 10px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+}
+
+.badgeCredits{
+
+    background:#f3f4f6;
+
+    padding:4px 10px;
+
+    border-radius:20px;
+
+    font-size:12px;
+
+}
 </style>
 
 </head>
@@ -188,6 +320,35 @@ const supabase = createClient(
     'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
 );
 
+    const INSTITUTE_INFO = {
+
+    "ИФТ":{
+        name:"Институт за фармацевтска технологија",
+        color:"#4F46E5"
+    },
+
+    "ИХ":{
+        name:"Институт за хемија",
+        color:"#059669"
+    },
+
+    "ИБ":{
+        name:"Институт за биологија",
+        color:"#0891B2"
+    },
+
+    "ИФ":{
+        name:"Институт за фармакологија",
+        color:"#DC2626"
+    },
+
+    "ИФК":{
+        name:"Институт за фармакогнозија",
+        color:"#CA8A04"
+    }
+
+};
+        
         
   function loadAcademicYears(){
 
@@ -300,7 +461,7 @@ async function loadPrograms(){
 
 }
 
-        async function loadSubjects(){
+async function loadSubjects(){
 
     const programId =
         document.getElementById("programFilter").value;
@@ -322,11 +483,12 @@ async function loadPrograms(){
         .select(`
             id,
             name,
-            institute
+            institute,
+            credits,
+            mandatory
         `)
         .eq("program_id", programId)
-        .eq("semester", semester)
-        .order("name");
+        .eq("semester", semester);
 
     if(error){
 
@@ -335,38 +497,117 @@ async function loadPrograms(){
 
     }
 
-    // Select All
-    container.innerHTML += `
-        <div class="subject">
+    data.sort((a,b)=>{
+
+        if(a.institute!==b.institute){
+
+            return a.institute.localeCompare(
+                b.institute,
+                "mk"
+            );
+
+        }
+
+        return a.name.localeCompare(
+            b.name,
+            "mk"
+        );
+
+    });
+
+    container.innerHTML=`
+
+        <div class="selectAllBox">
+
             <label>
+
                 <input
                     type="checkbox"
-                    id="checkAllSubjects"
-                >
-                <b>Select All</b>
+                    id="checkAllSubjects">
+
+                <b>Select All Subjects</b>
+
             </label>
+
         </div>
-        <hr>
+
     `;
+
+    let currentInstitute="";
 
     data.forEach(subject=>{
 
+        if(subject.institute!==currentInstitute){
+
+            currentInstitute=subject.institute;
+
+            const info=
+                INSTITUTE_INFO[currentInstitute] || {
+
+                    name:currentInstitute,
+                    color:"#6b7280"
+
+                };
+
+            container.innerHTML += `
+
+                <div
+                    class="instituteHeader"
+                    style="background:${info.color}">
+
+                    ${info.name}
+
+                </div>
+
+            `;
+
+        }
+
         container.innerHTML += `
-            <div class="subject">
 
-                <label>
+        <label class="subjectCard">
 
-                    <input
-                        type="checkbox"
-                        class="subjectCheck"
-                        value="${subject.id}"
-                    >
+            <input
+                type="checkbox"
+                class="subjectCheck"
+                value="${subject.id}">
+
+            <div class="subjectInfo">
+
+                <div class="subjectTitle">
 
                     ${subject.name}
 
-                </label>
+                </div>
+
+                <div class="subjectMeta">
+
+                    <span class="${
+                        subject.mandatory
+                        ?"badgeMandatory"
+                        :"badgeElective"
+                    }">
+
+                        ${
+                            subject.mandatory
+                            ?"Mandatory"
+                            :"Elective"
+                        }
+
+                    </span>
+
+                    <span class="badgeCredits">
+
+                        🎓 ${subject.credits} ECTS
+
+                    </span>
+
+                </div>
 
             </div>
+
+        </label>
+
         `;
 
     });
@@ -374,7 +615,10 @@ async function loadPrograms(){
     initSubjectSelection();
 
 }
-        function initSubjectSelection(){
+
+
+        
+function initSubjectSelection(){
 
     const all =
         document.getElementById(
@@ -386,15 +630,19 @@ async function loadPrograms(){
             ".subjectCheck"
         );
 
-    all.addEventListener("change",()=>{
+    if(all){
 
-        checks.forEach(c=>{
+        all.addEventListener("change",()=>{
 
-            c.checked = all.checked;
+            checks.forEach(c=>{
+
+                c.checked = all.checked;
+
+            });
 
         });
 
-    });
+    }
 
 }
 
