@@ -160,9 +160,25 @@ border-radius:8px;
 
 <br>
 
-<button onclick="downloadICS()">
-📅 Add to Calendar
+<div style="margin-top:20px">
+
+<button onclick="openGoogleCalendar()">
+🟢 Google Calendar
 </button>
+
+<button onclick="openICS()">
+🔵 Outlook / Apple Calendar
+</button>
+
+<button onclick="shareICS()">
+📱 Android / iPhone
+</button>
+
+<button onclick="downloadICS()">
+💾 Download .ics
+</button>
+
+</div>
 
 <button onclick="closeCalendarModal()">
 Close
@@ -972,25 +988,22 @@ document.getElementById(
 }
 
 
-    window.downloadICS = function(){
-
-    if(!currentCalendarEvent)
-        return;
+    function createICSBlob() {
 
     const lecture =
-    getLectureTimes(currentCalendarEvent);
+        getLectureTimes(currentCalendarEvent);
 
-const start =
-    currentCalendarEvent.date.replace(/-/g,"") +
-    "T" +
-    lecture.start.replace(":","") +
-    "00";
+    const start =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        lecture.start.replace(":","") +
+        "00";
 
-const end =
-    currentCalendarEvent.date.replace(/-/g,"") +
-    "T" +
-    lecture.end.replace(":","") +
-    "00";
+    const end =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        lecture.end.replace(":","") +
+        "00";
 
     const text = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -1003,13 +1016,19 @@ DESCRIPTION:Програма: ${currentCalendarEvent.program}\\nПрофесор
 END:VEVENT
 END:VCALENDAR`;
 
+    return new Blob(
+        [text],
+        {
+            type:"text/calendar"
+        }
+    );
+
+}
+
+    window.downloadICS = function(){
+
     const blob =
-        new Blob(
-            [text],
-            {
-                type:"text/calendar"
-            }
-        );
+        createICSBlob();
 
     const a =
         document.createElement("a");
