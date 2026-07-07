@@ -377,6 +377,23 @@ function capitalize(text) {
         === date
     );
 }
+
+function addHours(time, hours){
+
+    const [h,m] = time.split(":").map(Number);
+
+    const d = new Date();
+
+    d.setHours(h,m,0,0);
+
+    d.setHours(d.getHours()+hours);
+
+    return d.toTimeString().substring(0,5);
+
+}
+
+
+    
 // ================= LOAD =================
 
 async function load() {
@@ -915,7 +932,59 @@ document.getElementById(
 ).style.display="none";
 
 }
-    
+
+
+    window.downloadICS = function(){
+
+    if(!currentCalendarEvent)
+        return;
+
+    const start =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        currentCalendarEvent.time.replace(":","") +
+        "00";
+
+    const end =
+        currentCalendarEvent.date.replace(/-/g,"") +
+        "T" +
+        addHours(
+            currentCalendarEvent.time,
+            2
+        ).replace(":","") +
+        "00";
+
+    const text = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+SUMMARY:${currentCalendarEvent.subject}
+DTSTART:${start}
+DTEND:${end}
+LOCATION:${currentCalendarEvent.room}
+DESCRIPTION:Програма: ${currentCalendarEvent.program}\\nПрофесор: ${currentCalendarEvent.professorName}\\nТип: ${currentCalendarEvent.type}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob =
+        new Blob(
+            [text],
+            {
+                type:"text/calendar"
+            }
+        );
+
+    const a =
+        document.createElement("a");
+
+    a.href =
+        URL.createObjectURL(blob);
+
+    a.download =
+        currentCalendarEvent.subject + ".ics";
+
+    a.click();
+
+}
 
 window.exportSubjectExcel = function () {
 
