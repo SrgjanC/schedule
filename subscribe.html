@@ -228,6 +228,9 @@ button:disabled{
 }
 </style>
 
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
 </head>
 
 <body>
@@ -301,6 +304,9 @@ const supabase = createClient(
     'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd'
 );
 
+
+let professorSelect = null;
+    
     const INSTITUTE_INFO = {
 
     "ИФТ":{
@@ -669,6 +675,133 @@ function initSubjectSelection(){
 
 }
 
+
+async function loadProfessors() {
+
+    const programId =
+        document.getElementById("programFilter").value;
+
+    const semester =
+        document.getElementById("semesterFilter").value;
+
+    const select =
+        document.getElementById("professorFilter");
+
+    if (!programId)
+        return;
+
+    // Selected subjects
+    const selectedSubjects =
+        [...document.querySelectorAll(".subjectCheck:checked")]
+        .map(c => Number(c.value));
+
+    let query =
+        supabase
+        .from("events")
+        .select(`
+            professor_id,
+            professors (
+                id,
+                name
+            ),
+            subjects!inner(
+                program_id,
+                semester
+            )
+        `)
+        .eq("subjects.program_id", programId);
+
+    if (semester) {
+
+        query =
+            query.eq(
+                "subjects.semester",
+                semester
+            );
+
+    }
+
+    if (selectedSubjects.length > 0) {
+
+        query =
+            query.in(
+                "subject_id",
+                selectedSubjects
+            );
+
+    }
+
+    const { data, error } =
+        await query;
+
+    if (error) {
+
+        console.error(error);
+
+        return;
+
+    }
+
+    const unique = [];
+
+    data.forEach(row => {
+
+        if (!row.professors)
+            return;
+
+        if (
+            !unique.find(
+                p => p.id === row.professors.id
+            )
+        ) {
+
+            unique.push(row.professors);
+
+        }
+
+    });
+
+    unique.sort((a, b) =>
+        a.name.localeCompare(
+            b.name,
+            "mk"
+        )
+    );
+
+    select.innerHTML =
+        `<option value="">All Professors</option>`;
+
+    unique.forEach(p => {
+
+        select.innerHTML += `
+<option value="${p.id}">
+${p.name}
+</option>
+`;
+
+    });
+
+    if (professorSelect) {
+
+        professorSelect.destroy();
+
+    }
+
+    professorSelect =
+        new TomSelect(
+            "#professorFilter",
+            {
+                create:false,
+                allowEmptyOption:true,
+                placeholder:"Search professor..."
+            }
+        );
+
+}
+
+
+        
+
 document.addEventListener("DOMContentLoaded", async () => {
 
     loadAcademicYears();
@@ -688,6 +821,7 @@ document
 
         // Load all subjects for the selected program
         await loadSubjects();
+        await loadProfessors();
 
     }
 );
@@ -696,7 +830,13 @@ document
 .getElementById("semesterFilter")
 .addEventListener(
     "change",
-    loadSubjects
+    async () => {
+
+        await loadSubjects();
+
+        await loadProfessors();
+
+    }
 );
 
 });
