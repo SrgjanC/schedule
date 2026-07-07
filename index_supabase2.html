@@ -507,6 +507,7 @@ else {
     time: e.event_time?.substring(0,5),
 
     room: e.rooms?.name || "",
+        
  subjectId: e.subjects?.id || 0,
     subject: e.subjects?.name || "",
     semester: e.subjects?.semester || "",
@@ -920,7 +921,7 @@ ${currentCalendarEvent.type}
     document.getElementById(
         "calendarModal"
     ).style.display="block";
-
+console.log(currentCalendarEvent);
 }
 
 
