@@ -254,12 +254,65 @@ async function loadPrograms(){
 
 }
 
+        async function loadSemesters(){
+
+    const programId =
+        document.getElementById("programFilter").value;
+
+    const select =
+        document.getElementById("semesterFilter");
+
+    select.innerHTML =
+        `<option value="">-- Select Semester --</option>`;
+
+    if(!programId)
+        return;
+
+    const { data, error } =
+        await supabase
+        .from("subjects")
+        .select("semester")
+        .eq("program_id", programId)
+        .order("semester");
+
+    if(error){
+
+        alert(error.message);
+        return;
+
+    }
+
+    // remove duplicates
+    const semesters =
+        [...new Set(
+            data.map(s => s.semester)
+        )];
+
+    semesters.forEach(semester=>{
+
+        select.innerHTML += `
+            <option value="${semester}">
+                Semester ${semester}
+            </option>
+        `;
+
+    });
+
+}
+
 
 document.addEventListener("DOMContentLoaded", async () => {
 
     loadAcademicYears();
 
     await loadPrograms();
+
+    document
+    .getElementById("programFilter")
+    .addEventListener(
+        "change",
+        loadSemesters
+    );
 
 });
 
