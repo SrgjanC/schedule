@@ -876,11 +876,47 @@ html += `
 
 
 // CALENDAR POPUP FUNCTIONS HERE
-window.showCalendarPopup = function(id){
+function getLectureTimes(event) {
+
+    // All events for the same subject, date and room
+    const rows = events
+        .filter(e =>
+            e.subjectId === event.subjectId &&
+            e.date === event.date &&
+            e.room === event.room
+        )
+        .sort((a,b) => a.time.localeCompare(b.time));
+
+    if(rows.length === 0)
+        return null;
+
+    const start = rows[0].time;
+
+    // last scheduled hour
+    const last = rows[rows.length - 1].time;
+
+    // add one hour to get the finish time
+    const end = addHours(last, 1);
+
+    return {
+        start,
+        end,
+        count: rows.length
+    };
+
+}
+
+    
+    window.showCalendarPopup = function(id){
 
     currentCalendarEvent =
         events.find(e=>e.id==id);
+const lecture =
+    getLectureTimes(currentCalendarEvent);
 
+console.log(lecture);
+
+        
     if(!currentCalendarEvent)
         return;
 
