@@ -112,137 +112,102 @@ button:disabled{
     cursor:not-allowed;
 
 }
-.selectAllBox{
 
-    margin-bottom:20px;
+    /* Subject toolbar */
 
-    padding-bottom:10px;
-
-    border-bottom:1px solid #ddd;
-
-}
-
-.instituteHeader{
-
-    margin-top:18px;
-
-    margin-bottom:10px;
-
-    padding:10px 15px;
-
-    border-radius:8px;
-
-    color:white;
-
-    font-weight:bold;
-
-    font-size:15px;
-
-}
-
-.subjectCard{
+.subjectToolbar{
 
     display:flex;
-
-    gap:12px;
-
-    align-items:flex-start;
-
-    padding:12px;
-
+    justify-content:space-between;
+    align-items:center;
     margin-bottom:10px;
-
-    border:1px solid #ddd;
-
-    border-radius:10px;
-
-    cursor:pointer;
-
-    transition:.2s;
-
-    background:white;
+    gap:10px;
+    flex-wrap:wrap;
 
 }
 
-.subjectCard:hover{
-
-    background:#f8fbff;
-
-    border-color:#3f69b1;
-
-    transform:translateY(-2px);
-
-}
-
-.subjectCard input{
-
-    margin-top:6px;
-
-}
-
-.subjectInfo{
+#subjectSearch{
 
     flex:1;
+    min-width:220px;
+    padding:8px 12px;
+    border:1px solid #ccc;
+    border-radius:6px;
 
 }
 
-.subjectTitle{
+#selectedCount{
 
-    font-weight:bold;
-
-    margin-bottom:8px;
-
-    color:#333;
+    font-size:13px;
+    color:#666;
+    white-space:nowrap;
 
 }
 
-.subjectMeta{
+/* Subject row */
+
+.subjectRow{
 
     display:flex;
-
+    align-items:center;
     gap:10px;
+    padding:8px 10px;
+    border-bottom:1px solid #eee;
+    transition:.15s;
 
-    flex-wrap:wrap;
+}
+
+.subjectRow:hover{
+
+    background:#f7faff;
+
+}
+
+.subjectName{
+
+    flex:1;
+    font-size:14px;
+
+}
+
+.subjectBadge{
+
+    color:white;
+    font-size:11px;
+    font-weight:bold;
+    border-radius:12px;
+    padding:3px 8px;
+    min-width:42px;
+    text-align:center;
 
 }
 
 .badgeMandatory{
 
     background:#d1fae5;
-
     color:#065f46;
-
-    padding:4px 10px;
-
-    border-radius:20px;
-
-    font-size:12px;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
 
 }
 
 .badgeElective{
 
     background:#dbeafe;
-
     color:#1e40af;
-
-    padding:4px 10px;
-
-    border-radius:20px;
-
-    font-size:12px;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
 
 }
 
 .badgeCredits{
 
     background:#f3f4f6;
-
-    padding:4px 10px;
-
-    border-radius:20px;
-
-    font-size:12px;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
 
 }
 </style>
@@ -346,6 +311,15 @@ const supabase = createClient(
         name:"Институт за фармакогнозија",
         color:"#CA8A04"
     }
+
+};
+        const INSTITUTE_COLORS = {
+
+    "ИФТ":"#6D28D9",
+    "ИХ":"#16A34A",
+    "ИБ":"#0284C7",
+    "ИФ":"#DC2626",
+    "ИФК":"#D97706"
 
 };
         
@@ -463,22 +437,15 @@ async function loadPrograms(){
 
 async function loadSubjects(){
 
-    const programId =
-        document.getElementById("programFilter").value;
+    const programId=document.getElementById("programFilter").value;
+    const semester=document.getElementById("semesterFilter").value;
+    const container=document.getElementById("subjects");
 
-    const semester =
-        document.getElementById("semesterFilter").value;
+    container.innerHTML="";
 
-    const container =
-        document.getElementById("subjects");
+    if(!programId || !semester) return;
 
-    container.innerHTML = "";
-
-    if(!programId || !semester)
-        return;
-
-    const { data, error } =
-        await supabase
+    const {data,error}=await supabase
         .from("subjects")
         .select(`
             id,
@@ -487,8 +454,9 @@ async function loadSubjects(){
             credits,
             mandatory
         `)
-        .eq("program_id", programId)
-        .eq("semester", semester);
+        .eq("program_id",programId)
+        .eq("semester",semester)
+        .order("name");
 
     if(error){
 
@@ -497,118 +465,94 @@ async function loadSubjects(){
 
     }
 
-    data.sort((a,b)=>{
-
-        if(a.institute!==b.institute){
-
-            return a.institute.localeCompare(
-                b.institute,
-                "mk"
-            );
-
-        }
-
-        return a.name.localeCompare(
-            b.name,
-            "mk"
-        );
-
-    });
-
     container.innerHTML=`
 
-        <div class="selectAllBox">
+<div class="subjectToolbar">
 
-            <label>
+<label>
+<input
+type="checkbox"
+id="checkAllSubjects">
+Select All
+</label>
 
-                <input
-                    type="checkbox"
-                    id="checkAllSubjects">
+<div id="selectedCount">
 
-                <b>Select All Subjects</b>
+0 / ${data.length} selected
 
-            </label>
+</div>
 
-        </div>
+</div>
 
-    `;
+<input
+type="text"
+id="subjectSearch"
+placeholder="🔍 Search subjects...">
 
-    let currentInstitute="";
+<hr>
+
+<div id="subjectList"></div>
+
+`;
+
+    const list=document.getElementById("subjectList");
 
     data.forEach(subject=>{
 
-        if(subject.institute!==currentInstitute){
+        const color=
+            INSTITUTE_COLORS[subject.institute]
+            || "#666";
 
-            currentInstitute=subject.institute;
+        list.innerHTML+=`
 
-            const info=
-                INSTITUTE_INFO[currentInstitute] || {
+<label class="subjectRow">
 
-                    name:currentInstitute,
-                    color:"#6b7280"
+<input
+type="checkbox"
+class="subjectCheck"
+value="${subject.id}">
 
-                };
+<div class="subjectName">
 
-            container.innerHTML += `
+${subject.name}
 
-                <div
-                    class="instituteHeader"
-                    style="background:${info.color}">
+</div>
 
-                    ${info.name}
+<span
+class="subjectBadge"
+style="background:${color};">
 
-                </div>
+${subject.institute}
 
-            `;
+</span>
 
-        }
+<span class="badgeCredits">
 
-        container.innerHTML += `
+${subject.credits} ECTS
 
-        <label class="subjectCard">
+</span>
 
-            <input
-                type="checkbox"
-                class="subjectCheck"
-                value="${subject.id}">
+<span class="${
+subject.mandatory
+?
+"badgeMandatory"
+:
+"badgeElective"
+}">
 
-            <div class="subjectInfo">
+${
+subject.mandatory
+?
+"Mandatory"
+:
+"Elective"
+}
 
-                <div class="subjectTitle">
+</span>
 
-                    ${subject.name}
+</label>
 
-                </div>
-
-                <div class="subjectMeta">
-
-                    <span class="${
-                        subject.mandatory
-                        ?"badgeMandatory"
-                        :"badgeElective"
-                    }">
-
-                        ${
-                            subject.mandatory
-                            ?"Mandatory"
-                            :"Elective"
-                        }
-
-                    </span>
-
-                    <span class="badgeCredits">
-
-                        🎓 ${subject.credits} ECTS
-
-                    </span>
-
-                </div>
-
-            </div>
-
-        </label>
-
-        `;
+`;
 
     });
 
@@ -620,29 +564,73 @@ async function loadSubjects(){
         
 function initSubjectSelection(){
 
-    const all =
-        document.getElementById(
-            "checkAllSubjects"
+    const all=document.getElementById("checkAllSubjects");
+
+    const checks=document.querySelectorAll(".subjectCheck");
+
+    const counter=document.getElementById("selectedCount");
+
+    const search=document.getElementById("subjectSearch");
+
+    function updateCounter(){
+
+        const selected=[...checks]
+            .filter(c=>c.checked).length;
+
+        counter.innerText=
+            `${selected} / ${checks.length} selected`;
+
+        all.checked=
+            selected===checks.length;
+
+    }
+
+    checks.forEach(c=>{
+
+        c.addEventListener(
+            "change",
+            updateCounter
         );
 
-    const checks =
-        document.querySelectorAll(
-            ".subjectCheck"
-        );
+    });
 
-    if(all){
+    all.addEventListener("change",()=>{
 
-        all.addEventListener("change",()=>{
+        checks.forEach(c=>{
 
-            checks.forEach(c=>{
+            if(c.closest(".subjectRow").style.display!=="none"){
 
-                c.checked = all.checked;
+                c.checked=all.checked;
 
-            });
+            }
 
         });
 
-    }
+        updateCounter();
+
+    });
+
+    search.addEventListener("input",()=>{
+
+        const term=
+            search.value.toLowerCase();
+
+        document
+        .querySelectorAll(".subjectRow")
+        .forEach(row=>{
+
+            row.style.display=
+                row.innerText
+                .toLowerCase()
+                .includes(term)
+                ? "flex"
+                : "none";
+
+        });
+
+    });
+
+    updateCounter();
 
 }
 
