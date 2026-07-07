@@ -881,9 +881,10 @@ function getLectureTimes(event) {
     // All events for the same subject, date and room
     const rows = events
         .filter(e =>
-            e.subjectId === event.subjectId &&
-            e.date === event.date &&
-            e.room === event.room
+        e.subjectId === event.subjectId &&
+        e.date === event.date &&
+        e.room === event.room &&
+        e.type === event.type
         )
         .sort((a,b) => a.time.localeCompare(b.time));
 
