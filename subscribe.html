@@ -300,6 +300,103 @@ async function loadPrograms(){
 
 }
 
+        async function loadSubjects(){
+
+    const programId =
+        document.getElementById("programFilter").value;
+
+    const semester =
+        document.getElementById("semesterFilter").value;
+
+    const container =
+        document.getElementById("subjects");
+
+    container.innerHTML = "";
+
+    if(!programId || !semester)
+        return;
+
+    const { data, error } =
+        await supabase
+        .from("subjects")
+        .select(`
+            id,
+            name,
+            institute
+        `)
+        .eq("program_id", programId)
+        .eq("semester", semester)
+        .order("name");
+
+    if(error){
+
+        alert(error.message);
+        return;
+
+    }
+
+    // Select All
+    container.innerHTML += `
+        <div class="subject">
+            <label>
+                <input
+                    type="checkbox"
+                    id="checkAllSubjects"
+                >
+                <b>Select All</b>
+            </label>
+        </div>
+        <hr>
+    `;
+
+    data.forEach(subject=>{
+
+        container.innerHTML += `
+            <div class="subject">
+
+                <label>
+
+                    <input
+                        type="checkbox"
+                        class="subjectCheck"
+                        value="${subject.id}"
+                    >
+
+                    ${subject.name}
+
+                </label>
+
+            </div>
+        `;
+
+    });
+
+    initSubjectSelection();
+
+}
+        function initSubjectSelection(){
+
+    const all =
+        document.getElementById(
+            "checkAllSubjects"
+        );
+
+    const checks =
+        document.querySelectorAll(
+            ".subjectCheck"
+        );
+
+    all.addEventListener("change",()=>{
+
+        checks.forEach(c=>{
+
+            c.checked = all.checked;
+
+        });
+
+    });
+
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -308,11 +405,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadPrograms();
 
     document
-    .getElementById("programFilter")
-    .addEventListener(
-        "change",
-        loadSemesters
-    );
+.getElementById("programFilter")
+.addEventListener(
+    "change",
+    async ()=>{
+
+        await loadSemesters();
+
+        document.getElementById("subjects").innerHTML="";
+
+    }
+);
+
+document
+.getElementById("semesterFilter")
+.addEventListener(
+    "change",
+    loadSubjects
+);
 
 });
 
