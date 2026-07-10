@@ -278,68 +278,51 @@ button:disabled{
     border-radius:10px;
     font-size:11px;
     font-weight:bold;
+}
 
 /* ---------- Live Preview ---------- */
 
 #previewStats{
-
     display:flex;
-
     gap:10px;
-
     margin-bottom:20px;
-
     flex-wrap:wrap;
-
 }
 
 .statCard{
-
     flex:1;
-
     min-width:150px;
-
     background:#f8fbff;
-
     border:1px solid #d8e5ff;
-
     border-radius:10px;
-
     padding:12px;
-
 }
 
 #previewList{
-
     border:1px solid #ddd;
-
     border-radius:8px;
-
     background:white;
-
     min-height:500px;
-
     max-height:700px;
-
     overflow:auto;
-
 }
 
 .emptyPreview{
-
     padding:40px;
-
     text-align:center;
-
     color:#777;
-
 }
 
 
-
-
-    
+.previewEvent{
+    padding:12px;
+    border-bottom:1px solid #eee;
 }
+
+.previewEvent:hover{
+    background:#f7fbff;
+}
+
 </style>
 
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
@@ -813,7 +796,8 @@ function initSubjectSelection(){
                 );
 
         });
-updatePreviewStats();
+        updatePreviewStats();
+        refreshPreview();
     }    
 
     checks.forEach(c=>{
@@ -1000,10 +984,284 @@ select.value = currentProfessor;
     
     professorSelect.on("change",()=>{
         updatePreviewStats();
+        refreshPreview();
     });
 }
 
+        async function getFilteredEvents(){
 
+    const programId =
+        document.getElementById("programFilter").value;
+
+    if(!programId)
+        return [];
+
+    const semester =
+        document.getElementById("semesterFilter").value;
+
+    const professorId =
+        document.getElementById("professorFilter").value;
+
+    const selectedSubjects =
+        [...document.querySelectorAll(".subjectCheck:checked")]
+        .map(c => Number(c.value));
+
+    let query =
+        supabase
+        .from("events")
+        .select(`
+            id,
+            event_date,
+            event_time,
+            type,
+            groups_text,
+
+            subjects!inner(
+                id,
+                name,
+                semester,
+                program_id
+            ),
+
+            professors(
+                id,
+                name
+            ),
+
+            rooms(
+                id,
+                name
+            )
+        `)
+        .eq(
+            "subjects.program_id",
+            programId
+        );
+
+    if(semester){
+
+        query =
+            query.eq(
+                "subjects.semester",
+                semester
+            );
+
+    }
+
+    if(selectedSubjects.length){
+
+        query =
+            query.in(
+                "subject_id",
+                selectedSubjects
+            );
+
+    }
+
+    if(professorId){
+
+        query =
+            query.eq(
+                "professor_id",
+                professorId
+            );
+
+    }
+
+    const {data,error} =
+        await query;
+
+    if(error){
+
+        console.error(error);
+
+        return [];
+
+    }
+
+    return data;
+
+}
+
+        async function refreshPreview(){
+
+    const events =
+        await getFilteredEvents();
+
+    console.log(events);
+
+}
+
+
+        async function loadPreview(){
+
+    const programId =
+        document.getElementById("programFilter").value;
+
+    if(!programId){
+
+        document.getElementById("previewEvents").innerText = "0";
+        document.getElementById("previewList").innerHTML =
+            `<div class="emptyPreview">
+                Select a program.
+            </div>`;
+
+        return;
+
+    }
+
+    const semester =
+        document.getElementById("semesterFilter").value;
+
+    const professor =
+        document.getElementById("professorFilter").value;
+
+    const selectedSubjects =
+        [...document.querySelectorAll(".subjectCheck:checked")]
+        .map(c => Number(c.value));
+
+    let query =
+        supabase
+        .from("events")
+        .select(`
+            *,
+            subjects(
+                name,
+                semester
+            ),
+            professors(
+                name
+            ),
+            rooms(
+                name
+            )
+        `);
+
+    if(selectedSubjects.length){
+
+        query =
+            query.in(
+                "subject_id",
+                selectedSubjects
+            );
+
+    }else{
+
+        // Filter by program using joined subjects
+        query =
+            query.eq(
+                "subjects.program_id",
+                programId
+            );
+
+        if(semester){
+
+            query =
+                query.eq(
+                    "subjects.semester",
+                    semester
+                );
+
+        }
+
+    }
+
+    if(professor){
+
+        query =
+            query.eq(
+                "professor_id",
+                professor
+            );
+
+    }
+
+    const { data, error } =
+        await query;
+
+    if(error){
+
+        console.error(error);
+
+        return;
+
+    }
+
+    document.getElementById(
+        "previewEvents"
+    ).innerText = data.length;
+
+    renderPreview(data);
+
+}
+
+function renderPreview(events){
+
+    const preview =
+        document.getElementById("previewList");
+
+    if(events.length===0){
+
+        preview.innerHTML = `
+        <div class="emptyPreview">
+
+            No matching events.
+
+        </div>
+        `;
+
+        return;
+
+    }
+
+    events.sort((a,b)=>{
+
+        if(a.event_date!==b.event_date){
+
+            return a.event_date.localeCompare(
+                b.event_date
+            );
+
+        }
+
+        return a.event_time.localeCompare(
+            b.event_time
+        );
+
+    });
+
+    preview.innerHTML="";
+
+    events.slice(0,50).forEach(event=>{
+        preview.innerHTML += `
+            <div class="previewEvent">
+                <div>
+                    <strong>
+                        ${event.event_date}
+                    </strong>
+                    &nbsp;
+                    ${event.event_time.substring(0,5)}
+                </div>
+                <div>
+                    ${event.subjects?.name || ""}
+                </div>
+                <div style="font-size:12px;color:#666;">
+                    ${event.type}
+                    &nbsp;
+                    •
+                    &nbsp;
+                    ${event.rooms?.name || ""}
+                    &nbsp;
+                    •
+                    &nbsp;
+                    ${event.professors?.name || ""}
+                </div>
+            </div>
+        `;
+
+    });
+
+}
         
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1026,6 +1284,7 @@ document
         // Load all subjects for the selected program
         await loadSubjects();
         await loadProfessors();
+        await refreshPreview();
 
     }
 );
@@ -1037,8 +1296,8 @@ document
     async () => {
 
         await loadSubjects();
-
         await loadProfessors();
+        await refreshPreview();
 
     }
 );
