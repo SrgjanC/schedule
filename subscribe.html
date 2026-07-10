@@ -9,266 +9,196 @@
 <style>
 
 body{
-
-    font-family:Arial;
+    font-family: Arial, sans-serif;
     background:#f4f6fb;
     margin:30px;
-
 }
 
+/* ==========================
+   Layout
+========================== */
+
 .container{
-
     max-width:1500px;
-
     margin:auto;
-
-    background:white;
-
+    background:#fff;
     padding:25px;
-
     border-radius:10px;
-
     box-shadow:0 0 10px rgba(0,0,0,.08);
-
 }
 
 .mainLayout{
-
     display:grid;
-
     grid-template-columns:420px 1fr;
-
     gap:25px;
-
     align-items:start;
-
 }
 
 .leftPanel{
-
     display:flex;
-
     flex-direction:column;
-
     gap:18px;
-
 }
 
 .rightPanel{
-
     border-left:1px solid #ddd;
-
     padding-left:25px;
+}
+
+@media (max-width:1000px){
+
+    .mainLayout{
+        grid-template-columns:1fr;
+    }
+
+    .rightPanel{
+        border-left:none;
+        border-top:1px solid #ddd;
+        padding-left:0;
+        padding-top:20px;
+    }
 
 }
 
-@media(max-width:1000px){
+/* ==========================
+   General
+========================== */
 
-.mainLayout{
-
-    grid-template-columns:1fr;
-
-}
-
-.rightPanel{
-
-    border-left:none;
-
-    border-top:1px solid #ddd;
-
-    padding-left:0;
-
-    padding-top:20px;
-
-}
-
-}
-    
 h2{
-
     margin-top:0;
-
     color:#3f69b1;
-
 }
 
 .section{
-
     margin-bottom:25px;
-
 }
 
 label{
-
     display:block;
-
     margin-bottom:6px;
-
     font-weight:bold;
-
 }
 
 select{
-
     width:100%;
-
     padding:8px;
-
     font-size:14px;
-
-}
-
-#subjects{
-
-    border:1px solid #ddd;
-
-    border-radius:6px;
-
-    padding:10px;
-
-    max-height:320px;
-
-    overflow:auto;
-
-    background:white;
-
-}
-
-.subject{
-
-    padding:6px;
-
 }
 
 button{
-
     background:#3f69b1;
-
-    color:white;
-
+    color:#fff;
     border:none;
-
     padding:12px 20px;
-
     border-radius:6px;
-
     font-size:15px;
-
     cursor:pointer;
-
 }
 
 button:disabled{
-
     background:#999;
-
     cursor:not-allowed;
-
 }
 
-    /* Subject toolbar */
+/* ==========================
+   Subjects
+========================== */
+
+#subjects{
+    border:1px solid #ddd;
+    border-radius:6px;
+    padding:10px;
+    max-height:320px;
+    overflow:auto;
+    background:#fff;
+}
+
+.subject{
+    padding:6px;
+}
 
 .subjectToolbar{
-
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:10px;
     gap:10px;
+    margin-bottom:10px;
     flex-wrap:wrap;
-
 }
 
 #subjectSearch{
-
     flex:1;
     min-width:220px;
     padding:8px 12px;
     border:1px solid #ccc;
     border-radius:6px;
-
 }
 
 #selectedCount{
-
     font-size:13px;
     color:#666;
     white-space:nowrap;
-
 }
 
-/* Subject row */
-
 .subjectRow{
-
     display:flex;
     align-items:center;
     gap:10px;
     padding:8px 10px;
     border-bottom:1px solid #eee;
     transition:.15s;
-
 }
 
 .subjectRow:hover{
-
     background:#f7faff;
-
-}
-
-.subjectName{
-
-    flex:1;
-    font-size:14px;
-
-}
-
-.subjectBadge{
-
-    color:white;
-    font-size:11px;
-    font-weight:bold;
-    border-radius:12px;
-    padding:3px 8px;
-    min-width:42px;
-    text-align:center;
-
-}
-
-.badgeMandatory{
-
-    background:#d1fae5;
-    color:#065f46;
-    padding:3px 8px;
-    border-radius:10px;
-    font-size:11px;
-
-}
-
-.badgeElective{
-
-    background:#dbeafe;
-    color:#1e40af;
-    padding:3px 8px;
-    border-radius:10px;
-    font-size:11px;
-
-}
-
-.badgeCredits{
-
-    background:#f3f4f6;
-    padding:3px 8px;
-    border-radius:10px;
-    font-size:11px;
-
 }
 
 .subjectRow.selected{
     background:#e8f2ff;
     border-left:4px solid #3f69b1;
     padding-left:6px;
+}
 
+.subjectName{
+    flex:1;
+    font-size:14px;
+}
+
+/* ==========================
+   Badges
+========================== */
+
+.subjectBadge{
+    color:#fff;
+    font-size:11px;
+    font-weight:bold;
+    border-radius:12px;
+    padding:3px 8px;
+    min-width:42px;
+    text-align:center;
+}
+
+.badgeMandatory{
+    background:#d1fae5;
+    color:#065f46;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
+}
+
+.badgeElective{
+    background:#dbeafe;
+    color:#1e40af;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
+}
+
+.badgeCredits{
+    background:#f3f4f6;
+    padding:3px 8px;
+    border-radius:10px;
+    font-size:11px;
 }
 
 .badgeSemester{
@@ -280,28 +210,42 @@ button:disabled{
     font-weight:bold;
 }
 
-/* ---------- Live Preview ---------- */
+/* ==========================
+   Preview Header
+========================== */
 
-#previewStats{
+#previewHeader{
     display:flex;
-    gap:10px;
-    margin-bottom:20px;
-    flex-wrap:wrap;
+    flex-direction:column;
+    gap:15px;
+    margin-bottom:25px;
 }
 
-.statCard{
-    flex:1;
-    min-width:150px;
-    background:#f8fbff;
-    border:1px solid #d8e5ff;
+.previewCard{
+    background:#f9fbff;
+    border:1px solid #dde7ff;
     border-radius:10px;
-    padding:12px;
+    padding:15px;
 }
+
+.previewCard h4{
+    margin:0 0 10px;
+    color:#3f69b1;
+}
+
+.previewSubjectItem{
+    padding:4px 0;
+    font-size:14px;
+}
+
+/* ==========================
+   Preview Events
+========================== */
 
 #previewList{
     border:1px solid #ddd;
     border-radius:8px;
-    background:white;
+    background:#fff;
     min-height:500px;
     max-height:700px;
     overflow:auto;
@@ -313,108 +257,38 @@ button:disabled{
     color:#777;
 }
 
-
 .previewEvent{
-    padding:12px;
-    border-bottom:1px solid #eee;
-}
-
-.previewEvent:hover{
-    background:#f7fbff;
-}
-
-#previewHeader{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:15px;
-
-    margin-bottom:25px;
-
-}
-
-.previewCard{
-
-    background:#f9fbff;
-
-    border:1px solid #dde7ff;
-
-    border-radius:10px;
-
-    padding:15px;
-
-}
-
-.previewCard h4{
-
-    margin:0 0 10px;
-
-    color:#3f69b1;
-
-}
-
-.previewSubjectItem{
-
-    padding:4px 0;
-
-    font-size:14px;
-
-}
-
-    .previewEvent{
-
     padding:14px;
-
     border-bottom:1px solid #ececec;
-
 }
 
 .previewEvent:hover{
-
     background:#f7fbff;
-
 }
 
 .previewDate{
-
     color:#3f69b1;
-
     font-weight:bold;
-
 }
 
 .previewSubject{
-
     margin-top:5px;
-
     font-weight:bold;
-
 }
 
 .previewInfo{
-
     margin-top:4px;
-
     color:#666;
-
     font-size:13px;
-
 }
 
 .previewMore{
-
     padding:20px;
-
     text-align:center;
-
     color:#777;
-
     font-style:italic;
-
 }
-    
+
 </style>
 
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
@@ -1494,62 +1368,7 @@ function mergeEvents(events){
 
 }
 
-        
-function renderPreview(events){
 
-    const preview =
-        document.getElementById("previewList");
-
-    if(events.length===0){
-
-        preview.innerHTML = `
-        <div class="emptyPreview">
-
-            No matching events.
-
-        </div>
-        `;
-
-        return;
-
-    }
-
-events=mergeEvents(events);
-
-    preview.innerHTML="";
-
-    events.slice(0,50).forEach(event=>{
-        preview.innerHTML += `
-            <div class="previewEvent">
-                <div>
-                    <strong>
-                        ${event.event_date}
-                    </strong>
-                    &nbsp;
-                    ${event.startTime.substring(0,5)}
-                    -
-                    ${addOneHour(event.endTime).substring(0,5)}
-                </div>
-                <div>
-                    ${event.subjects?.name || ""}
-                </div>
-                <div style="font-size:12px;color:#666;">
-                    ${event.type}
-                    &nbsp;
-                    •
-                    &nbsp;
-                    ${event.rooms?.name || ""}
-                    &nbsp;
-                    •
-                    &nbsp;
-                    ${event.professors?.name || ""}
-                </div>
-            </div>
-        `;
-
-    });
-
-}
         
 
 document.addEventListener("DOMContentLoaded", async () => {
