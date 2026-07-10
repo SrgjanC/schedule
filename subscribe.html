@@ -288,7 +288,24 @@ button:disabled{
     color:#777;
     font-style:italic;
 }
+    
+.previewDay{
+    position:sticky;
+    top:0;
+    background:#eef4ff;
+    color:#3f69b1;
+    font-weight:bold;
+    padding:10px 14px;
+    border-bottom:2px solid #d6e4ff;
+    z-index:1;
+}
 
+.previewTime{
+    font-size:15px;
+    font-weight:bold;
+    color:#3f69b1;
+    margin-bottom:5px;
+}
 </style>
 
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
@@ -1096,6 +1113,26 @@ async function refreshPreview(){
 
 }
 
+
+
+        function formatPreviewDate(dateString){
+
+    const d = new Date(dateString);
+
+    return d.toLocaleDateString(
+        "mk-MK",
+        {
+            weekday:"long",
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric"
+        }
+    );
+
+}
+
+
+        
 function renderPreview(events){
 
     const preview =
@@ -1137,17 +1174,31 @@ No matching events.
 
     });
 
-    events.slice(0,20).forEach(event=>{
+    let currentDate = "";
+
+events.slice(0,20).forEach(event=>{
+
+    if(currentDate !== event.event_date){
+
+        currentDate = event.event_date;
 
         preview.innerHTML += `
 
+<div class="previewDay">
+
+📅 ${formatPreviewDate(currentDate)}
+
+</div>
+
+`;
+
+    }
+
+    preview.innerHTML += `
+
 <div class="previewEvent">
 
-<div class="previewDate">
-
-📅 ${event.event_date}
-
-&nbsp;
+<div class="previewTime">
 
 ${event.event_time.substring(0,5)}
 
@@ -1164,11 +1215,11 @@ ${event.subjects.name}
 ${event.type}
 
 ${event.rooms
-    ? " • "+event.rooms.name
+    ? " • " + event.rooms.name
     : ""}
 
 ${event.professors
-    ? " • "+event.professors.name
+    ? " • " + event.professors.name
     : ""}
 
 </div>
@@ -1177,7 +1228,7 @@ ${event.professors
 
 `;
 
-    });
+});
 
     if(events.length>20){
 
