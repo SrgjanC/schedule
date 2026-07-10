@@ -1131,7 +1131,68 @@ async function refreshPreview(){
 
 }
 
+function addHour(time){
 
+    const [h,m]=time.split(":").map(Number);
+
+    const d=new Date();
+
+    d.setHours(h,m);
+
+    d.setHours(d.getHours()+1);
+
+    return d.toTimeString().substring(0,5);
+
+}
+        function mergeEvents(events){
+
+    const merged=[];
+
+    events.forEach(event=>{
+
+        const last=merged[merged.length-1];
+
+        if(
+
+            last &&
+
+            last.event_date===event.event_date &&
+
+            last.subjects.id===event.subjects.id &&
+
+            last.type===event.type &&
+
+            (last.rooms?.id||0)===(event.rooms?.id||0) &&
+
+            (last.professors?.id||0)===(event.professors?.id||0) &&
+
+            addHour(last.endTime)===event.event_time.substring(0,5)
+
+        ){
+
+            last.endTime=event.event_time.substring(0,5);
+
+        }
+
+        else{
+
+            merged.push({
+
+                ...event,
+
+                startTime:event.event_time.substring(0,5),
+
+                endTime:event.event_time.substring(0,5)
+
+            });
+
+        }
+
+    });
+
+    return merged;
+
+}
         
 function renderPreview(events){
 
@@ -1173,6 +1234,7 @@ No matching events.
         );
 
     });
+    events = mergeEvents(events);
 
     let currentDate = "";
 
@@ -1200,7 +1262,11 @@ events.slice(0,20).forEach(event=>{
 
 <div class="previewTime">
 
-${event.event_time.substring(0,5)}
+${event.startTime}
+
+-
+
+${addHour(event.endTime)}
 
 </div>
 
