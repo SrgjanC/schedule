@@ -323,6 +323,46 @@ button:disabled{
     background:#f7fbff;
 }
 
+#previewHeader{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:15px;
+
+    margin-bottom:25px;
+
+}
+
+.previewCard{
+
+    background:#f9fbff;
+
+    border:1px solid #dde7ff;
+
+    border-radius:10px;
+
+    padding:15px;
+
+}
+
+.previewCard h4{
+
+    margin:0 0 10px;
+
+    color:#3f69b1;
+
+}
+
+.previewSubjectItem{
+
+    padding:4px 0;
+
+    font-size:14px;
+
+}
+    
 </style>
 
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
@@ -407,46 +447,45 @@ disabled>
 
     <h3>Live Preview</h3>
 
-    <div id="previewStats">
+<div id="previewHeader">
 
-        <div class="statCard">
+    <div class="previewCard">
 
-            📚
-            <strong>Subjects:</strong>
+        <h4>📚 Selected Subjects</h4>
 
-            <span id="previewSubjects">
-                0
-            </span>
+        <div id="previewSubjectsList">
 
-        </div>
-
-        <div class="statCard">
-
-            👨‍🏫
-            <strong>Professor:</strong>
-
-            <span id="previewProfessor">
-
-                All
-
-            </span>
-
-        </div>
-
-        <div class="statCard">
-
-            📅
-            <strong>Events:</strong>
-
-            <span id="previewEvents">
-
-                0
-
-            </span>
+            No subjects selected
 
         </div>
 
     </div>
+
+    <div class="previewCard">
+
+        <h4>👨‍🏫 Professor</h4>
+
+        <div id="previewProfessor">
+
+            All Professors
+
+        </div>
+
+    </div>
+
+    <div class="previewCard">
+
+        <h4>📅 Total Events</h4>
+
+        <div id="previewEvents">
+
+            0
+
+        </div>
+
+    </div>
+
+</div>
 
     <div id="previewList">
 
@@ -747,22 +786,55 @@ function refreshProfessorsDebounced(){
 
 }
 
-        function updatePreviewStats(){
+function updatePreviewStats(){
 
-    // Subjects selected
-    const subjectCount =
-        document.querySelectorAll(".subjectCheck:checked").length;
+    const selected =
+        [...document.querySelectorAll(".subjectCheck:checked")];
 
-    document.getElementById("previewSubjects").innerText =
-        subjectCount;
+    const list =
+        document.getElementById(
+            "previewSubjectsList"
+        );
 
-    // Professor
+    if(selected.length===0){
+
+        list.innerHTML =
+            "<i>All subjects</i>";
+
+    }else{
+
+        list.innerHTML =
+            selected.map(s=>{
+
+                const row =
+                    s.closest(".subjectRow");
+
+                const name =
+                    row.querySelector(".subjectName").innerText;
+
+                return `
+<div class="previewSubjectItem">
+
+✔ ${name}
+
+</div>
+`;
+
+            }).join("");
+
+    }
+
     const professor =
-        document.getElementById("professorFilter");
+        document.getElementById(
+            "professorFilter"
+        );
 
-    document.getElementById("previewProfessor").innerText =
-        professor.options[professor.selectedIndex]?.text
-        || "All";
+    document.getElementById(
+        "previewProfessor"
+    ).innerText =
+        professor.options[
+            professor.selectedIndex
+        ]?.text || "All Professors";
 
 }
         
