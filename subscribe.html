@@ -278,6 +278,67 @@ button:disabled{
     border-radius:10px;
     font-size:11px;
     font-weight:bold;
+
+/* ---------- Live Preview ---------- */
+
+#previewStats{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-bottom:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.statCard{
+
+    flex:1;
+
+    min-width:150px;
+
+    background:#f8fbff;
+
+    border:1px solid #d8e5ff;
+
+    border-radius:10px;
+
+    padding:12px;
+
+}
+
+#previewList{
+
+    border:1px solid #ddd;
+
+    border-radius:8px;
+
+    background:white;
+
+    min-height:500px;
+
+    max-height:700px;
+
+    overflow:auto;
+
+}
+
+.emptyPreview{
+
+    padding:40px;
+
+    text-align:center;
+
+    color:#777;
+
+}
+
+
+
+
+    
 }
 </style>
 
@@ -301,7 +362,61 @@ button:disabled{
 
 <div class="leftPanel">
 
-    <!-- ALL YOUR EXISTING FILTERS -->
+<div class="section">
+
+<label>Academic Year</label>
+
+<select id="yearFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Program</label>
+
+<select id="programFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Semester</label>
+
+<select id="semesterFilter"></select>
+
+</div>
+
+<div class="section">
+
+<label>Subjects</label>
+
+<div id="subjects"></div>
+
+</div>
+
+<div class="section">
+
+<label>Professor (optional)</label>
+
+<select id="professorFilter">
+
+<option value="">All Professors</option>
+
+</select>
+
+</div>
+
+<div class="section">
+
+<button
+id="createBtn"
+disabled>
+
+📅 Create Subscription
+
+</button>
+
+</div>
 
 </div>
 
@@ -380,34 +495,7 @@ const supabase = createClient(
 let professorSelect = null;
         let professorRefreshTimer = null;
     
-    const INSTITUTE_INFO = {
 
-    "ИФТ":{
-        name:"Институт за фармацевтска технологија",
-        color:"#4F46E5"
-    },
-
-    "ИФХ":{
-        name:"Институт за фармацевтска хемија",
-        color:"#059669"
-    },
-
-    "ИПБ":{
-        name:"Институт за применета биохемија",
-        color:"#0891B2"
-    },
-
-    "ИФГ":{
-        name:"Институт за фармакогнозија",
-        color:"#DC2626"
-    },
-
-    "ИПХФА":{
-        name:"Институт за применета хемија и фармацевтски анализи",
-        color:"#CA8A04"
-    }
-
-};
         const INSTITUTE_COLORS = {
 
     "ИФГ":"#4CAF50",   // Green
@@ -864,14 +952,17 @@ async function loadProfessors() {
 
     unique.forEach(p => {
 
-        select.innerHTML += `
+    select.innerHTML += `
 <option value="${p.id}">
 ${p.name}
 </option>
 `;
-select.value = currentProfessor;
-    });
 
+});
+
+select.value = currentProfessor;
+    
+    
     if (professorSelect) {
 
         professorSelect.destroy();
