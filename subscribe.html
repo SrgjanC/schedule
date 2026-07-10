@@ -362,6 +362,58 @@ button:disabled{
     font-size:14px;
 
 }
+
+    .previewEvent{
+
+    padding:14px;
+
+    border-bottom:1px solid #ececec;
+
+}
+
+.previewEvent:hover{
+
+    background:#f7fbff;
+
+}
+
+.previewDate{
+
+    color:#3f69b1;
+
+    font-weight:bold;
+
+}
+
+.previewSubject{
+
+    margin-top:5px;
+
+    font-weight:bold;
+
+}
+
+.previewInfo{
+
+    margin-top:4px;
+
+    color:#666;
+
+    font-size:13px;
+
+}
+
+.previewMore{
+
+    padding:20px;
+
+    text-align:center;
+
+    color:#777;
+
+    font-style:italic;
+
+}
     
 </style>
 
@@ -1155,15 +1207,120 @@ console.log(data[0]);
 
 }
 
-        async function refreshPreview(){
+async function refreshPreview(){
 
     const events =
         await getFilteredEvents();
 
-    console.table(events);
+    updatePreviewStats();
+
+    document.getElementById(
+        "previewEvents"
+    ).innerText = events.length;
+
+    renderPreview(events);
 
 }
 
+function renderPreview(events){
+
+    const preview =
+        document.getElementById(
+            "previewList"
+        );
+
+    preview.innerHTML="";
+
+    if(events.length===0){
+
+        preview.innerHTML=`
+
+<div class="emptyPreview">
+
+No matching events.
+
+</div>
+
+`;
+
+        return;
+
+    }
+
+    events.sort((a,b)=>{
+
+        if(a.event_date!==b.event_date){
+
+            return a.event_date.localeCompare(
+                b.event_date
+            );
+
+        }
+
+        return a.event_time.localeCompare(
+            b.event_time
+        );
+
+    });
+
+    events.slice(0,20).forEach(event=>{
+
+        preview.innerHTML += `
+
+<div class="previewEvent">
+
+<div class="previewDate">
+
+📅 ${event.event_date}
+
+&nbsp;
+
+${event.event_time.substring(0,5)}
+
+</div>
+
+<div class="previewSubject">
+
+${event.subjects.name}
+
+</div>
+
+<div class="previewInfo">
+
+${event.type}
+
+${event.rooms
+    ? " • "+event.rooms.name
+    : ""}
+
+${event.professors
+    ? " • "+event.professors.name
+    : ""}
+
+</div>
+
+</div>
+
+`;
+
+    });
+
+    if(events.length>20){
+
+        preview.innerHTML += `
+
+<div class="previewMore">
+
+Showing first 20 of ${events.length} events
+
+</div>
+
+`;
+
+    }
+
+}
+        
 
         async function loadPreview(){
 
