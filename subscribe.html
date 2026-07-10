@@ -1415,63 +1415,6 @@ Showing first 20 of ${events.length} events
 
 }
 
-function mergeEvents(events){
-
-    if(events.length===0)
-        return [];
-
-    events.sort((a,b)=>{
-
-        if(a.event_date!==b.event_date)
-            return a.event_date.localeCompare(b.event_date);
-
-        return a.event_time.localeCompare(b.event_time);
-
-    });
-
-    const merged=[];
-
-    events.forEach(event=>{
-
-        const last=merged[merged.length-1];
-
-        if(
-            last &&
-
-            last.event_date===event.event_date &&
-
-            last.subjects.id===event.subjects.id &&
-
-            last.type===event.type &&
-
-            (last.rooms?.id||0)===(event.rooms?.id||0) &&
-
-            (last.professors?.id||0)===(event.professors?.id||0) &&
-
-            addOneHour(last.endTime)===event.event_time
-        ){
-
-            last.endTime=event.event_time;
-
-        }else{
-
-            merged.push({
-
-                ...event,
-
-                startTime:event.event_time,
-
-                endTime:event.event_time
-
-            });
-
-        }
-
-    });
-
-    return merged;
-
-}
 
         function addOneHour(time){
 
