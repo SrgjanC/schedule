@@ -763,6 +763,25 @@ function refreshProfessorsDebounced(){
     },250);
 
 }
+
+        function updatePreviewStats(){
+
+    // Subjects selected
+    const subjectCount =
+        document.querySelectorAll(".subjectCheck:checked").length;
+
+    document.getElementById("previewSubjects").innerText =
+        subjectCount;
+
+    // Professor
+    const professor =
+        document.getElementById("professorFilter");
+
+    document.getElementById("previewProfessor").innerText =
+        professor.options[professor.selectedIndex]?.text
+        || "All";
+
+}
         
 function initSubjectSelection(){
 
@@ -794,7 +813,7 @@ function initSubjectSelection(){
                 );
 
         });
-
+updatePreviewStats();
     }    
 
     checks.forEach(c=>{
@@ -978,7 +997,10 @@ select.value = currentProfessor;
                 placeholder:"Search professor..."
             }
         );
-
+    
+    professorSelect.on("change",()=>{
+        updatePreviewStats();
+    });
 }
 
 
@@ -1020,7 +1042,7 @@ document
 
     }
 );
-
+updatePreviewStats();
 });
 
         
