@@ -425,6 +425,7 @@ id="createBtn">
 📅 Create Subscription
 
 </button>
+    
 
     <div id="subscriptionResult" style="display:none; margin-top:25px;">
 
@@ -446,6 +447,11 @@ id="createBtn">
             <button id="copySubscriptionBtn">
 
                 📋 Copy Link
+
+            </button>
+            <button id="openSubscriptionBtn">
+
+                📅 Open Calendar URL
 
             </button>
 
@@ -1629,17 +1635,55 @@ document
     createSubscription
 );
 
-    document
+document
 .getElementById("copySubscriptionBtn")
 .addEventListener(
     "click",
     async ()=>{
 
+        const btn =
+            document.getElementById(
+                "copySubscriptionBtn"
+            );
+
         await navigator.clipboard.writeText(
-            document.getElementById("subscriptionUrl").value
+            document.getElementById(
+                "subscriptionUrl"
+            ).value
         );
 
-        alert("Subscription link copied!");
+        const oldText =
+            btn.innerHTML;
+
+        btn.innerHTML =
+            "✅ Copied!";
+
+        btn.disabled = true;
+
+        setTimeout(()=>{
+
+            btn.innerHTML =
+                oldText;
+
+            btn.disabled = false;
+
+        },2000);
+
+    }
+);
+
+    document
+.getElementById("openSubscriptionBtn")
+.addEventListener(
+    "click",
+    ()=>{
+
+        window.open(
+            document.getElementById(
+                "subscriptionUrl"
+            ).value,
+            "_blank"
+        );
 
     }
 );
