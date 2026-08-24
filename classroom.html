@@ -417,22 +417,15 @@
 
 <script>
 
-
 /* =========================================================
    SUPABASE
 ========================================================= */
 
-/*
- * USE THE SAME VALUES YOU ALREADY USE
- * IN subscribe.html
- */
-
 const SUPABASE_URL =
-    "https://elmxwpwhyewgjlvoadtb.supabase.co";
-
+    "YOUR_SUPABASE_URL";
 
 const SUPABASE_ANON_KEY =
-    "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd";
+    "YOUR_SUPABASE_ANON_KEY";
 
 
 const supabaseClient =
@@ -442,35 +435,51 @@ const supabaseClient =
     );
 
 
-
 /* =========================================================
-   CLASSROOM
+   CLASSROOM CONFIGURATION
 ========================================================= */
-
-/*
- *
- * Examples:
- *
- * classroom.html?room=01
- * classroom.html?room=02
- * classroom.html?room=03
- * classroom.html?room=04
- *
- */
-
 
 const urlParams =
     new URLSearchParams(
         window.location.search
     );
 
-
 const roomCode =
     urlParams.get("room") || "01";
 
 
+const classroomNames = {
+
+    "01": "01 Пред.",
+    "02": "02 Пред.",
+    "03": "03 Пред.",
+    "04": "04 Пред."
+
+};
+
+
+const displayNames = {
+
+    "01": "Предавална 1",
+    "02": "Предавална 2",
+    "03": "Предавална 3",
+    "04": "Предавална 4"
+
+};
+
+
+const databaseRoomName =
+    classroomNames[roomCode];
+
+
+const displayRoomName =
+    displayNames[roomCode] ||
+    roomCode;
+
+
 document.getElementById("roomName")
-    .textContent = roomCode;
+    .textContent =
+        displayRoomName;
 
 
 
@@ -482,18 +491,15 @@ function updateClock() {
 
     const now = new Date();
 
-
     const hours =
         String(
             now.getHours()
         ).padStart(2, "0");
 
-
     const minutes =
         String(
             now.getMinutes()
         ).padStart(2, "0");
-
 
     document.getElementById("clock")
         .textContent =
@@ -502,7 +508,6 @@ function updateClock() {
 
 
 updateClock();
-
 
 setInterval(
     updateClock,
@@ -519,22 +524,18 @@ function getToday() {
 
     const now = new Date();
 
-
     const year =
         now.getFullYear();
-
 
     const month =
         String(
             now.getMonth() + 1
         ).padStart(2, "0");
 
-
     const day =
         String(
             now.getDate()
         ).padStart(2, "0");
-
 
     return `${year}-${month}-${day}`;
 }
@@ -551,16 +552,15 @@ function timeToMinutes(time) {
         return 0;
     }
 
+    const cleanTime =
+        time.substring(0, 5);
 
     const parts =
-        time
-            .substring(0, 5)
-            .split(":");
-
+        cleanTime.split(":");
 
     return (
-        parseInt(parts[0], 10) * 60 +
-        parseInt(parts[1], 10)
+        Number(parts[0]) * 60 +
+        Number(parts[1])
     );
 }
 
@@ -570,35 +570,25 @@ function timeToMinutes(time) {
    ADD ONE HOUR
 ========================================================= */
 
-/*
- * This is compatible with the mergeEvents()
- * function we already use in subscribe.html.
- */
-
 function addHour(time) {
 
     if (!time) {
         return "";
     }
 
-
     const minutes =
         timeToMinutes(time);
 
-
     const newMinutes =
         minutes + 60;
-
 
     const hours =
         Math.floor(
             newMinutes / 60
         );
 
-
     const mins =
         newMinutes % 60;
-
 
     return (
         String(hours).padStart(2, "0") +
@@ -610,40 +600,17 @@ function addHour(time) {
 
 
 /* =========================================================
-   MERGE CONSECUTIVE EVENTS
+   MERGE EVENTS
 ========================================================= */
-
-/*
- *
- * Example database events:
- *
- * 08:00 Pharmacology
- * 09:00 Pharmacology
- * 10:00 Pharmacology
- *
- * become:
- *
- * 08:00 - 10:00 internally
- *
- * The actual displayed end time is
- * calculated as 11:00 because 10:00
- * represents the beginning of the last
- * one-hour event.
- *
- */
 
 function mergeEvents(events) {
 
     const merged = [];
 
-
     events.forEach(event => {
 
         const last =
-            merged[
-                merged.length - 1
-            ];
-
+            merged[merged.length - 1];
 
         if (
 
@@ -694,22 +661,14 @@ function mergeEvents(events) {
 
     });
 
-
     return merged;
 }
 
 
 
 /* =========================================================
-   ACTUAL CLASS END TIME
+   REAL CLASS END TIME
 ========================================================= */
-
-/*
- *
- * If the last event starts at 10:00,
- * the class actually ends at 11:00.
- *
- */
 
 function getClassEndTime(event) {
 
@@ -721,29 +680,119 @@ function getClassEndTime(event) {
 
 
 /* =========================================================
-   LOAD TODAY'S EVENTS
+   LOAD CLASSROOM
 ========================================================= */
 
 async function loadClassroom() {
 
     const content =
-        document.getElementById("content");
+        document.getElementById(
+            "content"
+        );
 
 
     try {
+
+        content.innerHTML = `
+            <div class="loading">
+                Се вчитува распоредот...
+            </div>
+        `;
+
 
         const today =
             getToday();
 
 
-        /*
-         * Same query structure that is already
-         * working in subscribe.html.
-         */
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "Classroom:",
+            roomCode
+        );
+
+        console.log(
+            "Database room:",
+            databaseRoomName
+        );
+
+        console.log(
+            "Today:",
+            today
+        );
+
+
+        /* =========================================
+           FIND ROOM
+        ========================================= */
 
         const {
-            data,
-            error
+            data: rooms,
+            error: roomError
+        } = await supabaseClient
+
+            .from("rooms")
+
+            .select(`
+                id,
+                name
+            `)
+
+            .in(
+                "name",
+                [
+                    "01 Пред.",
+                    "02 Пред.",
+                    "03 Пред.",
+                    "04 Пред."
+                ]
+            );
+
+
+        if (roomError) {
+            throw roomError;
+        }
+
+
+        console.log(
+            "Classroom rooms:",
+            rooms
+        );
+
+
+        const room =
+            rooms?.find(
+                r =>
+                    r.name ===
+                    databaseRoomName
+            );
+
+
+        if (!room) {
+
+            throw new Error(
+                `Не е пронајдена просторијата "${databaseRoomName}".`
+            );
+
+        }
+
+
+        console.log(
+            "Selected room:",
+            room
+        );
+
+
+
+        /* =========================================
+           LOAD EVENTS FOR THIS ROOM
+        ========================================= */
+
+        const {
+            data: events,
+            error: eventsError
         } = await supabaseClient
 
             .from("events")
@@ -773,85 +822,50 @@ async function loadClassroom() {
             .eq(
                 "event_date",
                 today
+            )
+
+            .eq(
+                "room_id",
+                room.id
             );
 
 
-        if (error) {
-
-            throw error;
-
+        if (eventsError) {
+            throw eventsError;
         }
 
 
         console.log(
-            "Today's events:",
-            data
+            "Events from database:",
+            events
         );
 
 
-        /*
-         * Filter events belonging to
-         * this classroom.
-         */
+        /* =========================================
+           SORT
+        ========================================= */
 
         const roomEvents =
-            (data || []).filter(
-                event => {
-
-                    if (!event.rooms) {
-                        return false;
-                    }
-
-
-                    return (
-                        event.rooms.name ===
-                        roomCode
-                    );
-
-                }
+            (events || []).sort(
+                (a, b) =>
+                    timeToMinutes(
+                        a.event_time
+                    ) -
+                    timeToMinutes(
+                        b.event_time
+                    )
             );
 
 
         console.log(
-            "Room:",
-            roomCode
-        );
-
-
-        console.log(
-            "Room events:",
+            "Sorted room events:",
             roomEvents
         );
 
 
-        /*
-         * Sort events by start time.
-         *
-         * IMPORTANT:
-         * mergeEvents() expects chronological order.
-         */
-
-        roomEvents.sort(
-            (a, b) => {
-
-                return (
-                    timeToMinutes(
-                        a.event_time
-                    ) -
-
-                    timeToMinutes(
-                        b.event_time
-                    )
-                );
-
-            }
-        );
-
-
-        /*
-         * Merge one-hour events
-         * belonging to the same class.
-         */
+        /* =========================================
+           MERGE
+        ========================================= */
 
         const classBlocks =
             mergeEvents(
@@ -860,17 +874,22 @@ async function loadClassroom() {
 
 
         console.log(
-            "Merged classes:",
+            "Merged class blocks:",
             classBlocks
         );
 
 
-        /*
-         * Display current + next.
-         */
+        /* =========================================
+           DISPLAY
+        ========================================= */
 
         displayCurrentAndNext(
             classBlocks
+        );
+
+
+        console.log(
+            "================================"
         );
 
 
@@ -879,7 +898,7 @@ async function loadClassroom() {
     catch (error) {
 
         console.error(
-            "Classroom loading error:",
+            "CLASSROOM ERROR:",
             error
         );
 
@@ -926,17 +945,31 @@ function displayCurrentAndNext(events) {
         now.getMinutes();
 
 
-    let currentEvent = null;
+    console.log(
+        "Current time:",
+        currentMinutes
+    );
 
-    let nextEvent = null;
 
+    let currentEvent =
+        null;
+
+    let nextEvent =
+        null;
 
 
     /* =========================================
-       FIND CURRENT / NEXT
+       FIND CURRENT AND NEXT
     ========================================= */
 
-    for (const event of events) {
+    for (
+        let i = 0;
+        i < events.length;
+        i++
+    ) {
+
+        const event =
+            events[i];
 
 
         const start =
@@ -951,41 +984,49 @@ function displayCurrentAndNext(events) {
             );
 
 
+        console.log(
+            "Checking:",
+            event.subjects?.name,
+            event.startTime,
+            getClassEndTime(event),
+            "current:",
+            currentMinutes >= start &&
+            currentMinutes < end
+        );
+
+
         /*
-         * Current class
+         * CURRENT
          */
 
         if (
-
             currentMinutes >= start &&
-
             currentMinutes < end
-
         ) {
 
             currentEvent =
                 event;
 
-            continue;
+            /*
+             * Don't break yet.
+             * We want to find the next class too.
+             */
 
+            continue;
         }
 
 
         /*
-         * Next class
+         * NEXT
          */
 
         if (
-
             start > currentMinutes &&
-
             !nextEvent
-
         ) {
 
             nextEvent =
                 event;
-
         }
 
     }
@@ -1001,7 +1042,6 @@ function displayCurrentAndNext(events) {
     ========================================= */
 
     if (currentEvent) {
-
 
         const subject =
             currentEvent
@@ -1021,8 +1061,7 @@ function displayCurrentAndNext(events) {
 
 
         const startTime =
-            currentEvent
-                .startTime;
+            currentEvent.startTime;
 
 
         const endTime =
@@ -1036,29 +1075,21 @@ function displayCurrentAndNext(events) {
             <div class="current-card">
 
                 <div class="section-title">
-
                     ТЕКОВНА НАСТАВА
-
                 </div>
 
 
                 <div class="subject">
-
                     ${subject}
-
                 </div>
 
 
                 ${
                     type
                     ? `
-
                         <div class="type">
-
                             ${type}
-
                         </div>
-
                     `
                     : ""
                 }
@@ -1076,14 +1107,12 @@ function displayCurrentAndNext(events) {
                 ${
                     professor
                     ? `
-
                         <div class="professor">
 
                             👨‍🏫
                             ${professor}
 
                         </div>
-
                     `
                     : ""
                 }
@@ -1115,16 +1144,12 @@ function displayCurrentAndNext(events) {
             <div class="current-card">
 
                 <div class="section-title">
-
                     МОМЕНТАЛНО
-
                 </div>
 
 
                 <div class="subject">
-
                     Нема настава
-
                 </div>
 
 
@@ -1149,7 +1174,6 @@ function displayCurrentAndNext(events) {
     ========================================= */
 
     if (nextEvent) {
-
 
         const subject =
             nextEvent
@@ -1178,9 +1202,7 @@ function displayCurrentAndNext(events) {
             <div class="next-card">
 
                 <div class="section-title">
-
                     СЛЕДНА НАСТАВА
-
                 </div>
 
 
@@ -1203,14 +1225,12 @@ function displayCurrentAndNext(events) {
                 ${
                     professor
                     ? `
-
                         <div class="next-professor">
 
                             👨‍🏫
                             ${professor}
 
                         </div>
-
                     `
                     : ""
                 }
@@ -1223,7 +1243,7 @@ function displayCurrentAndNext(events) {
 
 
     /* =========================================
-       NO MORE CLASSES TODAY
+       NO MORE CLASSES
     ========================================= */
 
     else if (!currentEvent) {
@@ -1233,9 +1253,7 @@ function displayCurrentAndNext(events) {
             <div class="next-card">
 
                 <div class="section-title">
-
                     СЛЕДНА НАСТАВА
-
                 </div>
 
 
@@ -1252,10 +1270,6 @@ function displayCurrentAndNext(events) {
 
     }
 
-
-    /* =========================================
-       INSERT INTO PAGE
-    ========================================= */
 
     content.innerHTML =
         html;
@@ -1280,7 +1294,6 @@ setInterval(
     loadClassroom,
     60 * 1000
 );
-
 
 </script>
 
