@@ -1,341 +1,753 @@
 <!DOCTYPE html>
 <html lang="mk">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Classroom Display</title>
 
+
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
     <style>
+
         * {
             box-sizing: border-box;
         }
 
+
         html,
         body {
+
             margin: 0;
             padding: 0;
+
             width: 100%;
             min-height: 100%;
-            font-family: Arial, Helvetica, sans-serif;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
             background: #f5f7fa;
+
             color: #1f2937;
         }
 
+
         body {
+
             min-height: 100vh;
         }
 
+
         .container {
+
             width: 100%;
+
             max-width: 700px;
+
             margin: 0 auto;
+
             padding: 20px;
         }
 
-        /* HEADER */
+
+        /* =========================================
+           HEADER
+        ========================================= */
 
         .header {
+
             display: flex;
+
             justify-content: space-between;
+
             align-items: center;
+
             margin-bottom: 25px;
         }
+
 
         .faculty-name {
+
             font-size: 18px;
+
             font-weight: 600;
         }
+
 
         .clock {
+
             font-size: 20px;
+
             font-weight: 600;
         }
 
-        /* ROOM */
+
+        /* =========================================
+           ROOM
+        ========================================= */
 
         .room {
+
             text-align: center;
+
             margin-bottom: 25px;
         }
 
+
         .room-label {
+
             font-size: 16px;
+
             color: #6b7280;
         }
 
+
         .room-name {
+
             font-size: 32px;
+
             font-weight: 700;
+
             margin-top: 5px;
         }
 
-        /* CURRENT CLASS */
+
+        /* =========================================
+           CURRENT CLASS
+        ========================================= */
 
         .current-card {
+
             background: white;
+
             border-radius: 18px;
+
             padding: 30px 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+
+            box-shadow:
+                0 4px 20px rgba(0,0,0,0.08);
+
             margin-bottom: 20px;
         }
+
 
         .section-title {
+
             font-size: 15px;
+
             font-weight: 700;
+
             color: #6b7280;
+
             text-transform: uppercase;
+
             letter-spacing: 0.5px;
+
             margin-bottom: 15px;
         }
+
 
         .subject {
+
             font-size: 30px;
+
             font-weight: 700;
+
             line-height: 1.2;
+
             margin-bottom: 15px;
         }
 
+
         .type {
+
             font-size: 16px;
+
             color: #6b7280;
+
             margin-bottom: 20px;
         }
 
+
         .time {
+
             font-size: 22px;
+
             font-weight: 600;
         }
 
+
         .professor {
+
             margin-top: 15px;
+
             font-size: 17px;
         }
 
+
         .status {
+
             margin-top: 25px;
+
             padding: 12px;
+
             border-radius: 10px;
+
             text-align: center;
+
             font-weight: 700;
         }
 
+
         .status-current {
+
             background: #dcfce7;
+
             color: #166534;
         }
 
+
         .status-free {
+
             background: #f3f4f6;
+
             color: #4b5563;
         }
 
-        /* NEXT CLASS */
+
+        /* =========================================
+           NEXT CLASS
+        ========================================= */
 
         .next-card {
+
             background: white;
+
             border-radius: 15px;
+
             padding: 20px;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+
+            box-shadow:
+                0 3px 15px rgba(0,0,0,0.06);
         }
 
+
         .next-time {
+
             font-size: 24px;
+
             font-weight: 700;
+
             margin-bottom: 8px;
         }
 
+
         .next-subject {
+
             font-size: 19px;
+
             font-weight: 600;
         }
 
+
         .next-professor {
+
             margin-top: 8px;
+
             color: #6b7280;
+
             font-size: 15px;
         }
 
-        /* LOADING */
+
+        /* =========================================
+           LOADING
+        ========================================= */
 
         .loading {
+
             text-align: center;
+
             padding: 60px 20px;
+
             color: #6b7280;
         }
 
+
+        /* =========================================
+           ERROR
+        ========================================= */
+
         .error {
+
             background: #fee2e2;
+
             color: #991b1b;
+
             padding: 20px;
+
             border-radius: 12px;
+
             margin-top: 20px;
+
+            word-break: break-word;
         }
 
-        /* MOBILE / TABLET */
+
+        /* =========================================
+           MOBILE / TABLET
+        ========================================= */
 
         @media (max-width: 600px) {
 
             .container {
+
                 padding: 15px;
             }
 
+
             .subject {
+
                 font-size: 25px;
             }
 
+
             .room-name {
+
                 font-size: 28px;
             }
 
+
             .clock {
+
                 font-size: 18px;
             }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
+
 <div class="container">
 
+
+    <!-- =========================================
+         HEADER
+    ========================================= -->
+
     <div class="header">
+
         <div class="faculty-name">
+
             Фармацевтски факултет
+
         </div>
 
-        <div class="clock" id="clock">
+
+        <div
+            class="clock"
+            id="clock"
+        >
             --:--
         </div>
+
     </div>
+
+
+
+    <!-- =========================================
+         ROOM
+    ========================================= -->
 
     <div class="room">
+
         <div class="room-label">
+
             УЧИЛНИЦА
+
         </div>
 
-        <div class="room-name" id="roomName">
+
+        <div
+            class="room-name"
+            id="roomName"
+        >
             --
         </div>
+
     </div>
+
+
+
+    <!-- =========================================
+         CONTENT
+    ========================================= -->
 
     <div id="content">
 
         <div class="loading">
+
             Се вчитува распоредот...
+
         </div>
 
     </div>
 
+
 </div>
+
 
 
 <script>
 
+
 /* =========================================================
    SUPABASE
-   ========================================================= */
+========================================================= */
 
-const SUPABASE_URL = "https://elmxwpwhyewgjlvoadtb.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd";
+/*
+ * USE THE SAME VALUES YOU ALREADY USE
+ * IN subscribe.html
+ */
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-);
+const SUPABASE_URL =
+    "https://elmxwpwhyewgjlvoadtb.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+    "sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd";
+
+
+const supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY
+    );
+
 
 
 /* =========================================================
    CLASSROOM
-   ========================================================= */
+========================================================= */
 
 /*
-    The room is taken from the URL.
+ *
+ * Examples:
+ *
+ * classroom.html?room=01
+ * classroom.html?room=02
+ * classroom.html?room=03
+ * classroom.html?room=04
+ *
+ */
 
-    Examples:
 
-    classroom.html?room=01
-    classroom.html?room=02
-    classroom.html?room=03
-    classroom.html?room=04
-*/
+const urlParams =
+    new URLSearchParams(
+        window.location.search
+    );
 
-const urlParams = new URLSearchParams(window.location.search);
 
-const roomCode = urlParams.get("room") || "01";
+const roomCode =
+    urlParams.get("room") || "01";
 
-document.getElementById("roomName").textContent = roomCode;
+
+document.getElementById("roomName")
+    .textContent = roomCode;
+
 
 
 /* =========================================================
    CLOCK
-   ========================================================= */
+========================================================= */
 
 function updateClock() {
 
     const now = new Date();
 
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
 
-    document.getElementById("clock").textContent =
-        `${hours}:${minutes}`;
+    const hours =
+        String(
+            now.getHours()
+        ).padStart(2, "0");
+
+
+    const minutes =
+        String(
+            now.getMinutes()
+        ).padStart(2, "0");
+
+
+    document.getElementById("clock")
+        .textContent =
+            `${hours}:${minutes}`;
 }
+
 
 updateClock();
 
-setInterval(updateClock, 1000);
+
+setInterval(
+    updateClock,
+    1000
+);
+
 
 
 /* =========================================================
-   DATE
-   ========================================================= */
+   TODAY
+========================================================= */
 
 function getToday() {
 
     const now = new Date();
 
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
+
+    const year =
+        now.getFullYear();
+
+
+    const month =
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0");
+
+
+    const day =
+        String(
+            now.getDate()
+        ).padStart(2, "0");
+
 
     return `${year}-${month}-${day}`;
 }
 
 
+
 /* =========================================================
    TIME TO MINUTES
-   ========================================================= */
+========================================================= */
 
 function timeToMinutes(time) {
 
-    if (!time) return 0;
+    if (!time) {
+        return 0;
+    }
 
-    const parts = time.substring(0, 5).split(":");
+
+    const parts =
+        time
+            .substring(0, 5)
+            .split(":");
+
 
     return (
-        parseInt(parts[0]) * 60 +
-        parseInt(parts[1])
+        parseInt(parts[0], 10) * 60 +
+        parseInt(parts[1], 10)
     );
 }
 
 
+
+/* =========================================================
+   ADD ONE HOUR
+========================================================= */
+
+/*
+ * This is compatible with the mergeEvents()
+ * function we already use in subscribe.html.
+ */
+
+function addHour(time) {
+
+    if (!time) {
+        return "";
+    }
+
+
+    const minutes =
+        timeToMinutes(time);
+
+
+    const newMinutes =
+        minutes + 60;
+
+
+    const hours =
+        Math.floor(
+            newMinutes / 60
+        );
+
+
+    const mins =
+        newMinutes % 60;
+
+
+    return (
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(mins).padStart(2, "0")
+    );
+}
+
+
+
+/* =========================================================
+   MERGE CONSECUTIVE EVENTS
+========================================================= */
+
+/*
+ *
+ * Example database events:
+ *
+ * 08:00 Pharmacology
+ * 09:00 Pharmacology
+ * 10:00 Pharmacology
+ *
+ * become:
+ *
+ * 08:00 - 10:00 internally
+ *
+ * The actual displayed end time is
+ * calculated as 11:00 because 10:00
+ * represents the beginning of the last
+ * one-hour event.
+ *
+ */
+
+function mergeEvents(events) {
+
+    const merged = [];
+
+
+    events.forEach(event => {
+
+        const last =
+            merged[
+                merged.length - 1
+            ];
+
+
+        if (
+
+            last &&
+
+            last.event_date ===
+                event.event_date &&
+
+            last.subjects?.id ===
+                event.subjects?.id &&
+
+            last.type ===
+                event.type &&
+
+            (last.rooms?.id || 0) ===
+                (event.rooms?.id || 0) &&
+
+            (last.professors?.id || 0) ===
+                (event.professors?.id || 0) &&
+
+            addHour(last.endTime) ===
+                event.event_time.substring(0, 5)
+
+        ) {
+
+            last.endTime =
+                event.event_time.substring(0, 5);
+
+        }
+
+        else {
+
+            merged.push({
+
+                ...event,
+
+                startTime:
+                    event.event_time
+                        .substring(0, 5),
+
+                endTime:
+                    event.event_time
+                        .substring(0, 5)
+
+            });
+
+        }
+
+    });
+
+
+    return merged;
+}
+
+
+
+/* =========================================================
+   ACTUAL CLASS END TIME
+========================================================= */
+
+/*
+ *
+ * If the last event starts at 10:00,
+ * the class actually ends at 11:00.
+ *
+ */
+
+function getClassEndTime(event) {
+
+    return addHour(
+        event.endTime
+    );
+}
+
+
+
 /* =========================================================
    LOAD TODAY'S EVENTS
-   ========================================================= */
+========================================================= */
 
 async function loadClassroom() {
 
-    const content = document.getElementById("content");
+    const content =
+        document.getElementById("content");
+
 
     try {
 
-        const today = getToday();
+        const today =
+            getToday();
 
-        const { data, error } = await supabaseClient
+
+        /*
+         * Same query structure that is already
+         * working in subscribe.html.
+         */
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+
             .from("events")
+
             .select(`
                 *,
                 subjects (
@@ -357,133 +769,266 @@ async function loadClassroom() {
                     name
                 )
             `)
-            .eq("event_date", today);
+
+            .eq(
+                "event_date",
+                today
+            );
+
 
         if (error) {
+
             throw error;
+
         }
 
-        console.log("Today's events:", data);
+
+        console.log(
+            "Today's events:",
+            data
+        );
+
 
         /*
-         * Keep only events belonging to this classroom.
+         * Filter events belonging to
+         * this classroom.
          */
-        const roomEvents = (data || []).filter(event => {
 
-            if (!event.rooms) return false;
+        const roomEvents =
+            (data || []).filter(
+                event => {
 
-            return event.rooms.name === roomCode;
-        });
+                    if (!event.rooms) {
+                        return false;
+                    }
 
-        console.log("Room:", roomCode);
-        console.log("Room events:", roomEvents);
+
+                    return (
+                        event.rooms.name ===
+                        roomCode
+                    );
+
+                }
+            );
+
+
+        console.log(
+            "Room:",
+            roomCode
+        );
+
+
+        console.log(
+            "Room events:",
+            roomEvents
+        );
+
 
         /*
-         * Sort by start time.
+         * Sort events by start time.
+         *
+         * IMPORTANT:
+         * mergeEvents() expects chronological order.
          */
-        roomEvents.sort((a, b) => {
 
-            return timeToMinutes(a.event_time)
-                 - timeToMinutes(b.event_time);
+        roomEvents.sort(
+            (a, b) => {
 
-        });
+                return (
+                    timeToMinutes(
+                        a.event_time
+                    ) -
 
-        displayCurrentAndNext(roomEvents);
+                    timeToMinutes(
+                        b.event_time
+                    )
+                );
 
-    } catch (error) {
+            }
+        );
 
-        console.error("Classroom loading error:", error);
+
+        /*
+         * Merge one-hour events
+         * belonging to the same class.
+         */
+
+        const classBlocks =
+            mergeEvents(
+                roomEvents
+            );
+
+
+        console.log(
+            "Merged classes:",
+            classBlocks
+        );
+
+
+        /*
+         * Display current + next.
+         */
+
+        displayCurrentAndNext(
+            classBlocks
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Classroom loading error:",
+            error
+        );
+
 
         content.innerHTML = `
+
             <div class="error">
-                Грешка при вчитување на распоредот.
+
+                Грешка при вчитување
+                на распоредот.
+
                 <br><br>
+
                 ${error.message}
+
             </div>
+
         `;
+
     }
+
 }
+
 
 
 /* =========================================================
    DISPLAY CURRENT + NEXT
-   ========================================================= */
+========================================================= */
 
 function displayCurrentAndNext(events) {
 
-    const content = document.getElementById("content");
+    const content =
+        document.getElementById(
+            "content"
+        );
 
-    const now = new Date();
+
+    const now =
+        new Date();
+
 
     const currentMinutes =
         now.getHours() * 60 +
         now.getMinutes();
 
 
-    /*
-     * Find current class.
-     *
-     * For now we assume classes last until the
-     * start of the next event.
-     */
-
     let currentEvent = null;
+
     let nextEvent = null;
 
 
-    for (let i = 0; i < events.length; i++) {
 
-        const event = events[i];
+    /* =========================================
+       FIND CURRENT / NEXT
+    ========================================= */
+
+    for (const event of events) {
+
 
         const start =
-            timeToMinutes(event.event_time);
+            timeToMinutes(
+                event.startTime
+            );
 
-        const nextStart =
-            i < events.length - 1
-                ? timeToMinutes(events[i + 1].event_time)
-                : 24 * 60;
 
+        const end =
+            timeToMinutes(
+                getClassEndTime(event)
+            );
+
+
+        /*
+         * Current class
+         */
 
         if (
+
             currentMinutes >= start &&
-            currentMinutes < nextStart
+
+            currentMinutes < end
+
         ) {
 
-            currentEvent = event;
+            currentEvent =
+                event;
 
-            if (i < events.length - 1) {
-                nextEvent = events[i + 1];
-            }
+            continue;
 
-            break;
         }
 
 
-        if (start > currentMinutes) {
+        /*
+         * Next class
+         */
 
-            nextEvent = event;
-            break;
+        if (
+
+            start > currentMinutes &&
+
+            !nextEvent
+
+        ) {
+
+            nextEvent =
+                event;
+
         }
+
     }
 
 
-    /*
-     * Display
-     */
 
     let html = "";
 
 
+
+    /* =========================================
+       CURRENT CLASS
+    ========================================= */
+
     if (currentEvent) {
 
+
         const subject =
-            currentEvent.subjects?.name || "Непознат предмет";
+            currentEvent
+                .subjects?.name ||
+            "Непознат предмет";
+
 
         const professor =
-            currentEvent.professors?.name || "";
+            currentEvent
+                .professors?.name ||
+            "";
+
 
         const type =
-            currentEvent.type || "";
+            currentEvent.type ||
+            "";
+
+
+        const startTime =
+            currentEvent
+                .startTime;
+
+
+        const endTime =
+            getClassEndTime(
+                currentEvent
+            );
 
 
         html += `
@@ -491,122 +1036,255 @@ function displayCurrentAndNext(events) {
             <div class="current-card">
 
                 <div class="section-title">
+
                     ТЕКОВНА НАСТАВА
+
                 </div>
+
 
                 <div class="subject">
+
                     ${subject}
+
                 </div>
 
-                <div class="type">
-                    ${type}
-                </div>
-
-                <div class="time">
-                    ${currentEvent.event_time?.substring(0,5) || ""}
-                </div>
 
                 ${
-                    professor
+                    type
                     ? `
-                        <div class="professor">
-                            👨‍🏫 ${professor}
+
+                        <div class="type">
+
+                            ${type}
+
                         </div>
+
                     `
                     : ""
                 }
 
-                <div class="status status-current">
+
+                <div class="time">
+
+                    ${startTime}
+                    –
+                    ${endTime}
+
+                </div>
+
+
+                ${
+                    professor
+                    ? `
+
+                        <div class="professor">
+
+                            👨‍🏫
+                            ${professor}
+
+                        </div>
+
+                    `
+                    : ""
+                }
+
+
+                <div
+                    class="status status-current"
+                >
+
                     НАСТАВАТА Е ВО ТЕК
+
                 </div>
 
             </div>
+
         `;
 
-    } else {
+    }
+
+
+    /* =========================================
+       NO CURRENT CLASS
+    ========================================= */
+
+    else {
 
         html += `
 
             <div class="current-card">
 
                 <div class="section-title">
+
                     МОМЕНТАЛНО
+
                 </div>
+
 
                 <div class="subject">
+
                     Нема настава
+
                 </div>
 
-                <div class="status status-free">
+
+                <div
+                    class="status status-free"
+                >
+
                     УЧИЛНИЦАТА Е СЛОБОДНА
+
                 </div>
 
             </div>
+
         `;
+
     }
 
 
-    /*
-     * NEXT CLASS
-     */
+
+    /* =========================================
+       NEXT CLASS
+    ========================================= */
 
     if (nextEvent) {
 
+
         const subject =
-            nextEvent.subjects?.name || "Непознат предмет";
+            nextEvent
+                .subjects?.name ||
+            "Непознат предмет";
+
 
         const professor =
-            nextEvent.professors?.name || "";
+            nextEvent
+                .professors?.name ||
+            "";
+
+
+        const startTime =
+            nextEvent.startTime;
+
+
+        const endTime =
+            getClassEndTime(
+                nextEvent
+            );
+
 
         html += `
 
             <div class="next-card">
 
                 <div class="section-title">
+
                     СЛЕДНА НАСТАВА
+
                 </div>
+
 
                 <div class="next-time">
-                    ${nextEvent.event_time?.substring(0,5) || ""}
+
+                    ${startTime}
+                    –
+                    ${endTime}
+
                 </div>
 
+
                 <div class="next-subject">
+
                     ${subject}
+
                 </div>
+
 
                 ${
                     professor
                     ? `
+
                         <div class="next-professor">
-                            👨‍🏫 ${professor}
+
+                            👨‍🏫
+                            ${professor}
+
                         </div>
+
                     `
                     : ""
                 }
 
             </div>
+
         `;
+
     }
 
 
-    content.innerHTML = html;
+    /* =========================================
+       NO MORE CLASSES TODAY
+    ========================================= */
+
+    else if (!currentEvent) {
+
+        html += `
+
+            <div class="next-card">
+
+                <div class="section-title">
+
+                    СЛЕДНА НАСТАВА
+
+                </div>
+
+
+                <div class="next-subject">
+
+                    Нема повеќе настава
+                    денес.
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    /* =========================================
+       INSERT INTO PAGE
+    ========================================= */
+
+    content.innerHTML =
+        html;
+
 }
+
 
 
 /* =========================================================
    INITIAL LOAD
-   ========================================================= */
+========================================================= */
 
 loadClassroom();
 
 
-/*
- * Refresh the schedule every minute.
- */
 
-setInterval(loadClassroom, 60 * 1000);
+/* =========================================================
+   REFRESH EVERY MINUTE
+========================================================= */
+
+setInterval(
+    loadClassroom,
+    60 * 1000
+);
+
 
 </script>
 
+
 </body>
+
 </html>
