@@ -334,37 +334,25 @@ async function loadClassroom() {
 
         const today = getToday();
 
-        /*
-         * IMPORTANT:
-         *
-         * For the first test we load the events for today
-         * and then filter the classroom.
-         *
-         * We are NOT changing the database.
-         */
-
         const { data, error } = await supabaseClient
             .from("events")
             .select(`
-                id,
-                event_date,
-                event_time,
-                type,
-                subject_id,
-                professor_id,
-                room_id,
-
+                *,
                 subjects (
                     id,
-                    name
+                    name,
+                    semester,
+                    institute,
+                    programs (
+                        id,
+                        name
+                    )
                 ),
-
-                professor (
+                professors (
                     id,
                     name
                 ),
-
-                room (
+                rooms (
                     id,
                     name
                 )
@@ -378,21 +366,21 @@ async function loadClassroom() {
         console.log("Today's events:", data);
 
         /*
-         * Find the selected room.
+         * Keep only events belonging to this classroom.
          */
-
         const roomEvents = (data || []).filter(event => {
 
-            if (!event.room) return false;
+            if (!event.rooms) return false;
 
-            return event.room.name === roomCode;
+            return event.rooms.name === roomCode;
         });
 
+        console.log("Room:", roomCode);
+        console.log("Room events:", roomEvents);
 
         /*
          * Sort by start time.
          */
-
         roomEvents.sort((a, b) => {
 
             return timeToMinutes(a.event_time)
@@ -400,12 +388,11 @@ async function loadClassroom() {
 
         });
 
-
         displayCurrentAndNext(roomEvents);
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Classroom loading error:", error);
 
         content.innerHTML = `
             <div class="error">
