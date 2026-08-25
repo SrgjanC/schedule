@@ -337,6 +337,234 @@
 
         }
 
+
+        /* =========================================
+   TODAY SCHEDULE BUTTON
+========================================= */
+
+.today-button {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 18px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #1f2937;
+
+    color: white;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+}
+
+
+.today-button:active {
+
+    transform: scale(0.98);
+
+}
+
+
+/* =========================================
+   TODAY SCHEDULE SCREEN
+========================================= */
+
+#todayScreen {
+
+    display: none;
+}
+
+
+.today-header {
+
+    text-align: center;
+
+    margin-bottom: 20px;
+}
+
+
+.today-title {
+
+    font-size: 26px;
+
+    font-weight: 700;
+
+    margin-bottom: 5px;
+}
+
+
+.today-date {
+
+    color: #6b7280;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   SCHEDULE LIST
+========================================= */
+
+.schedule-list {
+
+    background: white;
+
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 3px 15px rgba(0,0,0,0.07);
+}
+
+
+.schedule-item {
+
+    padding: 18px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+
+.schedule-item:last-child {
+
+    border-bottom: none;
+}
+
+
+.schedule-time {
+
+    font-size: 21px;
+
+    font-weight: 700;
+
+    margin-bottom: 5px;
+}
+
+
+.schedule-subject {
+
+    font-size: 18px;
+
+    font-weight: 600;
+}
+
+
+.schedule-professor {
+
+    margin-top: 5px;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+
+
+.schedule-type {
+
+    margin-top: 4px;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   CURRENT CLASS IN FULL SCHEDULE
+========================================= */
+
+.schedule-current {
+
+    border-left: 5px solid #16a34a;
+
+    background: #f0fdf4;
+}
+
+
+/* =========================================
+   BREAK
+========================================= */
+
+.schedule-break {
+
+    text-align: center;
+
+    padding: 10px;
+
+    color: #9ca3af;
+
+    font-size: 14px;
+}
+
+
+/* =========================================
+   BACK BUTTON
+========================================= */
+
+.back-button {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 16px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #e5e7eb;
+
+    color: #1f2937;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+}
+
+
+/* =========================================
+   COUNTDOWN
+========================================= */
+
+.countdown {
+
+    margin-top: 12px;
+
+    text-align: center;
+
+    font-size: 16px;
+
+    color: #166534;
+
+    font-weight: 600;
+}
+
+
+.next-countdown {
+
+    margin-top: 10px;
+
+    color: #6b7280;
+
+    font-size: 15px;
+}
+        
     </style>
 
 </head>
@@ -400,6 +628,8 @@
          CONTENT
     ========================================= -->
 
+    <div id="mainScreen">
+
     <div id="content">
 
         <div class="loading">
@@ -410,6 +640,48 @@
 
     </div>
 
+</div>
+
+
+<!-- =========================================
+     TODAY'S SCHEDULE SCREEN
+========================================= -->
+
+<div id="todayScreen">
+
+    <div class="today-header">
+
+        <div class="today-title">
+
+            ДЕНЕШЕН РАСПОРЕД
+
+        </div>
+
+        <div
+            class="today-date"
+            id="todayDate"
+        >
+        </div>
+
+    </div>
+
+
+    <div
+        id="todaySchedule"
+        class="schedule-list"
+    >
+
+    </div>
+
+
+    <button
+        class="back-button"
+        onclick="showMainScreen()"
+    >
+
+        ← НАЗАД
+
+    </button>
 
 </div>
 
@@ -675,7 +947,55 @@ function getClassEndTime(event) {
     );
 }
 
+function formatCountdown(totalMinutes) {
 
+    if (totalMinutes <= 0) {
+        return "";
+    }
+
+
+    const hours =
+        Math.floor(
+            totalMinutes / 60
+        );
+
+
+    const minutes =
+        totalMinutes % 60;
+
+
+    if (hours > 0) {
+
+        return `${hours}ч ${minutes}мин`;
+
+    }
+
+
+    return `${minutes} мин`;
+
+}
+
+    function getMinutesUntil(targetTime) {
+
+    const now =
+        new Date();
+
+
+    const currentMinutes =
+        now.getHours() * 60 +
+        now.getMinutes();
+
+
+    const targetMinutes =
+        timeToMinutes(
+            targetTime
+        );
+
+
+    return targetMinutes -
+           currentMinutes;
+
+}
 
 /* =========================================================
    LOAD CLASSROOM
@@ -1017,6 +1337,10 @@ function displayCurrentAndNext(events) {
                 currentEvent
             );
 
+        const minutesRemaining =
+            getMinutesUntil(
+                endTime
+            );
 
         html += `
 
@@ -1071,6 +1395,14 @@ function displayCurrentAndNext(events) {
                 >
 
                     НАСТАВАТА Е ВО ТЕК
+
+                </div>
+
+
+                <div class="countdown">
+
+                    Завршува за
+                        ${formatCountdown(minutesRemaining)}
 
                 </div>
 
@@ -1144,6 +1476,10 @@ function displayCurrentAndNext(events) {
                 nextEvent
             );
 
+        const minutesUntilNext =
+            getMinutesUntil(
+                nextEvent.startTime
+            );
 
         html += `
 
@@ -1183,6 +1519,13 @@ function displayCurrentAndNext(events) {
                     : ""
                 }
 
+<div class="next-countdown">
+
+    Почнува за
+    ${formatCountdown(minutesUntilNext)}
+
+</div>
+
             </div>
 
         `;
@@ -1219,8 +1562,20 @@ function displayCurrentAndNext(events) {
     }
 
 
-    content.innerHTML =
-        html;
+   content.innerHTML =
+
+    html +
+
+    `
+        <button
+            class="today-button"
+            onclick="showTodaySchedule()"
+        >
+
+            📅 РАСПОРЕД ЗА ДЕНЕС
+
+        </button>
+    `;
 
 }
 
@@ -1243,6 +1598,463 @@ setInterval(
     60 * 1000
 );
 
+
+    /* =========================================================
+   SHOW TODAY'S SCHEDULE
+========================================================= */
+
+function showTodaySchedule() {
+
+    const mainScreen =
+        document.getElementById(
+            "mainScreen"
+        );
+
+
+    const todayScreen =
+        document.getElementById(
+            "todayScreen"
+        );
+
+
+    mainScreen.style.display =
+        "none";
+
+
+    todayScreen.style.display =
+        "block";
+
+
+    loadTodaySchedule();
+
+
+    /*
+     * Automatically return after 30 seconds.
+     */
+
+    clearTimeout(
+        window.todayScreenTimeout
+    );
+
+
+    window.todayScreenTimeout =
+        setTimeout(
+            showMainScreen,
+            30000
+        );
+
+}
+
+
+
+/* =========================================================
+   SHOW MAIN SCREEN
+========================================================= */
+
+function showMainScreen() {
+
+    const mainScreen =
+        document.getElementById(
+            "mainScreen"
+        );
+
+
+    const todayScreen =
+        document.getElementById(
+            "todayScreen"
+        );
+
+
+    todayScreen.style.display =
+        "none";
+
+
+    mainScreen.style.display =
+        "block";
+
+
+    clearTimeout(
+        window.todayScreenTimeout
+    );
+
+}
+
+
+
+/* =========================================================
+   LOAD TODAY'S SCHEDULE
+========================================================= */
+
+async function loadTodaySchedule() {
+
+    const schedule =
+        document.getElementById(
+            "todaySchedule"
+        );
+
+
+    schedule.innerHTML = `
+
+        <div class="loading">
+
+            Се вчитува распоредот...
+
+        </div>
+
+    `;
+
+
+    try {
+
+        const today =
+            getToday();
+
+
+        const {
+            data: events,
+            error
+        } = await supabaseClient
+
+            .from("events")
+
+            .select(`
+                *,
+                subjects (
+                    id,
+                    name,
+                    semester,
+                    institute,
+                    programs (
+                        id,
+                        name
+                    )
+                ),
+                professors (
+                    id,
+                    name
+                ),
+                rooms (
+                    id,
+                    name
+                )
+            `)
+
+            .eq(
+                "event_date",
+                today
+            )
+
+            .eq(
+                "room_id",
+                roomId
+            );
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        const roomEvents =
+            (events || []).sort(
+                (a, b) =>
+                    timeToMinutes(
+                        a.event_time
+                    ) -
+                    timeToMinutes(
+                        b.event_time
+                    )
+            );
+
+
+        const classBlocks =
+            mergeEvents(
+                roomEvents
+            );
+
+
+        displayTodaySchedule(
+            classBlocks
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Today's schedule error:",
+            error
+        );
+
+
+        schedule.innerHTML = `
+
+            <div class="error">
+
+                Грешка при вчитување
+                на распоредот.
+
+                <br><br>
+
+                ${error.message}
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   DISPLAY TODAY'S SCHEDULE
+========================================================= */
+
+function displayTodaySchedule(
+    events
+) {
+
+    const schedule =
+        document.getElementById(
+            "todaySchedule"
+        );
+
+
+    const today =
+        new Date();
+
+
+    const currentMinutes =
+        today.getHours() * 60 +
+        today.getMinutes();
+
+
+    /*
+     * Date
+     */
+
+    document.getElementById(
+        "todayDate"
+    ).textContent =
+        today.toLocaleDateString(
+            "mk-MK",
+            {
+                weekday: "long",
+                day: "numeric",
+                month: "long"
+            }
+        );
+
+
+    if (!events.length) {
+
+        schedule.innerHTML = `
+
+            <div class="schedule-item">
+
+                <div class="schedule-subject">
+
+                    Нема настава
+                    во оваа просторија
+                    денес.
+
+                </div>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    for (
+        let i = 0;
+        i < events.length;
+        i++
+    ) {
+
+        const event =
+            events[i];
+
+
+        const start =
+            timeToMinutes(
+                event.startTime
+            );
+
+
+        const end =
+            timeToMinutes(
+                getClassEndTime(
+                    event
+                )
+            );
+
+
+        /*
+         * Add break if there is
+         * a gap between classes.
+         */
+
+        if (i > 0) {
+
+            const previous =
+                events[i - 1];
+
+
+            const previousEnd =
+                timeToMinutes(
+                    getClassEndTime(
+                        previous
+                    )
+                );
+
+
+            if (start > previousEnd) {
+
+                html += `
+
+                    <div class="schedule-break">
+
+                        ── Пауза ──
+
+                    </div>
+
+                `;
+
+            }
+
+        }
+
+
+        /*
+         * Is this the current class?
+         */
+
+        const isCurrent =
+            currentMinutes >= start &&
+            currentMinutes < end;
+
+
+        const subject =
+            event.subjects?.name ||
+            "Непознат предмет";
+
+
+        const professor =
+            event.professors?.name ||
+            "";
+
+
+        const type =
+            event.type ||
+            "";
+
+
+        html += `
+
+            <div
+                class="
+                    schedule-item
+                    ${
+                        isCurrent
+                        ? "schedule-current"
+                        : ""
+                    }
+                "
+            >
+
+                <div class="schedule-time">
+
+                    ${event.startTime}
+                    –
+                    ${getClassEndTime(event)}
+
+                </div>
+
+
+                <div class="schedule-subject">
+
+                    ${subject}
+
+                </div>
+
+
+                ${
+                    professor
+                    ? `
+
+                        <div
+                            class="schedule-professor"
+                        >
+
+                            👨‍🏫
+                            ${professor}
+
+                        </div>
+
+                    `
+                    : ""
+                }
+
+
+                ${
+                    type
+                    ? `
+
+                        <div
+                            class="schedule-type"
+                        >
+
+                            ${type}
+
+                        </div>
+
+                    `
+                    : ""
+                }
+
+
+                ${
+                    isCurrent
+                    ? `
+
+                        <div
+                            class="schedule-type"
+                        >
+
+                            🟢 НАСТАВАТА Е ВО ТЕК
+
+                        </div>
+
+                    `
+                    : ""
+                }
+
+            </div>
+
+        `;
+
+    }
+
+
+    schedule.innerHTML =
+        html;
+
+}
+
+
+    
 </script>
 
 
