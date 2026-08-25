@@ -564,7 +564,281 @@
 
     font-size: 15px;
 }
-        
+        /* =========================================
+   PROFESSOR ACCESS
+========================================= */
+
+.professor-access-button {
+
+    width: 100%;
+
+    margin-top: 12px;
+
+    padding: 14px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+}
+
+
+.professor-access-button:active {
+
+    background: #e5e7eb;
+
+}
+
+
+/* =========================================
+   PROFESSOR SCREEN
+========================================= */
+
+#professorScreen {
+
+    display: none;
+
+    text-align: center;
+}
+
+
+.professor-title {
+
+    font-size: 25px;
+
+    font-weight: 700;
+
+    margin-bottom: 8px;
+}
+
+
+.professor-subtitle {
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    margin-bottom: 20px;
+}
+
+
+/* =========================================
+   PIN DISPLAY
+========================================= */
+
+.pin-display {
+
+    width: 100%;
+
+    min-height: 55px;
+
+    margin-bottom: 20px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 12px;
+
+    font-size: 25px;
+
+    letter-spacing: 8px;
+}
+
+
+.pin-dot {
+
+    width: 13px;
+
+    height: 13px;
+
+    border-radius: 50%;
+
+    background: #1f2937;
+}
+
+
+.pin-empty {
+
+    width: 13px;
+
+    height: 13px;
+
+    border-radius: 50%;
+
+    border: 2px solid #9ca3af;
+}
+
+
+/* =========================================
+   PIN KEYPAD
+========================================= */
+
+.pin-keypad {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 10px;
+
+    max-width: 360px;
+
+    margin: 0 auto;
+}
+
+
+.pin-key {
+
+    height: 65px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: white;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,0.08);
+
+    font-size: 23px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+}
+
+
+.pin-key:active {
+
+    transform: scale(0.96);
+
+    background: #e5e7eb;
+}
+
+
+/* =========================================
+   PIN ERROR
+========================================= */
+
+.pin-error {
+
+    min-height: 22px;
+
+    margin-bottom: 10px;
+
+    color: #b91c1c;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================
+   PROFESSOR MENU
+========================================= */
+
+.professor-menu {
+
+    background: white;
+
+    border-radius: 16px;
+
+    padding: 25px;
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,0.08);
+
+    margin-bottom: 20px;
+}
+
+
+.professor-current-subject {
+
+    font-size: 25px;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+}
+
+
+.professor-current-time {
+
+    font-size: 20px;
+
+    color: #6b7280;
+
+    margin-bottom: 20px;
+}
+
+
+.start-class-button {
+
+    width: 100%;
+
+    padding: 18px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-size: 19px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+}
+
+
+.start-class-button:active {
+
+    transform: scale(0.98);
+
+}
+
+
+/* =========================================
+   CLASS STARTED
+========================================= */
+
+.class-started {
+
+    padding: 18px;
+
+    border-radius: 12px;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-weight: 700;
+
+    margin-bottom: 15px;
+}
     </style>
 
 </head>
@@ -685,7 +959,212 @@
 
 </div>
 
+<!-- =========================================
+     PROFESSOR SCREEN
+========================================= -->
 
+<div id="professorScreen">
+
+    <div class="professor-title">
+
+        ПРОФЕСОРСКИ ПРИСТАП
+
+    </div>
+
+
+    <div
+        class="professor-subtitle"
+        id="professorSubtitle"
+    >
+
+        Внесете PIN
+
+    </div>
+
+
+    <!-- =====================================
+         PIN AREA
+    ====================================== -->
+
+    <div
+        id="pinArea"
+    >
+
+        <div
+            class="pin-display"
+            id="pinDisplay"
+        >
+        </div>
+
+
+        <div
+            class="pin-error"
+            id="pinError"
+        >
+        </div>
+
+
+        <div class="pin-keypad">
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('1')"
+            >
+                1
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('2')"
+            >
+                2
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('3')"
+            >
+                3
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('4')"
+            >
+                4
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('5')"
+            >
+                5
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('6')"
+            >
+                6
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('7')"
+            >
+                7
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('8')"
+            >
+                8
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('9')"
+            >
+                9
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="clearPin()"
+            >
+                ←
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="pressPin('0')"
+            >
+                0
+            </button>
+
+
+            <button
+                class="pin-key"
+                onclick="submitPin()"
+            >
+                ✓
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================
+         PROFESSOR MENU
+    ====================================== -->
+
+    <div
+        id="professorMenu"
+        style="display:none;"
+    >
+
+        <div class="professor-menu">
+
+            <div
+                class="section-title"
+            >
+
+                ТЕКОВНА НАСТАВА
+
+            </div>
+
+
+            <div
+                class="professor-current-subject"
+                id="professorSubject"
+            >
+            </div>
+
+
+            <div
+                class="professor-current-time"
+                id="professorTime"
+            >
+            </div>
+
+
+            <button
+                class="start-class-button"
+                onclick="startClass()"
+            >
+
+                ▶ ЗАПОЧНИ НАСТАВА
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-button"
+        onclick="showMainScreen()"
+    >
+
+        ← НАЗАД
+
+    </button>
+
+</div>
 
 <script>
 
@@ -1575,6 +2054,15 @@ function displayCurrentAndNext(events) {
             📅 РАСПОРЕД ЗА ДЕНЕС
 
         </button>
+
+        <button
+            class="professor-access-button"
+            onclick="showProfessorScreen()"
+        >
+
+            Професорски пристап
+
+        </button>
     `;
 
 }
@@ -2053,7 +2541,559 @@ function displayTodaySchedule(
 
 }
 
+/* =========================================================
+   PROFESSOR ACCESS
+========================================================= */
 
+
+/*
+ * Temporary test PIN.
+ *
+ * We will NOT store this in the database yet.
+ */
+
+const PROFESSOR_TEST_PIN =
+    "1234";
+
+
+let currentPin = "";
+
+
+
+/* =========================================================
+   SHOW PROFESSOR SCREEN
+========================================================= */
+
+function showProfessorScreen() {
+
+    document.getElementById(
+        "mainScreen"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "todayScreen"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "professorScreen"
+    ).style.display = "block";
+
+
+    /*
+     * Reset PIN every time the screen
+     * is opened.
+     */
+
+    currentPin = "";
+
+    updatePinDisplay();
+
+
+    document.getElementById(
+        "pinError"
+    ).textContent = "";
+
+
+    document.getElementById(
+        "pinArea"
+    ).style.display = "block";
+
+
+    document.getElementById(
+        "professorMenu"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "professorSubtitle"
+    ).textContent =
+        "Внесете PIN";
+
+}
+
+
+
+/* =========================================================
+   PRESS PIN
+========================================================= */
+
+function pressPin(number) {
+
+    /*
+     * Maximum 4 digits for now.
+     */
+
+    if (
+        currentPin.length >= 4
+    ) {
+
+        return;
+
+    }
+
+
+    currentPin += number;
+
+
+    updatePinDisplay();
+
+
+    /*
+     * Automatically check after
+     * four digits.
+     */
+
+    if (
+        currentPin.length === 4
+    ) {
+
+        submitPin();
+
+    }
+
+}
+
+
+
+/* =========================================================
+   CLEAR PIN
+========================================================= */
+
+function clearPin() {
+
+    currentPin =
+        currentPin.slice(
+            0,
+            -1
+        );
+
+
+    updatePinDisplay();
+
+
+    document.getElementById(
+        "pinError"
+    ).textContent = "";
+
+}
+
+
+
+/* =========================================================
+   DISPLAY PIN
+========================================================= */
+
+function updatePinDisplay() {
+
+    const display =
+        document.getElementById(
+            "pinDisplay"
+        );
+
+
+    let html = "";
+
+
+    for (
+        let i = 0;
+        i < 4;
+        i++
+    ) {
+
+        if (
+            i < currentPin.length
+        ) {
+
+            html += `
+                <span
+                    class="pin-dot"
+                ></span>
+            `;
+
+        }
+
+        else {
+
+            html += `
+                <span
+                    class="pin-empty"
+                ></span>
+            `;
+
+        }
+
+    }
+
+
+    display.innerHTML =
+        html;
+
+}
+
+
+
+/* =========================================================
+   CHECK PIN
+========================================================= */
+
+function submitPin() {
+
+    if (
+        currentPin ===
+        PROFESSOR_TEST_PIN
+    ) {
+
+        openProfessorMenu();
+
+    }
+
+    else {
+
+        document.getElementById(
+            "pinError"
+        ).textContent =
+            "Погрешен PIN";
+
+
+        /*
+         * Clear after wrong PIN.
+         */
+
+        setTimeout(
+            () => {
+
+                currentPin = "";
+
+                updatePinDisplay();
+
+            },
+            800
+        );
+
+    }
+
+}
+
+
+
+/* =========================================================
+   OPEN PROFESSOR MENU
+========================================================= */
+
+function openProfessorMenu() {
+
+    document.getElementById(
+        "pinArea"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "professorMenu"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "professorSubtitle"
+    ).textContent =
+        displayRoomName;
+
+
+    /*
+     * Find the current class
+     * from the same data we already
+     * use for the main display.
+     */
+
+    loadProfessorCurrentClass();
+
+}
+
+
+
+/* =========================================================
+   LOAD CURRENT CLASS FOR PROFESSOR
+========================================================= */
+
+async function loadProfessorCurrentClass() {
+
+    try {
+
+        const today =
+            getToday();
+
+
+        const {
+            data: events,
+            error
+        } = await supabaseClient
+
+            .from("events")
+
+            .select(`
+                *,
+                subjects (
+                    id,
+                    name,
+                    semester,
+                    institute,
+                    programs (
+                        id,
+                        name
+                    )
+                ),
+                professors (
+                    id,
+                    name
+                ),
+                rooms (
+                    id,
+                    name
+                )
+            `)
+
+            .eq(
+                "event_date",
+                today
+            )
+
+            .eq(
+                "room_id",
+                roomId
+            );
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        const roomEvents =
+            (events || []).sort(
+                (a, b) =>
+                    timeToMinutes(
+                        a.event_time
+                    ) -
+                    timeToMinutes(
+                        b.event_time
+                    )
+            );
+
+
+        const classBlocks =
+            mergeEvents(
+                roomEvents
+            );
+
+
+        const now =
+            new Date();
+
+
+        const currentMinutes =
+            now.getHours() * 60 +
+            now.getMinutes();
+
+
+        let currentEvent =
+            null;
+
+
+        for (
+            const event
+            of classBlocks
+        ) {
+
+            const start =
+                timeToMinutes(
+                    event.startTime
+                );
+
+
+            const end =
+                timeToMinutes(
+                    getClassEndTime(
+                        event
+                    )
+                );
+
+
+            if (
+                currentMinutes >= start &&
+                currentMinutes < end
+            ) {
+
+                currentEvent =
+                    event;
+
+                break;
+
+            }
+
+        }
+
+
+        if (!currentEvent) {
+
+            document.getElementById(
+                "professorSubject"
+            ).textContent =
+                "Нема тековна настава";
+
+
+            document.getElementById(
+                "professorTime"
+            ).textContent =
+                "Во моментов нема час за започнување.";
+
+
+            document.querySelector(
+                ".start-class-button"
+            ).style.display =
+                "none";
+
+
+            return;
+
+        }
+
+
+        document.getElementById(
+            "professorSubject"
+        ).textContent =
+            currentEvent
+                .subjects?.name ||
+            "Непознат предмет";
+
+
+        document.getElementById(
+            "professorTime"
+        ).textContent =
+
+            `${currentEvent.startTime} – ${
+                getClassEndTime(
+                    currentEvent
+                )
+            }`;
+
+
+        document.querySelector(
+            ".start-class-button"
+        ).style.display =
+            "block";
+
+
+        /*
+         * Store current event temporarily
+         * in memory only.
+         */
+
+        window.currentProfessorEvent =
+            currentEvent;
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Professor class error:",
+            error
+        );
+
+
+        document.getElementById(
+            "professorSubject"
+        ).textContent =
+            "Грешка";
+
+
+        document.getElementById(
+            "professorTime"
+        ).textContent =
+            error.message;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   START CLASS
+========================================================= */
+
+function startClass() {
+
+    const event =
+        window.currentProfessorEvent;
+
+
+    if (!event) {
+
+        return;
+
+    }
+
+
+    const now =
+        new Date();
+
+
+    const time =
+        String(
+            now.getHours()
+        ).padStart(2, "0")
+        +
+        ":" +
+        String(
+            now.getMinutes()
+        ).padStart(2, "0");
+
+
+    document.getElementById(
+        "professorMenu"
+    ).innerHTML = `
+
+        <div class="professor-menu">
+
+            <div class="class-started">
+
+                ✓ НАСТАВАТА Е ЗАПОЧНАТА
+
+            </div>
+
+
+            <div
+                class="professor-current-subject"
+            >
+
+                ${
+                    event.subjects?.name ||
+                    "Непознат предмет"
+                }
+
+            </div>
+
+
+            <div
+                class="professor-current-time"
+            >
+
+                Започнато во ${time}
+
+            </div>
+
+        </div>
+
+    `;
+
+}
     
 </script>
 
