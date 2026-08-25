@@ -2153,17 +2153,78 @@ function showMainScreen() {
         );
 
 
-    todayScreen.style.display =
-        "none";
+    const professorScreen =
+        document.getElementById(
+            "professorScreen"
+        );
 
+
+    /*
+     * Show main screen
+     */
 
     mainScreen.style.display =
         "block";
 
 
+    /*
+     * Hide other screens
+     */
+
+    todayScreen.style.display =
+        "none";
+
+
+    professorScreen.style.display =
+        "none";
+
+
+    /*
+     * Cancel any automatic
+     * schedule-screen timeout.
+     */
+
     clearTimeout(
         window.todayScreenTimeout
     );
+
+
+    /*
+     * Reset professor PIN state.
+     */
+
+    currentPin = "";
+
+
+    /*
+     * Make sure professor screen
+     * starts from PIN entry next time.
+     */
+
+    document.getElementById(
+        "pinArea"
+    ).style.display =
+        "block";
+
+
+    document.getElementById(
+        "professorMenu"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "pinError"
+    ).textContent = "";
+
+
+    document.getElementById(
+        "professorSubtitle"
+    ).textContent =
+        "Внесете PIN";
+
+
+    updatePinDisplay();
 
 }
 
@@ -2566,24 +2627,46 @@ let currentPin = "";
 
 function showProfessorScreen() {
 
-    document.getElementById(
-        "mainScreen"
-    ).style.display = "none";
+    const mainScreen =
+        document.getElementById(
+            "mainScreen"
+        );
 
 
-    document.getElementById(
-        "todayScreen"
-    ).style.display = "none";
+    const todayScreen =
+        document.getElementById(
+            "todayScreen"
+        );
 
 
-    document.getElementById(
-        "professorScreen"
-    ).style.display = "block";
+    const professorScreen =
+        document.getElementById(
+            "professorScreen"
+        );
 
 
     /*
-     * Reset PIN every time the screen
-     * is opened.
+     * Hide other screens
+     */
+
+    mainScreen.style.display =
+        "none";
+
+
+    todayScreen.style.display =
+        "none";
+
+
+    /*
+     * Show professor screen
+     */
+
+    professorScreen.style.display =
+        "block";
+
+
+    /*
+     * Reset PIN
      */
 
     currentPin = "";
@@ -2598,12 +2681,14 @@ function showProfessorScreen() {
 
     document.getElementById(
         "pinArea"
-    ).style.display = "block";
+    ).style.display =
+        "block";
 
 
     document.getElementById(
         "professorMenu"
-    ).style.display = "none";
+    ).style.display =
+        "none";
 
 
     document.getElementById(
