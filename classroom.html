@@ -686,9 +686,7 @@ function getClassEndTime(event) {
 async function loadClassroom() {
 
     const content =
-        document.getElementById(
-            "content"
-        );
+        document.getElementById("content");
 
 
     try {
@@ -704,9 +702,7 @@ async function loadClassroom() {
             getToday();
 
 
-        console.log(
-            "================================"
-        );
+        console.log("================================");
 
         console.log(
             "Classroom:",
@@ -725,74 +721,12 @@ async function loadClassroom() {
 
 
         /* =========================================
-           FIND ROOM
-        ========================================= */
-
-        const {
-            data: rooms,
-            error: roomError
-        } = await supabaseClient
-
-            .from("rooms")
-
-            .select(`
-                id,
-                name
-            `)
-
-            .in(
-                "name",
-                [
-                    "01 Пред.",
-                    "02 Пред.",
-                    "03 Пред.",
-                    "04 Пред."
-                ]
-            );
-
-
-        if (roomError) {
-            throw roomError;
-        }
-
-
-        console.log(
-            "Classroom rooms:",
-            rooms
-        );
-
-
-        const room =
-            rooms?.find(
-                r =>
-                    r.name ===
-                    databaseRoomName
-            );
-
-
-        if (!room) {
-
-            throw new Error(
-                `Не е пронајдена просторијата "${databaseRoomName}".`
-            );
-
-        }
-
-
-        console.log(
-            "Selected room:",
-            room
-        );
-
-
-
-        /* =========================================
-           LOAD EVENTS FOR THIS ROOM
+           LOAD TODAY'S EVENTS
         ========================================= */
 
         const {
             data: events,
-            error: eventsError
+            error
         } = await supabaseClient
 
             .from("events")
@@ -822,22 +756,46 @@ async function loadClassroom() {
             .eq(
                 "event_date",
                 today
-            )
-
-            .eq(
-                "room_id",
-                room.id
             );
 
 
-        if (eventsError) {
-            throw eventsError;
+        if (error) {
+            throw error;
         }
 
 
         console.log(
-            "Events from database:",
+            "All today's events:",
             events
+        );
+
+
+        /* =========================================
+           FIND EVENTS FOR THIS ROOM
+        ========================================= */
+
+        const roomEvents =
+            (events || []).filter(
+                event => {
+
+                    return (
+                        event.rooms?.name ===
+                        databaseRoomName
+                    );
+
+                }
+            );
+
+
+        console.log(
+            "Events for:",
+            databaseRoomName
+        );
+
+
+        console.log(
+            "Room events:",
+            roomEvents
         );
 
 
@@ -845,21 +803,14 @@ async function loadClassroom() {
            SORT
         ========================================= */
 
-        const roomEvents =
-            (events || []).sort(
-                (a, b) =>
-                    timeToMinutes(
-                        a.event_time
-                    ) -
-                    timeToMinutes(
-                        b.event_time
-                    )
-            );
-
-
-        console.log(
-            "Sorted room events:",
-            roomEvents
+        roomEvents.sort(
+            (a, b) =>
+                timeToMinutes(
+                    a.event_time
+                ) -
+                timeToMinutes(
+                    b.event_time
+                )
         );
 
 
