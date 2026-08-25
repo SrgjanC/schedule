@@ -768,6 +768,14 @@ async function loadClassroom() {
             "All today's events:",
             events
         );
+        console.log(
+            "ROOM DEBUG:",
+            events.map(event => ({
+                event_id: event.id,
+                room_id: event.room_id,
+                rooms: event.rooms
+            }))
+        );
 
 
         /* =========================================
