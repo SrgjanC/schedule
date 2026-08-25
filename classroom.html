@@ -448,12 +448,12 @@ const roomCode =
     urlParams.get("room") || "01";
 
 
-const classroomNames = {
+const classroomRoomIds = {
 
-    "01": "01 Пред.",
-    "02": "02 Пред.",
-    "03": "03 Пред.",
-    "04": "04 Пред."
+    "01": 1,
+    "02": 2,
+    "03": 3,
+    "04": 4
 
 };
 
@@ -468,14 +468,12 @@ const displayNames = {
 };
 
 
-const databaseRoomName =
-    classroomNames[roomCode];
-
+const roomId =
+    classroomRoomIds[roomCode];
 
 const displayRoomName =
     displayNames[roomCode] ||
     roomCode;
-
 
 document.getElementById("roomName")
     .textContent =
@@ -784,22 +782,16 @@ async function loadClassroom() {
 
         const roomEvents =
             (events || []).filter(
-                event => {
-
-                    return (
-                        event.rooms?.name ===
-                        databaseRoomName
-                    );
-
-                }
+                event =>
+                    Number(event.room_id) ===
+                    Number(roomId)
             );
 
 
         console.log(
-            "Events for:",
-            databaseRoomName
+            "Room ID:",
+            roomId
         );
-
 
         console.log(
             "Room events:",
