@@ -16,33 +16,849 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<style>
 
-    <style>
+    /* =========================================================
+       GLOBAL
+    ========================================================= */
 
-        * {
-            box-sizing: border-box;
-        }
+    * {
+        box-sizing: border-box;
+    }
 
 
-        html,
-        body {
+    html,
+    body {
 
-            margin: 0;
-            padding: 0;
+        margin: 0;
 
-            width: 100%;
-            min-height: 100%;
+        padding: 0;
 
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
+        width: 100%;
 
-            background: #f5f7fa;
+        min-height: 100%;
 
-            color: #1f2937;
-        }
+        font-family:
+            Arial,
+            Helvetica,
+            sans-serif;
 
+        background: #f5f7fa;
+
+        color: #1f2937;
+    }
+
+
+    body {
+
+        min-height: 100vh;
+    }
+
+
+
+    /* =========================================================
+       MAIN CONTAINER
+    ========================================================= */
+
+    .container {
+
+        width: 100%;
+
+        max-width: 900px;
+
+        margin: 0 auto;
+
+        padding: 20px 25px;
+    }
+
+
+
+    /* =========================================================
+       HEADER
+    ========================================================= */
+
+    .header {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        align-items: center;
+
+        margin-bottom: 15px;
+    }
+
+
+    .faculty-name {
+
+        font-size: 18px;
+
+        font-weight: 600;
+    }
+
+
+    .clock {
+
+        font-size: 20px;
+
+        font-weight: 600;
+    }
+
+
+
+    /* =========================================================
+       ROOM
+    ========================================================= */
+
+    .room {
+
+        text-align: center;
+
+        margin-bottom: 18px;
+    }
+
+
+    .room-label {
+
+        font-size: 15px;
+
+        color: #6b7280;
+    }
+
+
+    .room-name {
+
+        font-size: 32px;
+
+        font-weight: 700;
+
+        margin-top: 4px;
+    }
+
+
+
+    /* =========================================================
+       CURRENT CLASS
+    ========================================================= */
+
+    .current-card {
+
+        width: 100%;
+
+        background: white;
+
+        border-radius: 18px;
+
+        padding: 24px 25px;
+
+        box-shadow:
+            0 4px 20px rgba(0,0,0,0.08);
+
+        margin-bottom: 15px;
+    }
+
+
+    .section-title {
+
+        font-size: 15px;
+
+        font-weight: 700;
+
+        color: #6b7280;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.5px;
+
+        margin-bottom: 12px;
+    }
+
+
+    .subject {
+
+        font-size: 30px;
+
+        font-weight: 700;
+
+        line-height: 1.2;
+
+        margin-bottom: 10px;
+    }
+
+
+    .type {
+
+        font-size: 16px;
+
+        color: #6b7280;
+
+        margin-bottom: 14px;
+    }
+
+
+    .time {
+
+        font-size: 22px;
+
+        font-weight: 600;
+    }
+
+
+    .professor {
+
+        margin-top: 12px;
+
+        font-size: 17px;
+    }
+
+
+    .status {
+
+        margin-top: 18px;
+
+        padding: 11px;
+
+        border-radius: 10px;
+
+        text-align: center;
+
+        font-weight: 700;
+    }
+
+
+    .status-current {
+
+        background: #dcfce7;
+
+        color: #166534;
+    }
+
+
+    .status-free {
+
+        background: #f3f4f6;
+
+        color: #4b5563;
+    }
+
+
+
+    /* =========================================================
+       NEXT CLASS
+    ========================================================= */
+
+    .next-card {
+
+        width: 100%;
+
+        background: white;
+
+        border-radius: 15px;
+
+        padding: 20px 25px;
+
+        box-shadow:
+            0 3px 15px rgba(0,0,0,0.06);
+
+        margin-bottom: 15px;
+    }
+
+
+    .next-time {
+
+        font-size: 24px;
+
+        font-weight: 700;
+
+        margin-bottom: 7px;
+    }
+
+
+    .next-subject {
+
+        font-size: 20px;
+
+        font-weight: 600;
+    }
+
+
+    .next-professor {
+
+        margin-top: 7px;
+
+        color: #6b7280;
+
+        font-size: 15px;
+    }
+
+
+
+    /* =========================================================
+       LOADING
+    ========================================================= */
+
+    .loading {
+
+        text-align: center;
+
+        padding: 50px 20px;
+
+        color: #6b7280;
+    }
+
+
+
+    /* =========================================================
+       ERROR
+    ========================================================= */
+
+    .error {
+
+        background: #fee2e2;
+
+        color: #991b1b;
+
+        padding: 20px;
+
+        border-radius: 12px;
+
+        margin-top: 20px;
+
+        word-break: break-word;
+    }
+
+
+
+    /* =========================================================
+       TODAY SCHEDULE BUTTON
+    ========================================================= */
+
+    .today-button {
+
+        width: 100%;
+
+        margin-top: 5px;
+
+        padding: 17px;
+
+        border: none;
+
+        border-radius: 14px;
+
+        background: #1f2937;
+
+        color: white;
+
+        font-size: 18px;
+
+        font-weight: 700;
+
+        cursor: pointer;
+
+        touch-action: manipulation;
+    }
+
+
+    .today-button:active {
+
+        transform: scale(0.98);
+    }
+
+
+
+    /* =========================================================
+       TODAY SCHEDULE SCREEN
+    ========================================================= */
+
+    #todayScreen {
+
+        display: none;
+
+        width: 100%;
+    }
+
+
+    .today-header {
+
+        text-align: center;
+
+        margin-bottom: 15px;
+    }
+
+
+    .today-title {
+
+        font-size: 26px;
+
+        font-weight: 700;
+
+        margin-bottom: 4px;
+    }
+
+
+    .today-date {
+
+        color: #6b7280;
+
+        font-size: 16px;
+    }
+
+
+
+    /* =========================================================
+       SCHEDULE LIST
+    ========================================================= */
+
+    .schedule-list {
+
+        background: white;
+
+        border-radius: 16px;
+
+        overflow: hidden;
+
+        box-shadow:
+            0 3px 15px rgba(0,0,0,0.07);
+    }
+
+
+    .schedule-item {
+
+        padding: 16px 18px;
+
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+
+    .schedule-item:last-child {
+
+        border-bottom: none;
+    }
+
+
+    .schedule-time {
+
+        font-size: 21px;
+
+        font-weight: 700;
+
+        margin-bottom: 5px;
+    }
+
+
+    .schedule-subject {
+
+        font-size: 18px;
+
+        font-weight: 600;
+    }
+
+
+    .schedule-professor {
+
+        margin-top: 5px;
+
+        color: #6b7280;
+
+        font-size: 15px;
+    }
+
+
+    .schedule-type {
+
+        margin-top: 4px;
+
+        color: #6b7280;
+
+        font-size: 14px;
+    }
+
+
+
+    /* =========================================================
+       CURRENT CLASS IN FULL SCHEDULE
+    ========================================================= */
+
+    .schedule-current {
+
+        border-left: 5px solid #16a34a;
+
+        background: #f0fdf4;
+    }
+
+
+
+    /* =========================================================
+       BREAK
+    ========================================================= */
+
+    .schedule-break {
+
+        text-align: center;
+
+        padding: 8px;
+
+        color: #9ca3af;
+
+        font-size: 14px;
+    }
+
+
+
+    /* =========================================================
+       BACK BUTTON
+    ========================================================= */
+
+    .back-button {
+
+        width: 100%;
+
+        margin-top: 15px;
+
+        padding: 15px;
+
+        border: none;
+
+        border-radius: 14px;
+
+        background: #e5e7eb;
+
+        color: #1f2937;
+
+        font-size: 17px;
+
+        font-weight: 700;
+
+        cursor: pointer;
+
+        touch-action: manipulation;
+    }
+
+
+
+    /* =========================================================
+       COUNTDOWN
+    ========================================================= */
+
+    .countdown {
+
+        margin-top: 10px;
+
+        text-align: center;
+
+        font-size: 16px;
+
+        color: #166534;
+
+        font-weight: 600;
+    }
+
+
+    .next-countdown {
+
+        margin-top: 9px;
+
+        color: #6b7280;
+
+        font-size: 15px;
+    }
+
+
+
+    /* =========================================================
+       PROFESSOR ACCESS
+    ========================================================= */
+
+    .professor-access-button {
+
+        width: 100%;
+
+        margin-top: 8px;
+
+        padding: 12px;
+
+        border: none;
+
+        border-radius: 12px;
+
+        background: transparent;
+
+        color: #6b7280;
+
+        font-size: 14px;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        touch-action: manipulation;
+    }
+
+
+    .professor-access-button:active {
+
+        background: #e5e7eb;
+    }
+
+
+
+    /* =========================================================
+       PROFESSOR SCREEN
+    ========================================================= */
+
+    #professorScreen {
+
+        display: none;
+
+        text-align: center;
+    }
+
+
+    .professor-title {
+
+        font-size: 25px;
+
+        font-weight: 700;
+
+        margin-bottom: 8px;
+    }
+
+
+    .professor-subtitle {
+
+        color: #6b7280;
+
+        font-size: 15px;
+
+        margin-bottom: 20px;
+    }
+
+
+
+    /* =========================================================
+       PIN DISPLAY
+    ========================================================= */
+
+    .pin-display {
+
+        width: 100%;
+
+        min-height: 55px;
+
+        margin-bottom: 20px;
+
+        display: flex;
+
+        justify-content: center;
+
+        align-items: center;
+
+        gap: 12px;
+
+        font-size: 25px;
+
+        letter-spacing: 8px;
+    }
+
+
+    .pin-dot {
+
+        width: 13px;
+
+        height: 13px;
+
+        border-radius: 50%;
+
+        background: #1f2937;
+    }
+
+
+    .pin-empty {
+
+        width: 13px;
+
+        height: 13px;
+
+        border-radius: 50%;
+
+        border: 2px solid #9ca3af;
+    }
+
+
+
+    /* =========================================================
+       PIN KEYPAD
+    ========================================================= */
+
+    .pin-keypad {
+
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+        gap: 10px;
+
+        max-width: 360px;
+
+        margin: 0 auto;
+    }
+
+
+    .pin-key {
+
+        height: 65px;
+
+        border: none;
+
+        border-radius: 12px;
+
+        background: white;
+
+        box-shadow:
+            0 2px 8px rgba(0,0,0,0.08);
+
+        font-size: 23px;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        touch-action: manipulation;
+    }
+
+
+    .pin-key:active {
+
+        transform: scale(0.96);
+
+        background: #e5e7eb;
+    }
+
+
+
+    /* =========================================================
+       PIN ERROR
+    ========================================================= */
+
+    .pin-error {
+
+        min-height: 22px;
+
+        margin-bottom: 10px;
+
+        color: #b91c1c;
+
+        font-size: 14px;
+
+        font-weight: 600;
+    }
+
+
+
+    /* =========================================================
+       PROFESSOR MENU
+    ========================================================= */
+
+    .professor-menu {
+
+        background: white;
+
+        border-radius: 16px;
+
+        padding: 25px;
+
+        box-shadow:
+            0 4px 20px rgba(0,0,0,0.08);
+
+        margin-bottom: 20px;
+    }
+
+
+    .professor-current-subject {
+
+        font-size: 25px;
+
+        font-weight: 700;
+
+        margin-bottom: 10px;
+    }
+
+
+    .professor-current-time {
+
+        font-size: 20px;
+
+        color: #6b7280;
+
+        margin-bottom: 20px;
+    }
+
+
+    .start-class-button {
+
+        width: 100%;
+
+        padding: 18px;
+
+        border: none;
+
+        border-radius: 14px;
+
+        background: #16a34a;
+
+        color: white;
+
+        font-size: 19px;
+
+        font-weight: 700;
+
+        cursor: pointer;
+
+        touch-action: manipulation;
+    }
+
+
+    .start-class-button:active {
+
+        transform: scale(0.98);
+    }
+
+
+
+    /* =========================================================
+       CLASS STARTED
+    ========================================================= */
+
+    .class-started {
+
+        padding: 18px;
+
+        border-radius: 12px;
+
+        background: #dcfce7;
+
+        color: #166534;
+
+        font-weight: 700;
+
+        margin-bottom: 15px;
+    }
+
+
+
+    /* =========================================================
+       LANDSCAPE TABLET
+       
+       IMPORTANT:
+       Current class stays FIRST.
+       Next class stays UNDER it.
+       
+       We only make the page wider and
+       reduce vertical spacing.
+    ========================================================= */
+
+    @media (orientation: landscape) {
 
         body {
 
@@ -52,110 +868,69 @@
 
         .container {
 
-            width: 100%;
+            max-width: 1000px;
 
-            max-width: 700px;
-
-            margin: 0 auto;
-
-            padding: 20px;
+            padding:
+                14px 30px;
         }
 
 
-        /* =========================================
-           HEADER
-        ========================================= */
-
         .header {
 
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            margin-bottom: 25px;
+            margin-bottom: 10px;
         }
 
 
         .faculty-name {
 
-            font-size: 18px;
-
-            font-weight: 600;
+            font-size: 19px;
         }
 
 
         .clock {
 
-            font-size: 20px;
-
-            font-weight: 600;
+            font-size: 21px;
         }
 
 
-        /* =========================================
-           ROOM
-        ========================================= */
-
         .room {
 
-            text-align: center;
-
-            margin-bottom: 25px;
+            margin-bottom: 12px;
         }
 
 
         .room-label {
 
-            font-size: 16px;
-
-            color: #6b7280;
+            font-size: 15px;
         }
 
 
         .room-name {
 
-            font-size: 32px;
+            font-size: 30px;
 
-            font-weight: 700;
-
-            margin-top: 5px;
+            margin-top: 2px;
         }
 
 
-        /* =========================================
-           CURRENT CLASS
-        ========================================= */
+        /*
+         * CURRENT CLASS
+         *
+         * Still full width.
+         */
 
         .current-card {
 
-            background: white;
+            padding:
+                20px 28px;
 
-            border-radius: 18px;
-
-            padding: 30px 25px;
-
-            box-shadow:
-                0 4px 20px rgba(0,0,0,0.08);
-
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
 
 
         .section-title {
 
-            font-size: 15px;
-
-            font-weight: 700;
-
-            color: #6b7280;
-
-            text-transform: uppercase;
-
-            letter-spacing: 0.5px;
-
-            margin-bottom: 15px;
+            margin-bottom: 9px;
         }
 
 
@@ -163,818 +938,262 @@
 
             font-size: 30px;
 
-            font-weight: 700;
-
-            line-height: 1.2;
-
-            margin-bottom: 15px;
+            margin-bottom: 8px;
         }
 
 
         .type {
 
-            font-size: 16px;
-
-            color: #6b7280;
-
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
 
         .time {
 
             font-size: 22px;
-
-            font-weight: 600;
         }
 
 
         .professor {
 
-            margin-top: 15px;
-
-            font-size: 17px;
+            margin-top: 8px;
         }
 
 
         .status {
 
-            margin-top: 25px;
+            margin-top: 12px;
 
-            padding: 12px;
-
-            border-radius: 10px;
-
-            text-align: center;
-
-            font-weight: 700;
+            padding: 9px;
         }
 
 
-        .status-current {
+        .countdown {
 
-            background: #dcfce7;
-
-            color: #166534;
+            margin-top: 7px;
         }
 
 
-        .status-free {
-
-            background: #f3f4f6;
-
-            color: #4b5563;
-        }
-
-
-        /* =========================================
-           NEXT CLASS
-        ========================================= */
+        /*
+         * NEXT CLASS
+         *
+         * Still UNDER current class.
+         */
 
         .next-card {
 
-            background: white;
+            padding:
+                16px 28px;
 
-            border-radius: 15px;
-
-            padding: 20px;
-
-            box-shadow:
-                0 3px 15px rgba(0,0,0,0.06);
+            margin-bottom: 12px;
         }
 
 
         .next-time {
 
-            font-size: 24px;
+            font-size: 22px;
 
-            font-weight: 700;
-
-            margin-bottom: 8px;
+            margin-bottom: 5px;
         }
 
 
         .next-subject {
 
-            font-size: 19px;
-
-            font-weight: 600;
+            font-size: 20px;
         }
 
 
         .next-professor {
 
-            margin-top: 8px;
-
-            color: #6b7280;
-
-            font-size: 15px;
+            margin-top: 5px;
         }
 
 
-        /* =========================================
-           LOADING
-        ========================================= */
+        .next-countdown {
 
-        .loading {
-
-            text-align: center;
-
-            padding: 60px 20px;
-
-            color: #6b7280;
+            margin-top: 6px;
         }
 
 
-        /* =========================================
-           ERROR
-        ========================================= */
+        /*
+         * TODAY BUTTON
+         */
 
-        .error {
+        .today-button {
 
-            background: #fee2e2;
+            margin-top: 3px;
 
-            color: #991b1b;
-
-            padding: 20px;
-
-            border-radius: 12px;
-
-            margin-top: 20px;
-
-            word-break: break-word;
+            padding: 14px;
         }
 
 
-        /* =========================================
-           MOBILE / TABLET
-        ========================================= */
+        /*
+         * PROFESSOR ACCESS
+         */
 
-        @media (max-width: 600px) {
+        .professor-access-button {
 
-            .container {
+            margin-top: 5px;
 
-                padding: 15px;
-            }
-
-
-            .subject {
-
-                font-size: 25px;
-            }
-
-
-            .room-name {
-
-                font-size: 28px;
-            }
-
-
-            .clock {
-
-                font-size: 18px;
-            }
-
+            padding: 9px;
         }
 
 
-        /* =========================================
-   TODAY SCHEDULE BUTTON
-========================================= */
+        /*
+         * TODAY'S SCHEDULE
+         *
+         * Wider and more compact.
+         */
 
-.today-button {
+        #todayScreen {
 
-    width: 100%;
+            width: 100%;
+        }
 
-    margin-top: 20px;
 
-    padding: 18px;
+        .today-header {
 
-    border: none;
+            margin-bottom: 10px;
+        }
 
-    border-radius: 14px;
 
-    background: #1f2937;
+        .today-title {
 
-    color: white;
+            font-size: 25px;
+        }
 
-    font-size: 18px;
 
-    font-weight: 700;
+        .schedule-item {
 
-    cursor: pointer;
+            padding:
+                12px 20px;
+        }
 
-    touch-action: manipulation;
-}
 
+        .schedule-time {
 
-.today-button:active {
+            font-size: 20px;
 
-    transform: scale(0.98);
+            margin-bottom: 3px;
+        }
 
-}
 
+        .schedule-subject {
 
-/* =========================================
-   TODAY SCHEDULE SCREEN
-========================================= */
+            font-size: 18px;
+        }
 
-#todayScreen {
 
-    display: none;
-}
+        .schedule-professor {
 
+            margin-top: 3px;
+        }
 
-.today-header {
 
-    text-align: center;
+        .schedule-type {
 
-    margin-bottom: 20px;
-}
+            margin-top: 2px;
+        }
 
 
-.today-title {
+        .schedule-break {
 
-    font-size: 26px;
+            padding: 5px;
+        }
 
-    font-weight: 700;
 
-    margin-bottom: 5px;
-}
+        .back-button {
 
+            margin-top: 10px;
 
-.today-date {
+            padding: 12px;
+        }
 
-    color: #6b7280;
 
-    font-size: 16px;
-}
+        /*
+         * PROFESSOR SCREEN
+         */
 
+        #professorScreen {
 
-/* =========================================
-   SCHEDULE LIST
-========================================= */
+            max-width: 600px;
 
-.schedule-list {
+            margin:
+                0 auto;
+        }
 
-    background: white;
 
-    border-radius: 16px;
+        .professor-title {
 
-    overflow: hidden;
+            font-size: 25px;
 
-    box-shadow:
-        0 3px 15px rgba(0,0,0,0.07);
-}
+            margin-bottom: 5px;
+        }
 
 
-.schedule-item {
+        .professor-subtitle {
 
-    padding: 18px;
+            margin-bottom: 12px;
+        }
 
-    border-bottom: 1px solid #e5e7eb;
-}
 
+        .pin-display {
 
-.schedule-item:last-child {
+            min-height: 45px;
 
-    border-bottom: none;
-}
+            margin-bottom: 12px;
+        }
 
 
-.schedule-time {
+        .pin-keypad {
 
-    font-size: 21px;
+            max-width: 380px;
 
-    font-weight: 700;
+            gap: 8px;
+        }
 
-    margin-bottom: 5px;
-}
 
+        .pin-key {
 
-.schedule-subject {
+            height: 55px;
+        }
 
-    font-size: 18px;
-
-    font-weight: 600;
-}
-
-
-.schedule-professor {
-
-    margin-top: 5px;
-
-    color: #6b7280;
-
-    font-size: 15px;
-}
-
-
-.schedule-type {
-
-    margin-top: 4px;
-
-    color: #6b7280;
-
-    font-size: 14px;
-}
-
-
-/* =========================================
-   CURRENT CLASS IN FULL SCHEDULE
-========================================= */
-
-.schedule-current {
-
-    border-left: 5px solid #16a34a;
-
-    background: #f0fdf4;
-}
-
-
-/* =========================================
-   BREAK
-========================================= */
-
-.schedule-break {
-
-    text-align: center;
-
-    padding: 10px;
-
-    color: #9ca3af;
-
-    font-size: 14px;
-}
-
-
-/* =========================================
-   BACK BUTTON
-========================================= */
-
-.back-button {
-
-    width: 100%;
-
-    margin-top: 20px;
-
-    padding: 16px;
-
-    border: none;
-
-    border-radius: 14px;
-
-    background: #e5e7eb;
-
-    color: #1f2937;
-
-    font-size: 17px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    touch-action: manipulation;
-}
-
-
-/* =========================================
-   COUNTDOWN
-========================================= */
-
-.countdown {
-
-    margin-top: 12px;
-
-    text-align: center;
-
-    font-size: 16px;
-
-    color: #166534;
-
-    font-weight: 600;
-}
-
-
-.next-countdown {
-
-    margin-top: 10px;
-
-    color: #6b7280;
-
-    font-size: 15px;
-}
-        /* =========================================
-   PROFESSOR ACCESS
-========================================= */
-
-.professor-access-button {
-
-    width: 100%;
-
-    margin-top: 12px;
-
-    padding: 14px;
-
-    border: none;
-
-    border-radius: 12px;
-
-    background: transparent;
-
-    color: #6b7280;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    touch-action: manipulation;
-}
-
-
-.professor-access-button:active {
-
-    background: #e5e7eb;
-
-}
-
-
-/* =========================================
-   PROFESSOR SCREEN
-========================================= */
-
-#professorScreen {
-
-    display: none;
-
-    text-align: center;
-}
-
-
-.professor-title {
-
-    font-size: 25px;
-
-    font-weight: 700;
-
-    margin-bottom: 8px;
-}
-
-
-.professor-subtitle {
-
-    color: #6b7280;
-
-    font-size: 15px;
-
-    margin-bottom: 20px;
-}
-
-
-/* =========================================
-   PIN DISPLAY
-========================================= */
-
-.pin-display {
-
-    width: 100%;
-
-    min-height: 55px;
-
-    margin-bottom: 20px;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    gap: 12px;
-
-    font-size: 25px;
-
-    letter-spacing: 8px;
-}
-
-
-.pin-dot {
-
-    width: 13px;
-
-    height: 13px;
-
-    border-radius: 50%;
-
-    background: #1f2937;
-}
-
-
-.pin-empty {
-
-    width: 13px;
-
-    height: 13px;
-
-    border-radius: 50%;
-
-    border: 2px solid #9ca3af;
-}
-
-
-/* =========================================
-   PIN KEYPAD
-========================================= */
-
-.pin-keypad {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 10px;
-
-    max-width: 360px;
-
-    margin: 0 auto;
-}
-
-
-.pin-key {
-
-    height: 65px;
-
-    border: none;
-
-    border-radius: 12px;
-
-    background: white;
-
-    box-shadow:
-        0 2px 8px rgba(0,0,0,0.08);
-
-    font-size: 23px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    touch-action: manipulation;
-}
-
-
-.pin-key:active {
-
-    transform: scale(0.96);
-
-    background: #e5e7eb;
-}
-
-
-/* =========================================
-   PIN ERROR
-========================================= */
-
-.pin-error {
-
-    min-height: 22px;
-
-    margin-bottom: 10px;
-
-    color: #b91c1c;
-
-    font-size: 14px;
-
-    font-weight: 600;
-}
-
-
-/* =========================================
-   PROFESSOR MENU
-========================================= */
-
-.professor-menu {
-
-    background: white;
-
-    border-radius: 16px;
-
-    padding: 25px;
-
-    box-shadow:
-        0 4px 20px rgba(0,0,0,0.08);
-
-    margin-bottom: 20px;
-}
-
-
-.professor-current-subject {
-
-    font-size: 25px;
-
-    font-weight: 700;
-
-    margin-bottom: 10px;
-}
-
-
-.professor-current-time {
-
-    font-size: 20px;
-
-    color: #6b7280;
-
-    margin-bottom: 20px;
-}
-
-
-.start-class-button {
-
-    width: 100%;
-
-    padding: 18px;
-
-    border: none;
-
-    border-radius: 14px;
-
-    background: #16a34a;
-
-    color: white;
-
-    font-size: 19px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    touch-action: manipulation;
-}
-
-
-.start-class-button:active {
-
-    transform: scale(0.98);
-
-}
-
-
-/* =========================================
-   CLASS STARTED
-========================================= */
-
-.class-started {
-
-    padding: 18px;
-
-    border-radius: 12px;
-
-    background: #dcfce7;
-
-    color: #166534;
-
-    font-weight: 700;
-
-    margin-bottom: 15px;
-}
-
-
-
-/* =========================================================
-   LANDSCAPE CLASSROOM DISPLAY
-========================================================= */
-
-@media (orientation: landscape) {
-
-    body {
-        min-height: 100vh;
     }
 
 
-    /*
-     * Main content uses the full width
-     */
 
-    #mainScreen {
-        width: 100%;
+    /* =========================================================
+       SMALL SCREENS / PORTRAIT PHONES
+    ========================================================= */
+
+    @media (max-width: 600px) {
+
+        .container {
+
+            padding: 15px;
+        }
+
+
+        .subject {
+
+            font-size: 25px;
+        }
+
+
+        .room-name {
+
+            font-size: 28px;
+        }
+
+
+        .clock {
+
+            font-size: 18px;
+        }
+
     }
 
-
-    #content {
-        width: 100%;
-        max-width: 1100px;
-        margin: 0 auto;
-    }
-
-
-    /*
-     * Current + next class side by side
-     *
-     * The existing cards are generated inside #content.
-     */
-
-    .current-card,
-    .next-card {
-        box-sizing: border-box;
-    }
-
-
-    /*
-     * Put the two cards next to each other.
-     */
-
-    .current-card,
-.next-card {
-
-    display: inline-block;
-
-    vertical-align: top;
-
-    width: calc(50% - 8px);
-
-    max-width: none;
-
-    box-sizing: border-box;
-
-    margin-top: 0;
-
-    margin-bottom: 16px;
-}
-
-
-    .current-card {
-        margin-right: 8px;
-    }
-
-
-    .next-card {
-        margin-left: 8px;
-    }
-
-
-    /*
-     * Today's schedule button below both cards.
-     */
-
-    .today-button {
-        clear: both;
-
-        display: block;
-
-        width: 100%;
-
-        margin-top: 20px;
-    }
-
-
-    /*
-     * Professor access stays below the schedule button.
-     */
-
-    .professor-access-button {
-        display: block;
-
-        width: 100%;
-    }
-
-
-    /*
-     * Make the important information
-     * more visible in landscape.
-     */
-
-    .subject {
-        font-size: 30px;
-    }
-
-
-    .next-subject {
-        font-size: 25px;
-    }
-
-
-    .time,
-    .next-time {
-        font-size: 22px;
-    }
-
-
-    .professor,
-    .next-professor {
-        font-size: 17px;
-    }
-
-
-    .countdown,
-    .next-countdown {
-        font-size: 16px;
-    }
-
-}
-        
-    </style>
+</style>
 
 </head>
 
