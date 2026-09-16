@@ -334,37 +334,10 @@
        TODAY SCHEDULE BUTTON
     ========================================================= */
 
-    .today-button {
-
-        width: 100%;
-
-        margin-top: 5px;
-
-        padding: 17px;
-
-        border: none;
-
-        border-radius: 14px;
-
-        background: #1f2937;
-
-        color: white;
-
-        font-size: 18px;
-
-        font-weight: 700;
-
-        cursor: pointer;
-
-        touch-action: manipulation;
-    }
+    
 
 
-    .today-button:active {
-
-        transform: scale(0.98);
-    }
-
+    
 
 
     /* =========================================================
@@ -570,30 +543,75 @@
        PROFESSOR ACCESS
     ========================================================= */
 
-    .professor-access-button {
+    /* =========================================================
+   ACTION BUTTONS
+========================================================= */
 
-        width: 100%;
+.action-buttons {
 
-        margin-top: 8px;
+    width: 100%;
 
-        padding: 12px;
+    display: flex;
 
-        border: none;
+    gap: 12px;
 
-        border-radius: 12px;
+    margin-top: 5px;
+}
 
-        background: transparent;
 
-        color: #6b7280;
+.action-button {
 
-        font-size: 14px;
+    flex: 1;
 
-        font-weight: 600;
+    width: 50%;
 
-        cursor: pointer;
+    min-height: 50px;
 
-        touch-action: manipulation;
-    }
+    padding: 13px 15px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    background: #1f2937;
+
+    color: white;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    transition: transform 0.1s ease,
+                background 0.1s ease;
+}
+
+
+.action-button:active {
+
+    transform: scale(0.98);
+
+    background: #111827;
+}
+
+
+.button-icon {
+
+    font-size: 19px;
+
+    line-height: 1;
+}
 
 
     .professor-access-button:active {
@@ -1024,24 +1042,35 @@
          * TODAY BUTTON
          */
 
-        .today-button {
+        .action-buttons {
 
-            margin-top: 3px;
+    gap: 14px;
 
-            padding: 14px;
-        }
+    margin-top: 3px;
+}
+
+
+.action-button {
+
+    min-height: 52px;
+
+    padding: 12px 18px;
+
+    font-size: 17px;
+}
+
+
+.button-icon {
+
+    font-size: 20px;
+}
 
 
         /*
          * PROFESSOR ACCESS
          */
 
-        .professor-access-button {
-
-            margin-top: 5px;
-
-            padding: 9px;
-        }
+       
 
 
         /*
@@ -2421,23 +2450,19 @@ function displayCurrentAndNext(events) {
     html +
 
     `
-        <button
-            class="today-button"
-            onclick="showTodaySchedule()"
-        >
+        <div class="action-buttons">
 
-            📅 РАСПОРЕД ЗА ДЕНЕС
+    <button class="action-button" onclick="showTodaySchedule()">
+        <span class="button-icon">📅</span>
+        <span>РАСПОРЕД ЗА ДЕНЕС</span>
+    </button>
 
-        </button>
+    <button class="action-button" onclick="showProfessorAccess()">
+        <span class="button-icon">👨‍🏫</span>
+        <span>ПРОФЕСОРСКИ ПРИСТАП</span>
+    </button>
 
-        <button
-            class="professor-access-button"
-            onclick="showProfessorScreen()"
-        >
-
-            Професорски пристап
-
-        </button>
+</div>
     `;
 
 }
