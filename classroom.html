@@ -3180,11 +3180,17 @@ function displayTodaySchedule(
 
             if (start > previousEnd) {
 
+                const freeHours =
+                    (start - previousEnd) / 60;
+
                 html += `
 
                     <div class="schedule-break">
 
-                        ── Пауза ──
+                        — Предавалната е слободна
+                            ${freeHours}
+                            ${freeHours === 1 ? "час" : "часа"}
+                        —
 
                     </div>
 
