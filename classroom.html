@@ -1755,6 +1755,10 @@ function addHour(time) {
    MERGE EVENTS
 ========================================================= */
 
+/* =========================================================
+   MERGE EVENTS
+========================================================= */
+
 function mergeEvents(events) {
 
     if (!events || !events.length) {
@@ -1763,7 +1767,7 @@ function mergeEvents(events) {
 
     /*
      * STEP 1
-     * Sort events by start time
+     * Sort by start time
      */
     const sorted = [...events].sort(
         (a, b) =>
@@ -1774,15 +1778,20 @@ function mergeEvents(events) {
 
     /*
      * STEP 2
-     * Group all events that start at the same time.
+     * Group all events having the same start time.
      *
      * Example:
      *
-     * 12:00 Subject 1
-     * 12:00 Subject 2
-     * 12:00 Subject 3
+     * 12:00 Subject A
+     * 12:00 Subject B
+     * 12:00 Subject C
      *
-     * becomes one time block.
+     * becomes ONE block:
+     *
+     * 12:00–13:00
+     * A
+     * B
+     * C
      */
     const timeBlocks = [];
 
@@ -1801,6 +1810,7 @@ function mergeEvents(events) {
             block = {
                 startTime: time,
                 endTime: addHour(time),
+                event_date: event.event_date,
                 events: []
             };
 
@@ -1808,13 +1818,13 @@ function mergeEvents(events) {
         }
 
         block.events.push(event);
+
     });
 
 
     /*
      * STEP 3
-     * Remove duplicate subjects inside
-     * the same time block.
+     * Create unique subject / professor / type lists
      */
     timeBlocks.forEach(block => {
 
@@ -1833,18 +1843,29 @@ function mergeEvents(events) {
                 event.subjects?.name ||
                 "Непознат предмет";
 
+
+            /*
+             * SUBJECT
+             */
             if (
                 !uniqueSubjects.some(
-                    s => s.id === subjectId
+                    subject =>
+                        String(subject.id) ===
+                        String(subjectId)
                 )
             ) {
+
                 uniqueSubjects.push({
                     id: subjectId,
                     name: subjectName
                 });
+
             }
 
 
+            /*
+             * PROFESSOR
+             */
             const professorName =
                 event.professors?.name;
 
@@ -1854,12 +1875,17 @@ function mergeEvents(events) {
                     professorName
                 )
             ) {
+
                 uniqueProfessors.push(
                     professorName
                 );
+
             }
 
 
+            /*
+             * TYPE
+             */
             const type =
                 event.type;
 
@@ -1867,7 +1893,9 @@ function mergeEvents(events) {
                 type &&
                 !uniqueTypes.includes(type)
             ) {
+
                 uniqueTypes.push(type);
+
             }
 
         });
@@ -1881,26 +1909,31 @@ function mergeEvents(events) {
 
         block.typesList =
             uniqueTypes;
+
     });
 
 
     /*
      * STEP 4
-     * Merge consecutive time blocks when they
-     * contain the SAME subjects.
+     * MERGE CONSECUTIVE BLOCKS
      *
-     * Example:
+     * IMPORTANT:
      *
-     * 12:00 Subject 1,2,3
-     * 13:00 Subject 1,2,3
-     * 14:00 Subject 1,2,3
+     * last.endTime is already the REAL end time.
      *
-     * becomes:
+     * Therefore:
      *
-     * 12:00 – 15:00 Subject 1,2,3
+     * 12:00–13:00
+     * followed by
+     * 13:00–14:00
+     *
+     * is checked with:
+     *
+     * last.endTime === block.startTime
+     *
+     * NOT addHour(last.endTime)
      */
     const merged = [];
-
 
     timeBlocks.forEach(block => {
 
@@ -1910,37 +1943,57 @@ function mergeEvents(events) {
 
         const currentSubjectIds =
             block.subjectsList
-                .map(s => String(s.id))
+                .map(
+                    subject =>
+                        String(subject.id)
+                )
                 .sort();
 
 
-        if (
+        const lastSubjectIds =
+            last
+            ? last.subjectsList
+                .map(
+                    subject =>
+                        String(subject.id)
+                )
+                .sort()
+            : [];
+
+
+        const sameSubjects =
             last &&
-            last.event_date ===
-                block.events[0].event_date &&
-
-            addHour(last.endTime) ===
-                block.startTime &&
-
             JSON.stringify(
-                last.subjectsList
-                    .map(s => String(s.id))
-                    .sort()
+                lastSubjectIds
             ) ===
             JSON.stringify(
                 currentSubjectIds
-            )
+            );
+
+
+        /*
+         * SAME SUBJECT SET + CONSECUTIVE TIME
+         */
+        if (
+            last &&
+            last.event_date ===
+                block.event_date &&
+
+            last.endTime ===
+                block.startTime &&
+
+            sameSubjects
         ) {
 
             /*
-             * Extend existing block
+             * Extend the existing block
              */
             last.endTime =
                 block.endTime;
 
 
             /*
-             * Add professors/types if new
+             * Add any new professors
              */
             block.professorsList
                 .forEach(professor => {
@@ -1949,13 +2002,18 @@ function mergeEvents(events) {
                         !last.professorsList
                             .includes(professor)
                     ) {
+
                         last.professorsList
                             .push(professor);
+
                     }
 
                 });
 
 
+            /*
+             * Add any new teaching types
+             */
             block.typesList
                 .forEach(type => {
 
@@ -1963,8 +2021,10 @@ function mergeEvents(events) {
                         !last.typesList
                             .includes(type)
                     ) {
+
                         last.typesList
                             .push(type);
+
                     }
 
                 });
@@ -1973,11 +2033,9 @@ function mergeEvents(events) {
 
         else {
 
-            /*
-             * Create new combined block
-             */
             const firstEvent =
                 block.events[0];
+
 
             merged.push({
 
@@ -2066,11 +2124,21 @@ function getTypeNames(event) {
    REAL CLASS END TIME
 ========================================================= */
 
+/* =========================================================
+   REAL CLASS END TIME
+========================================================= */
+
 function getClassEndTime(event) {
 
+    if (event.endTime) {
+        return event.endTime;
+    }
+
     return addHour(
-        event.endTime
+        event.startTime ||
+        event.event_time.substring(0, 5)
     );
+
 }
 
 function formatCountdown(totalMinutes) {
