@@ -1757,55 +1757,246 @@ function addHour(time) {
 
 function mergeEvents(events) {
 
+    if (!events || !events.length) {
+        return [];
+    }
+
+    /*
+     * STEP 1
+     * Sort events by start time
+     */
+    const sorted = [...events].sort(
+        (a, b) =>
+            timeToMinutes(a.event_time) -
+            timeToMinutes(b.event_time)
+    );
+
+
+    /*
+     * STEP 2
+     * Group all events that start at the same time.
+     *
+     * Example:
+     *
+     * 12:00 Subject 1
+     * 12:00 Subject 2
+     * 12:00 Subject 3
+     *
+     * becomes one time block.
+     */
+    const timeBlocks = [];
+
+    sorted.forEach(event => {
+
+        const time =
+            event.event_time.substring(0, 5);
+
+        let block =
+            timeBlocks.find(
+                b => b.startTime === time
+            );
+
+        if (!block) {
+
+            block = {
+                startTime: time,
+                endTime: addHour(time),
+                events: []
+            };
+
+            timeBlocks.push(block);
+        }
+
+        block.events.push(event);
+    });
+
+
+    /*
+     * STEP 3
+     * Remove duplicate subjects inside
+     * the same time block.
+     */
+    timeBlocks.forEach(block => {
+
+        const uniqueSubjects = [];
+        const uniqueProfessors = [];
+        const uniqueTypes = [];
+
+        block.events.forEach(event => {
+
+            const subjectId =
+                event.subjects?.id ??
+                event.subject_id ??
+                event.subjects?.name;
+
+            const subjectName =
+                event.subjects?.name ||
+                "Непознат предмет";
+
+            if (
+                !uniqueSubjects.some(
+                    s => s.id === subjectId
+                )
+            ) {
+                uniqueSubjects.push({
+                    id: subjectId,
+                    name: subjectName
+                });
+            }
+
+
+            const professorName =
+                event.professors?.name;
+
+            if (
+                professorName &&
+                !uniqueProfessors.includes(
+                    professorName
+                )
+            ) {
+                uniqueProfessors.push(
+                    professorName
+                );
+            }
+
+
+            const type =
+                event.type;
+
+            if (
+                type &&
+                !uniqueTypes.includes(type)
+            ) {
+                uniqueTypes.push(type);
+            }
+
+        });
+
+
+        block.subjectsList =
+            uniqueSubjects;
+
+        block.professorsList =
+            uniqueProfessors;
+
+        block.typesList =
+            uniqueTypes;
+    });
+
+
+    /*
+     * STEP 4
+     * Merge consecutive time blocks when they
+     * contain the SAME subjects.
+     *
+     * Example:
+     *
+     * 12:00 Subject 1,2,3
+     * 13:00 Subject 1,2,3
+     * 14:00 Subject 1,2,3
+     *
+     * becomes:
+     *
+     * 12:00 – 15:00 Subject 1,2,3
+     */
     const merged = [];
 
-    events.forEach(event => {
+
+    timeBlocks.forEach(block => {
 
         const last =
             merged[merged.length - 1];
 
+
+        const currentSubjectIds =
+            block.subjectsList
+                .map(s => String(s.id))
+                .sort();
+
+
         if (
-
             last &&
-
             last.event_date ===
-                event.event_date &&
-
-            last.subjects?.id ===
-                event.subjects?.id &&
-
-            last.type ===
-                event.type &&
-
-            (last.rooms?.id || 0) ===
-                (event.rooms?.id || 0) &&
-
-            (last.professors?.id || 0) ===
-                (event.professors?.id || 0) &&
+                block.events[0].event_date &&
 
             addHour(last.endTime) ===
-                event.event_time.substring(0, 5)
+                block.startTime &&
 
+            JSON.stringify(
+                last.subjectsList
+                    .map(s => String(s.id))
+                    .sort()
+            ) ===
+            JSON.stringify(
+                currentSubjectIds
+            )
         ) {
 
+            /*
+             * Extend existing block
+             */
             last.endTime =
-                event.event_time.substring(0, 5);
+                block.endTime;
+
+
+            /*
+             * Add professors/types if new
+             */
+            block.professorsList
+                .forEach(professor => {
+
+                    if (
+                        !last.professorsList
+                            .includes(professor)
+                    ) {
+                        last.professorsList
+                            .push(professor);
+                    }
+
+                });
+
+
+            block.typesList
+                .forEach(type => {
+
+                    if (
+                        !last.typesList
+                            .includes(type)
+                    ) {
+                        last.typesList
+                            .push(type);
+                    }
+
+                });
 
         }
 
         else {
 
+            /*
+             * Create new combined block
+             */
+            const firstEvent =
+                block.events[0];
+
             merged.push({
 
-                ...event,
+                ...firstEvent,
 
                 startTime:
-                    event.event_time
-                        .substring(0, 5),
+                    block.startTime,
 
                 endTime:
-                    event.event_time
-                        .substring(0, 5)
+                    block.endTime,
+
+                subjectsList:
+                    block.subjectsList,
+
+                professorsList:
+                    block.professorsList,
+
+                typesList:
+                    block.typesList
 
             });
 
@@ -1813,10 +2004,63 @@ function mergeEvents(events) {
 
     });
 
+
     return merged;
+
+}
+
+function getSubjectNames(event) {
+
+    if (
+        event.subjectsList &&
+        event.subjectsList.length
+    ) {
+        return event.subjectsList.map(
+            s => s.name
+        );
+    }
+
+    return [
+        event.subjects?.name ||
+        "Непознат предмет"
+    ];
 }
 
 
+function getProfessorNames(event) {
+
+    if (
+        event.professorsList &&
+        event.professorsList.length
+    ) {
+        return event.professorsList;
+    }
+
+    if (event.professors?.name) {
+        return [
+            event.professors.name
+        ];
+    }
+
+    return [];
+}
+
+
+function getTypeNames(event) {
+
+    if (
+        event.typesList &&
+        event.typesList.length
+    ) {
+        return event.typesList;
+    }
+
+    if (event.type) {
+        return [event.type];
+    }
+
+    return [];
+}
 
 /* =========================================================
    REAL CLASS END TIME
@@ -2193,21 +2437,14 @@ function displayCurrentAndNext(events) {
 
     if (currentEvent) {
 
-        const subject =
-            currentEvent
-                .subjects?.name ||
-            "Непознат предмет";
+        const subjects =
+    getSubjectNames(currentEvent);
 
+const professors =
+    getProfessorNames(currentEvent);
 
-        const professor =
-            currentEvent
-                .professors?.name ||
-            "";
-
-
-        const type =
-            currentEvent.type ||
-            "";
+const types =
+    getTypeNames(currentEvent);
 
 
         const startTime =
@@ -2234,17 +2471,19 @@ function displayCurrentAndNext(events) {
 
 
                 <div class="subject">
-                    ${subject}
+                    ${subjects.map(
+                        subject => `<div>${subject}</div>`
+                    ).join("")}
                 </div>
 
 
                 ${
-                    type
-                    ? `
+                    types.length
+                        ? `
                         <div class="type">
-                            ${type}
+                        ${types.join(" / ")}
                         </div>
-                    `
+                        `
                     : ""
                 }
 
@@ -2259,16 +2498,14 @@ function displayCurrentAndNext(events) {
 
 
                 ${
-                    professor
-                    ? `
+                        professors.length
+                        ? `
                         <div class="professor">
-
-                            👨‍🏫
-                            ${professor}
-
+                        👨‍🏫
+                        ${professors.join(" / ")}
                         </div>
-                    `
-                    : ""
+                        `
+                        : ""
                 }
 
 
@@ -2337,16 +2574,11 @@ function displayCurrentAndNext(events) {
 
     if (nextEvent) {
 
-        const subject =
-            nextEvent
-                .subjects?.name ||
-            "Непознат предмет";
+        const subjects =
+            getSubjectNames(nextEvent);
 
-
-        const professor =
-            nextEvent
-                .professors?.name ||
-            "";
+        const professors =
+            getProfessorNames(nextEvent);
 
 
         const startTime =
@@ -2382,23 +2614,21 @@ function displayCurrentAndNext(events) {
 
 
                 <div class="next-subject">
-
-                    ${subject}
-
+                    ${subjects.map(
+                        subject => `<div>${subject}</div>`
+                    ).join("")}
                 </div>
 
 
                 ${
-                    professor
-                    ? `
-                        <div class="next-professor">
-
+                        professors.length
+                            ? `
+                            <div class="next-professor">
                             👨‍🏫
-                            ${professor}
-
-                        </div>
-                    `
-                    : ""
+                            ${professors.join(" / ")}
+                            </div>
+                                `
+                            : ""
                 }
 
 <div class="next-countdown">
@@ -2799,6 +3029,10 @@ function displayTodaySchedule(
         );
 
 
+    /*
+     * NO EVENTS
+     */
+
     if (!events.length) {
 
         schedule.innerHTML = `
@@ -2825,6 +3059,10 @@ function displayTodaySchedule(
     let html = "";
 
 
+    /*
+     * DISPLAY EACH COMBINED CLASS BLOCK
+     */
+
     for (
         let i = 0;
         i < events.length;
@@ -2835,6 +3073,10 @@ function displayTodaySchedule(
             events[i];
 
 
+        /*
+         * START / END
+         */
+
         const start =
             timeToMinutes(
                 event.startTime
@@ -2843,15 +3085,16 @@ function displayTodaySchedule(
 
         const end =
             timeToMinutes(
-                getClassEndTime(
-                    event
-                )
+                event.endTime ||
+                getClassEndTime(event)
             );
 
 
         /*
-         * Add break if there is
-         * a gap between classes.
+         * ADD BREAK
+         *
+         * Only add a pause if there is
+         * a real gap between blocks.
          */
 
         if (i > 0) {
@@ -2862,9 +3105,8 @@ function displayTodaySchedule(
 
             const previousEnd =
                 timeToMinutes(
-                    getClassEndTime(
-                        previous
-                    )
+                    previous.endTime ||
+                    getClassEndTime(previous)
                 );
 
 
@@ -2886,7 +3128,7 @@ function displayTodaySchedule(
 
 
         /*
-         * Is this the current class?
+         * CURRENT CLASS
          */
 
         const isCurrent =
@@ -2894,20 +3136,93 @@ function displayTodaySchedule(
             currentMinutes < end;
 
 
-        const subject =
-            event.subjects?.name ||
-            "Непознат предмет";
+        /*
+         * SUBJECTS
+         *
+         * For exam blocks there can be
+         * several subjects.
+         */
+
+        const subjects =
+            getSubjectNames(event);
 
 
-        const professor =
-            event.professors?.name ||
-            "";
+        /*
+         * PROFESSORS
+         */
+
+        const professors =
+            getProfessorNames(event);
 
 
-        const type =
-            event.type ||
-            "";
+        /*
+         * TYPES
+         */
 
+        const types =
+            getTypeNames(event);
+
+
+        /*
+         * SUBJECT HTML
+         */
+
+        const subjectHtml =
+            subjects
+                .map(
+                    subject => `
+                        <div>
+                            ${subject}
+                        </div>
+                    `
+                )
+                .join("");
+
+
+        /*
+         * PROFESSOR HTML
+         */
+
+        const professorHtml =
+            professors.length
+            ? `
+
+                <div
+                    class="schedule-professor"
+                >
+
+                    👨‍🏫
+                    ${professors.join(" / ")}
+
+                </div>
+
+            `
+            : "";
+
+
+        /*
+         * TYPE HTML
+         */
+
+        const typeHtml =
+            types.length
+            ? `
+
+                <div
+                    class="schedule-type"
+                >
+
+                    ${types.join(" / ")}
+
+                </div>
+
+            `
+            : "";
+
+
+        /*
+         * FINAL SCHEDULE ITEM
+         */
 
         html += `
 
@@ -2926,51 +3241,25 @@ function displayTodaySchedule(
 
                     ${event.startTime}
                     –
-                    ${getClassEndTime(event)}
+                    ${
+                        event.endTime ||
+                        getClassEndTime(event)
+                    }
 
                 </div>
 
 
                 <div class="schedule-subject">
 
-                    ${subject}
+                    ${subjectHtml}
 
                 </div>
 
 
-                ${
-                    professor
-                    ? `
-
-                        <div
-                            class="schedule-professor"
-                        >
-
-                            👨‍🏫
-                            ${professor}
-
-                        </div>
-
-                    `
-                    : ""
-                }
+                ${professorHtml}
 
 
-                ${
-                    type
-                    ? `
-
-                        <div
-                            class="schedule-type"
-                        >
-
-                            ${type}
-
-                        </div>
-
-                    `
-                    : ""
-                }
+                ${typeHtml}
 
 
                 ${
@@ -2995,6 +3284,10 @@ function displayTodaySchedule(
 
     }
 
+
+    /*
+     * DISPLAY
+     */
 
     schedule.innerHTML =
         html;
