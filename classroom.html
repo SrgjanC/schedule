@@ -156,6 +156,8 @@
             0 4px 20px rgba(0,0,0,0.08);
 
         margin-bottom: 15px;
+        cursor: pointer;
+    touch-action: manipulation;
     }
 
 
@@ -2224,7 +2226,7 @@ function displayCurrentAndNext(events) {
 
         html += `
 
-            <div class="current-card">
+            <div class="current-card" onclick="showProfessorScreen()">
 
                 <div class="section-title">
                     ТЕКОВНА НАСТАВА
