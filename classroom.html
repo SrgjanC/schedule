@@ -2578,12 +2578,18 @@ const types =
 
 
                 <div
-                    class="status status-current"
-                >
-
-                    НАСТАВАТА Е ВО ТЕК
-
-                </div>
+    class="status ${
+        isClassStarted(currentEvent)
+            ? "status-current"
+            : "status-not-started"
+    }"
+>
+    ${
+        isClassStarted(currentEvent)
+            ? "НАСТАВАТА Е ВО ТЕК"
+            : "НАСТАВАТА НЕ Е ЗАПОЧНАТА"
+    }
+</div>
 
 
                 <div class="countdown">
@@ -2922,6 +2928,7 @@ function showMainScreen() {
 
 
     updatePinDisplay();
+    loadClassroom();
 
 }
 
@@ -3385,7 +3392,48 @@ const PROFESSOR_TEST_PIN =
 
 let currentPin = "";
 
+/* =========================================================
+   STARTED CLASSES
+========================================================= */
 
+const startedClasses = new Set();
+
+
+function getEventKey(event) {
+
+    const subjectIds =
+        event.subjectsList
+            ? event.subjectsList
+                .map(s => String(s.id))
+                .sort()
+                .join(",")
+            : String(
+                event.subjects?.id ||
+                event.subject_id ||
+                ""
+            );
+
+    return [
+        event.event_date,
+        roomId,
+        event.startTime,
+        subjectIds
+    ].join("|");
+
+}
+
+
+function isClassStarted(event) {
+
+    if (!event) {
+        return false;
+    }
+
+    return startedClasses.has(
+        getEventKey(event)
+    );
+
+}
 
 /* =========================================================
    SHOW PROFESSOR SCREEN
@@ -3884,29 +3932,40 @@ function startClass() {
     const event =
         window.currentProfessorEvent;
 
-
     if (!event) {
-
         return;
-
     }
 
 
+    /*
+     * Mark this class as started
+     */
+    startedClasses.add(
+        getEventKey(event)
+    );
+
+
+    /*
+     * Current time
+     */
     const now =
         new Date();
-
 
     const time =
         String(
             now.getHours()
         ).padStart(2, "0")
         +
-        ":" +
+        ":"
+        +
         String(
             now.getMinutes()
         ).padStart(2, "0");
 
 
+    /*
+     * Update professor screen
+     */
     document.getElementById(
         "professorMenu"
     ).innerHTML = `
@@ -3925,8 +3984,16 @@ function startClass() {
             >
 
                 ${
-                    event.subjects?.name ||
-                    "Непознат предмет"
+                    event.subjectsList
+                    ? event.subjectsList
+                        .map(
+                            s => s.name
+                        )
+                        .join("<br>")
+                    : (
+                        event.subjects?.name ||
+                        "Непознат предмет"
+                    )
                 }
 
             </div>
@@ -3943,6 +4010,12 @@ function startClass() {
         </div>
 
     `;
+
+
+    /*
+     * Refresh the main classroom display
+     */
+    loadClassroom();
 
 }
     
