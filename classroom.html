@@ -3854,19 +3854,91 @@ async function loadProfessorCurrentClass() {
             }`;
 
 
-        document.querySelector(
-            ".start-class-button"
-        ).style.display =
-            "block";
-
-
-        /*
-         * Store current event temporarily
-         * in memory only.
-         */
-
         window.currentProfessorEvent =
-            currentEvent;
+    currentEvent;
+
+
+/*
+ * Check whether the class
+ * has already been started
+ */
+if (currentEvent.started_at) {
+
+    const startedDate =
+        new Date(
+            currentEvent.started_at
+        );
+
+    const startedHours =
+        String(
+            startedDate.getHours()
+        ).padStart(2, "0");
+
+    const startedMinutes =
+        String(
+            startedDate.getMinutes()
+        ).padStart(2, "0");
+
+
+    document.getElementById(
+        "professorMenu"
+    ).innerHTML = `
+
+        <div class="professor-menu">
+
+            <div class="class-started">
+
+                ✓ НАСТАВАТА Е ЗАПОЧНАТА
+
+            </div>
+
+
+            <div
+                class="professor-current-subject"
+            >
+
+                ${
+                    currentEvent.subjectsList
+                    ? currentEvent.subjectsList
+                        .map(
+                            s => s.name
+                        )
+                        .join("<br>")
+                    : (
+                        currentEvent.subjects?.name ||
+                        "Непознат предмет"
+                    )
+                }
+
+            </div>
+
+
+            <div
+                class="professor-current-time"
+            >
+
+                Наставата е започната
+                во ${startedHours}:${startedMinutes}
+                часот.
+
+            </div>
+
+        </div>
+
+    `;
+
+}
+else {
+
+    /*
+     * Class has NOT been started yet.
+     */
+    document.querySelector(
+        ".start-class-button"
+    ).style.display =
+        "block";
+
+}
 
 
     }
