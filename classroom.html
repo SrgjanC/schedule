@@ -4119,7 +4119,10 @@ async function startClass() {
     /*
      * Refresh main classroom display
      */
-    loadClassroom();
+    setTimeout(() => {
+        showMainScreen();
+        loadClassroom();
+    }, 3000);
 
 }
     
