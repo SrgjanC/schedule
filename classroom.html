@@ -2578,18 +2578,18 @@ const types =
 
 
                 <div
-    class="status ${
-        isClassStarted(currentEvent)
-            ? "status-current"
-            : "status-not-started"
-    }"
->
-    ${
-        isClassStarted(currentEvent)
-            ? "НАСТАВАТА Е ВО ТЕК"
-            : "НАСТАВАТА НЕ Е ЗАПОЧНАТА"
-    }
-</div>
+                    class="status ${
+                        isClassStarted(currentEvent)
+                            ? "status-current"
+                            : "status-not-started"
+                     }"
+                >
+                ${
+                    isClassStarted(currentEvent)
+                        ? "НАСТАВАТА Е ВО ТЕК"
+                        : "НАСТАВАТА НЕ Е ЗАПОЧНАТА"
+                    }
+                </div>
 
 
                 <div class="countdown">
@@ -3396,44 +3396,17 @@ let currentPin = "";
    STARTED CLASSES
 ========================================================= */
 
-const startedClasses = new Set();
-
-
-function getEventKey(event) {
-
-    const subjectIds =
-        event.subjectsList
-            ? event.subjectsList
-                .map(s => String(s.id))
-                .sort()
-                .join(",")
-            : String(
-                event.subjects?.id ||
-                event.subject_id ||
-                ""
-            );
-
-    return [
-        event.event_date,
-        roomId,
-        event.startTime,
-        subjectIds
-    ].join("|");
-
-}
-
 
 function isClassStarted(event) {
 
-    if (!event) {
-        return false;
-    }
-
-    return startedClasses.has(
-        getEventKey(event)
+    return !!(
+        event &&
+        event.started_at
     );
 
 }
+
+
 
 /* =========================================================
    SHOW PROFESSOR SCREEN
@@ -3927,7 +3900,7 @@ async function loadProfessorCurrentClass() {
    START CLASS
 ========================================================= */
 
-function startClass() {
+async function startClass() {
 
     const event =
         window.currentProfessorEvent;
@@ -3938,33 +3911,91 @@ function startClass() {
 
 
     /*
-     * Mark this class as started
+     * Prevent starting the same class twice
      */
-    startedClasses.add(
-        getEventKey(event)
-    );
+    if (event.started_at) {
+        return;
+    }
 
 
     /*
-     * Current time
+     * Exact start time
      */
-    const now =
-        new Date();
+    const startedAt =
+        new Date().toISOString();
 
-    const time =
+
+    /*
+     * Save start time to Supabase
+     *
+     * IMPORTANT:
+     * Only the FIRST event of a merged
+     * multi-hour class is updated.
+     */
+    const {
+        data,
+        error
+    } = await supabaseClient
+
+        .from("events")
+
+        .update({
+            started_at: startedAt
+        })
+
+        .eq("id", event.id)
+
+        .select()
+        .single();
+
+
+    /*
+     * Database error
+     */
+    if (error) {
+
+        console.error(
+            "Start class error:",
+            error
+        );
+
+        alert(
+            "Грешка при започнување на наставата:\n\n" +
+            error.message
+        );
+
+        return;
+    }
+
+
+    /*
+     * Update local object immediately
+     */
+    event.started_at =
+        data.started_at;
+
+
+    /*
+     * Display actual start time
+     */
+    const startDate =
+        new Date(
+            data.started_at
+        );
+
+    const hours =
         String(
-            now.getHours()
-        ).padStart(2, "0")
-        +
-        ":"
-        +
+            startDate.getHours()
+        ).padStart(2, "0");
+
+    const minutes =
         String(
-            now.getMinutes()
+            startDate.getMinutes()
         ).padStart(2, "0");
 
 
     /*
-     * Update professor screen
+     * Professor screen
      */
     document.getElementById(
         "professorMenu"
@@ -4003,7 +4034,8 @@ function startClass() {
                 class="professor-current-time"
             >
 
-                Започнато во ${time}
+                Започнато во
+                ${hours}:${minutes}
 
             </div>
 
@@ -4013,7 +4045,7 @@ function startClass() {
 
 
     /*
-     * Refresh the main classroom display
+     * Refresh main classroom display
      */
     loadClassroom();
 
