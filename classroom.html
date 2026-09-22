@@ -2888,6 +2888,7 @@ function showTodaySchedule() {
 ========================================================= */
 
 function showMainScreen() {
+    stopProfessorInactivityTimer();
 
     const mainScreen =
         document.getElementById(
@@ -3451,6 +3452,33 @@ function isClassStarted(event) {
 
 }
 
+/* =========================================================
+   PROFESSOR SCREEN INACTIVITY TIMER
+========================================================= */
+
+let professorInactivityTimer = null;
+
+
+function resetProfessorInactivityTimer() {
+
+    clearTimeout(professorInactivityTimer);
+
+    professorInactivityTimer = setTimeout(() => {
+
+        showMainScreen();
+
+    }, 3000);
+
+}
+
+
+function stopProfessorInactivityTimer() {
+
+    clearTimeout(professorInactivityTimer);
+
+    professorInactivityTimer = null;
+
+}
 
 
 /* =========================================================
@@ -3528,15 +3556,28 @@ function showProfessorScreen() {
     ).textContent =
         "Внесете PIN";
 
+
+    resetProfessorInactivityTimer();
+    
 }
 
+document
+    .getElementById("professorScreen")
+    .addEventListener(
+        "click",
+        () => {
 
+            resetProfessorInactivityTimer();
+
+        }
+    );
 
 /* =========================================================
    PRESS PIN
 ========================================================= */
 
 function pressPin(number) {
+    resetProfessorInactivityTimer();
 
     /*
      * Maximum 4 digits for now.
@@ -3579,6 +3620,7 @@ function pressPin(number) {
 ========================================================= */
 
 function clearPin() {
+    resetProfessorInactivityTimer();
 
     currentPin =
         currentPin.slice(
@@ -3700,6 +3742,7 @@ function submitPin() {
 ========================================================= */
 
 function openProfessorMenu() {
+    resetProfessorInactivityTimer();
 
     document.getElementById(
         "pinArea"
