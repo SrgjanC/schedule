@@ -4061,121 +4061,53 @@ else {
 ========================================================= */
 
 async function startClass() {
+    const event = window.currentProfessorEvent;
 
-    const event =
-        window.currentProfessorEvent;
+    if (!event) return;
 
-    if (!event) {
+    if (event.started_at) return;
+
+    const startedAt = new Date().toISOString();
+
+    const { error } = await supabaseClient
+        .from("events")
+        .update({ started_at: startedAt })
+        .eq("id", event.id);
+
+    if (error) {
+        console.error("Start class error:", error);
+        alert("Грешка при започнување на наставата:\n\n" + error.message);
         return;
     }
 
+    event.started_at = startedAt;
 
-    /*
-     * Prevent starting the same class twice
-     */
-    if (event.started_at) {
-        return;
-    }
+    const startDate = new Date(startedAt);
+    const hours = String(startDate.getHours()).padStart(2, "0");
+    const minutes = String(startDate.getMinutes()).padStart(2, "0");
 
-
-    /*
-     * Exact start time
-     */
-    const startedAt =
-        new Date().toISOString();
-
-
-    /*
-     * Save start time to Supabase
-     *
-     * IMPORTANT:
-     * Only the FIRST event of a merged
-     * multi-hour class is updated.
-     */
-const { error } = await supabaseClient
-    .from("events")
-    .update({ started_at: startedAt })
-    .eq("id", event.id);
-
-if (error) {
-    console.error("Start class error:", error);
-    alert("Грешка при започнување на наставата:\n\n" + error.message);
-    return;
-}
-
-event.started_at = startedAt;
-
-const startDate = new Date(startedAt);
-
-    const hours =
-        String(
-            startDate.getHours()
-        ).padStart(2, "0");
-
-    const minutes =
-        String(
-            startDate.getMinutes()
-        ).padStart(2, "0");
-
-
-    /*
-     * Professor screen
-     */
-    document.getElementById(
-        "professorMenu"
-    ).innerHTML = `
-
+    document.getElementById("professorMenu").innerHTML = `
         <div class="professor-menu">
+            <div class="class-started">✓ НАСТАВАТА Е ЗАПОЧНАТА</div>
 
-            <div class="class-started">
-
-                ✓ НАСТАВАТА Е ЗАПОЧНАТА
-
-            </div>
-
-
-            <div
-                class="professor-current-subject"
-            >
-
+            <div class="professor-current-subject">
                 ${
                     event.subjectsList
-                    ? event.subjectsList
-                        .map(
-                            s => s.name
-                        )
-                        .join("<br>")
-                    : (
-                        event.subjects?.name ||
-                        "Непознат предмет"
-                    )
+                        ? event.subjectsList.map(s => s.name).join("<br>")
+                        : (event.subjects?.name || "Непознат предмет")
                 }
-
             </div>
 
-
-            <div
-                class="professor-current-time"
-            >
-
-                Започнато во
-                ${hours}:${minutes}
-
+            <div class="professor-current-time">
+                Започнато во ${hours}:${minutes}
             </div>
-
         </div>
-
     `;
 
-
-    /*
-     * Refresh main classroom display
-     */
     setTimeout(() => {
         showMainScreen();
         loadClassroom();
     }, 3000);
-
 }
     
 </script>
