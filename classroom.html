@@ -3564,10 +3564,26 @@ function showProfessorScreen() {
 document
     .getElementById("professorScreen")
     .addEventListener(
-        "click",
+        "pointerdown",
         () => {
 
-            resetProfessorInactivityTimer();
+            const professorScreen =
+                document.getElementById(
+                    "professorScreen"
+                );
+
+            /*
+             * Only reset the timer while
+             * the professor screen is visible.
+             */
+            if (
+                professorScreen.style.display ===
+                "block"
+            ) {
+
+                resetProfessorInactivityTimer();
+
+            }
 
         }
     );
@@ -3577,7 +3593,6 @@ document
 ========================================================= */
 
 function pressPin(number) {
-    resetProfessorInactivityTimer();
 
     /*
      * Maximum 4 digits for now.
@@ -3591,17 +3606,9 @@ function pressPin(number) {
 
     }
 
-
     currentPin += number;
 
-
     updatePinDisplay();
-
-
-    /*
-     * Automatically check after
-     * four digits.
-     */
 
     if (
         currentPin.length === 4
@@ -3620,7 +3627,6 @@ function pressPin(number) {
 ========================================================= */
 
 function clearPin() {
-    resetProfessorInactivityTimer();
 
     currentPin =
         currentPin.slice(
@@ -3628,9 +3634,7 @@ function clearPin() {
             -1
         );
 
-
     updatePinDisplay();
-
 
     document.getElementById(
         "pinError"
@@ -4106,7 +4110,6 @@ async function startClass() {
 
     setTimeout(() => {
         showMainScreen();
-        loadClassroom();
     }, 3000);
 }
     
