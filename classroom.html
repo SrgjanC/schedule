@@ -1553,6 +1553,14 @@
             </div>
 
 
+            <div
+                class="class-started"
+                id="professorStatus"
+                style="display:none;"
+            >
+            </div>
+
+
             <button
                 class="start-class-button"
                 onclick="startClass()"
@@ -2259,23 +2267,8 @@ async function loadClassroom() {
             getToday();
 
 
-        console.log("================================");
-
-        console.log(
-            "Classroom:",
-            roomCode
-        );
-
-        
-
-        console.log(
-            "Today:",
-            today
-        );
-
-
         /* =========================================
-           LOAD TODAY'S EVENTS
+           LOAD TODAY'S EVENTS FOR THIS ROOM
         ========================================= */
 
         const {
@@ -2310,6 +2303,11 @@ async function loadClassroom() {
             .eq(
                 "event_date",
                 today
+            )
+
+            .eq(
+                "room_id",
+                roomId
             );
 
 
@@ -2318,41 +2316,8 @@ async function loadClassroom() {
         }
 
 
-        console.log(
-            "All today's events:",
-            events
-        );
-        console.log(
-            "ROOM DEBUG:",
-            events.map(event => ({
-                event_id: event.id,
-                room_id: event.room_id,
-                rooms: event.rooms
-            }))
-        );
-
-
-        /* =========================================
-           FIND EVENTS FOR THIS ROOM
-        ========================================= */
-
         const roomEvents =
-            (events || []).filter(
-                event =>
-                    Number(event.room_id) ===
-                    Number(roomId)
-            );
-
-
-        console.log(
-            "Room ID:",
-            roomId
-        );
-
-        console.log(
-            "Room events:",
-            roomEvents
-        );
+            events || [];
 
 
         /* =========================================
@@ -2380,23 +2345,12 @@ async function loadClassroom() {
             );
 
 
-        console.log(
-            "Merged class blocks:",
-            classBlocks
-        );
-
-
         /* =========================================
            DISPLAY
         ========================================= */
 
         displayCurrentAndNext(
             classBlocks
-        );
-
-
-        console.log(
-            "================================"
         );
 
 
@@ -2943,6 +2897,8 @@ function showMainScreen() {
      */
 
     currentPin = "";
+    window.currentProfessorEvent = null;
+    window.startingClass = false;
 
 
     /*
@@ -2972,6 +2928,30 @@ function showMainScreen() {
     ).textContent =
         "Внесете PIN";
 
+    document.getElementById(
+        "professorSubject"
+    ).textContent = "";
+
+    document.getElementById(
+        "professorTime"
+    ).textContent = "";
+
+    document.getElementById(
+        "professorStatus"
+    ).style.display = "none";
+
+    document.getElementById(
+        "professorStatus"
+    ).textContent = "";
+
+    const startButton = document.querySelector(
+        ".start-class-button"
+    );
+
+    if (startButton) {
+        startButton.style.display = "block";
+        startButton.disabled = false;
+    }
 
     updatePinDisplay();
     loadClassroom();
@@ -3487,6 +3467,10 @@ function stopProfessorInactivityTimer() {
 
 function showProfessorScreen() {
 
+    stopProfessorInactivityTimer();
+    window.currentProfessorEvent = null;
+    window.startingClass = false;
+
     const mainScreen =
         document.getElementById(
             "mainScreen"
@@ -3556,6 +3540,30 @@ function showProfessorScreen() {
     ).textContent =
         "Внесете PIN";
 
+    document.getElementById(
+        "professorStatus"
+    ).style.display = "none";
+
+    document.getElementById(
+        "professorStatus"
+    ).textContent = "";
+
+    document.getElementById(
+        "professorSubject"
+    ).textContent = "";
+
+    document.getElementById(
+        "professorTime"
+    ).textContent = "";
+
+    const startButton = document.querySelector(
+        ".start-class-button"
+    );
+
+    if (startButton) {
+        startButton.style.display = "block";
+        startButton.disabled = false;
+    }
 
     resetProfessorInactivityTimer();
     
@@ -3568,21 +3576,10 @@ document
         () => {
 
             const professorScreen =
-                document.getElementById(
-                    "professorScreen"
-                );
+                document.getElementById("professorScreen");
 
-            /*
-             * Only reset the timer while
-             * the professor screen is visible.
-             */
-            if (
-                professorScreen.style.display ===
-                "block"
-            ) {
-
+            if (professorScreen.style.display === "block") {
                 resetProfessorInactivityTimer();
-
             }
 
         }
@@ -3606,9 +3603,17 @@ function pressPin(number) {
 
     }
 
+
     currentPin += number;
 
+
     updatePinDisplay();
+
+
+    /*
+     * Automatically check after
+     * four digits.
+     */
 
     if (
         currentPin.length === 4
@@ -3634,7 +3639,9 @@ function clearPin() {
             -1
         );
 
+
     updatePinDisplay();
+
 
     document.getElementById(
         "pinError"
@@ -3786,6 +3793,8 @@ async function loadProfessorCurrentClass() {
 
     try {
 
+        window.currentProfessorEvent = null;
+
         const today =
             getToday();
 
@@ -3831,9 +3840,26 @@ async function loadProfessorCurrentClass() {
 
 
         if (error) {
-
             throw error;
+        }
 
+
+        /*
+         * The user may have returned to the main screen
+         * while the Supabase request was in progress.
+         * Do not apply a late response to the hidden
+         * professor screen or restore stale state.
+         */
+        const professorScreen =
+            document.getElementById(
+                "professorScreen"
+            );
+
+        if (
+            !professorScreen ||
+            professorScreen.style.display !== "block"
+        ) {
+            return;
         }
 
 
@@ -3902,43 +3928,64 @@ async function loadProfessorCurrentClass() {
         }
 
 
-        if (!currentEvent) {
-
+        const subjectElement =
             document.getElementById(
                 "professorSubject"
-            ).textContent =
-                "Нема тековна настава";
+            );
 
-
+        const timeElement =
             document.getElementById(
                 "professorTime"
-            ).textContent =
-                "Во моментов нема час за започнување.";
+            );
 
+        const statusElement =
+            document.getElementById(
+                "professorStatus"
+            );
 
+        const startButton =
             document.querySelector(
                 ".start-class-button"
-            ).style.display =
+            );
+
+
+        if (!currentEvent) {
+
+            subjectElement.textContent =
+                "Нема тековна настава";
+
+            timeElement.textContent =
+                "Во моментов нема час за започнување.";
+
+            statusElement.style.display =
                 "none";
 
+            statusElement.textContent = "";
+
+            if (startButton) {
+                startButton.style.display =
+                    "none";
+                startButton.disabled = false;
+            }
 
             return;
 
         }
 
 
-        document.getElementById(
-            "professorSubject"
-        ).textContent =
-            currentEvent
-                .subjects?.name ||
-            "Непознат предмет";
+        window.currentProfessorEvent =
+            currentEvent;
 
 
-        document.getElementById(
-            "professorTime"
-        ).textContent =
+        const subjectNames =
+            getSubjectNames(
+                currentEvent
+            );
 
+        subjectElement.innerHTML =
+            subjectNames.join("<br>");
+
+        timeElement.textContent =
             `${currentEvent.startTime} – ${
                 getClassEndTime(
                     currentEvent
@@ -3946,91 +3993,50 @@ async function loadProfessorCurrentClass() {
             }`;
 
 
-        window.currentProfessorEvent =
-    currentEvent;
+        if (currentEvent.started_at) {
 
+            const startedDate =
+                new Date(
+                    currentEvent.started_at
+                );
 
-/*
- * Check whether the class
- * has already been started
- */
-if (currentEvent.started_at) {
+            const startedHours =
+                String(
+                    startedDate.getHours()
+                ).padStart(2, "0");
 
-    const startedDate =
-        new Date(
-            currentEvent.started_at
-        );
+            const startedMinutes =
+                String(
+                    startedDate.getMinutes()
+                ).padStart(2, "0");
 
-    const startedHours =
-        String(
-            startedDate.getHours()
-        ).padStart(2, "0");
+            statusElement.textContent =
+                `✓ НАСТАВАТА Е ЗАПОЧНАТА — започнато во ${startedHours}:${startedMinutes}`;
 
-    const startedMinutes =
-        String(
-            startedDate.getMinutes()
-        ).padStart(2, "0");
+            statusElement.style.display =
+                "block";
 
+            if (startButton) {
+                startButton.style.display =
+                    "none";
+                startButton.disabled = true;
+            }
 
-    document.getElementById(
-        "professorMenu"
-    ).innerHTML = `
+        }
+        else {
 
-        <div class="professor-menu">
+            statusElement.textContent = "";
+            statusElement.style.display =
+                "none";
 
-            <div class="class-started">
+            if (startButton) {
+                startButton.style.display =
+                    "block";
+                startButton.disabled =
+                    !!window.startingClass;
+            }
 
-                ✓ НАСТАВАТА Е ЗАПОЧНАТА
-
-            </div>
-
-
-            <div
-                class="professor-current-subject"
-            >
-
-                ${
-                    currentEvent.subjectsList
-                    ? currentEvent.subjectsList
-                        .map(
-                            s => s.name
-                        )
-                        .join("<br>")
-                    : (
-                        currentEvent.subjects?.name ||
-                        "Непознат предмет"
-                    )
-                }
-
-            </div>
-
-
-            <div
-                class="professor-current-time"
-            >
-
-                Наставата е започната
-                во ${startedHours}:${startedMinutes}
-                часот.
-
-            </div>
-
-        </div>
-
-    `;
-
-}
-else {
-
-    /*
-     * Class has NOT been started yet.
-     */
-    document.querySelector(
-        ".start-class-button"
-    ).style.display =
-        "block";
-
-}
+        }
 
 
     }
@@ -4043,76 +4049,231 @@ else {
         );
 
 
-        document.getElementById(
-            "professorSubject"
-        ).textContent =
-            "Грешка";
+        window.currentProfessorEvent = null;
 
+        const subjectElement =
+            document.getElementById(
+                "professorSubject"
+            );
 
-        document.getElementById(
-            "professorTime"
-        ).textContent =
-            error.message;
+        const timeElement =
+            document.getElementById(
+                "professorTime"
+            );
+
+        const statusElement =
+            document.getElementById(
+                "professorStatus"
+            );
+
+        const startButton =
+            document.querySelector(
+                ".start-class-button"
+            );
+
+        if (subjectElement) {
+            subjectElement.textContent =
+                "Грешка";
+        }
+
+        if (timeElement) {
+            timeElement.textContent =
+                error.message;
+        }
+
+        if (statusElement) {
+            statusElement.style.display =
+                "none";
+            statusElement.textContent = "";
+        }
+
+        if (startButton) {
+            startButton.style.display =
+                "none";
+            startButton.disabled = false;
+        }
 
     }
 
 }
-
 
 
 /* =========================================================
    START CLASS
 ========================================================= */
 
+window.startingClass = false;
+
+
 async function startClass() {
-    const event = window.currentProfessorEvent;
 
-    if (!event) return;
+    const event =
+        window.currentProfessorEvent;
 
-    if (event.started_at) return;
 
-    const startedAt = new Date().toISOString();
-
-    const { error } = await supabaseClient
-        .from("events")
-        .update({ started_at: startedAt })
-        .eq("id", event.id);
-
-    if (error) {
-        console.error("Start class error:", error);
-        alert("Грешка при започнување на наставата:\n\n" + error.message);
+    if (!event || window.startingClass) {
         return;
     }
 
-    event.started_at = startedAt;
 
-    const startDate = new Date(startedAt);
-    const hours = String(startDate.getHours()).padStart(2, "0");
-    const minutes = String(startDate.getMinutes()).padStart(2, "0");
+    if (event.started_at) {
+        return;
+    }
 
-    document.getElementById("professorMenu").innerHTML = `
-        <div class="professor-menu">
-            <div class="class-started">✓ НАСТАВАТА Е ЗАПОЧНАТА</div>
 
-            <div class="professor-current-subject">
-                ${
-                    event.subjectsList
-                        ? event.subjectsList.map(s => s.name).join("<br>")
-                        : (event.subjects?.name || "Непознат предмет")
-                }
-            </div>
+    const now =
+        new Date();
 
-            <div class="professor-current-time">
-                Започнато во ${hours}:${minutes}
-            </div>
-        </div>
-    `;
+    const currentMinutes =
+        now.getHours() * 60 +
+        now.getMinutes();
+
+    const startMinutes =
+        timeToMinutes(
+            event.startTime
+        );
+
+    const endMinutes =
+        timeToMinutes(
+            getClassEndTime(event)
+        );
+
+
+    if (
+        currentMinutes < startMinutes ||
+        currentMinutes >= endMinutes
+    ) {
+
+        window.currentProfessorEvent =
+            null;
+
+        await loadProfessorCurrentClass();
+
+        return;
+
+    }
+
+
+    window.startingClass = true;
+
+
+    const startButton =
+        document.querySelector(
+            ".start-class-button"
+        );
+
+    if (startButton) {
+        startButton.disabled = true;
+    }
+
+
+    const startedAt =
+        new Date().toISOString();
+
+
+    const { error } =
+        await supabaseClient
+            .from("events")
+            .update({
+                started_at: startedAt
+            })
+            .eq(
+                "id",
+                event.id
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Start class error:",
+            error
+        );
+
+        window.startingClass = false;
+
+        if (startButton) {
+            startButton.disabled = false;
+        }
+
+        alert(
+            "Грешка при започнување на наставата:\n\n" +
+            error.message
+        );
+
+        return;
+
+    }
+
+
+    event.started_at =
+        startedAt;
+
+
+    stopProfessorInactivityTimer();
+
+
+    const startDate =
+        new Date(startedAt);
+
+    const hours =
+        String(
+            startDate.getHours()
+        ).padStart(2, "0");
+
+    const minutes =
+        String(
+            startDate.getMinutes()
+        ).padStart(2, "0");
+
+
+    const statusElement =
+        document.getElementById(
+            "professorStatus"
+        );
+
+    const subjectElement =
+        document.getElementById(
+            "professorSubject"
+        );
+
+    const timeElement =
+        document.getElementById(
+            "professorTime"
+        );
+
+
+    subjectElement.innerHTML =
+        getSubjectNames(event).join(
+            "<br>"
+        );
+
+    timeElement.textContent =
+        `${event.startTime} – ${
+            getClassEndTime(event)
+        }`;
+
+    statusElement.textContent =
+        `✓ НАСТАВАТА Е ЗАПОЧНАТА — започнато во ${hours}:${minutes}`;
+
+    statusElement.style.display =
+        "block";
+
+    if (startButton) {
+        startButton.style.display =
+            "none";
+        startButton.disabled = true;
+    }
+
+
+    window.startingClass = false;
+
 
     setTimeout(() => {
         showMainScreen();
     }, 3000);
 }
-    
+
 </script>
 
 
