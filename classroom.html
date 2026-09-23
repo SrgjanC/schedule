@@ -4092,56 +4092,20 @@ async function startClass() {
      * Only the FIRST event of a merged
      * multi-hour class is updated.
      */
-    const {
-        data,
-        error
-    } = await supabaseClient
+const { error } = await supabaseClient
+    .from("events")
+    .update({ started_at: startedAt })
+    .eq("id", event.id);
 
-        .from("events")
+if (error) {
+    console.error("Start class error:", error);
+    alert("Грешка при започнување на наставата:\n\n" + error.message);
+    return;
+}
 
-        .update({
-            started_at: startedAt
-        })
+event.started_at = startedAt;
 
-        .eq("id", event.id)
-
-        .select()
-        .single();
-
-
-    /*
-     * Database error
-     */
-    if (error) {
-
-        console.error(
-            "Start class error:",
-            error
-        );
-
-        alert(
-            "Грешка при започнување на наставата:\n\n" +
-            error.message
-        );
-
-        return;
-    }
-
-
-    /*
-     * Update local object immediately
-     */
-    event.started_at =
-        data.started_at;
-
-
-    /*
-     * Display actual start time
-     */
-    const startDate =
-        new Date(
-            data.started_at
-        );
+const startDate = new Date(startedAt);
 
     const hours =
         String(
