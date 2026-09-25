@@ -4171,39 +4171,62 @@ async function startClass() {
         new Date().toISOString();
 
 
-    const { error } =
-        await supabaseClient
-            .from("events")
-            .update({
-                started_at: startedAt
-            })
-            .eq(
-                "id",
-                event.id
-            );
+const { data, error } =
+    await supabaseClient
+        .from("events")
+        .update({
+            started_at: startedAt
+        })
+        .eq(
+            "id",
+            event.id
+        )
+        .select("id");
 
 
-    if (error) {
+if (error) {
 
-        console.error(
-            "Start class error:",
-            error
-        );
+    console.error(
+        "Start class error:",
+        error
+    );
 
-        window.startingClass = false;
+    window.startingClass = false;
 
-        if (startButton) {
-            startButton.disabled = false;
-        }
-
-        alert(
-            "Грешка при започнување на наставата:\n\n" +
-            error.message
-        );
-
-        return;
-
+    if (startButton) {
+        startButton.disabled = false;
     }
+
+    alert(
+        "Грешка при започнување на наставата:\n\n" +
+        error.message
+    );
+
+    return;
+}
+
+
+// NEW: Verify that a row was actually updated
+if (!data || data.length === 0) {
+
+    console.error(
+        "No event was updated:",
+        event.id
+    );
+
+    window.startingClass = false;
+
+    if (startButton) {
+        startButton.disabled = false;
+    }
+
+    alert(
+        "Наставата не е зачувана во базата.\n" +
+        "Нема ажурирани записи. Проверете ги дозволите во Supabase."
+    );
+
+    return;
+}
 
 
     event.started_at =
