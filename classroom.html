@@ -4111,6 +4111,7 @@ async function startClass() {
         window.currentProfessorEvent;
 
 
+
     if (!event || window.startingClass) {
         return;
     }
@@ -4167,27 +4168,26 @@ async function startClass() {
     }
 
 
-    const startedAt =
-        new Date().toISOString();
 
-
-const { data, error } =
-    await supabaseClient
-        .from("events")
-        .update({
-            started_at: startedAt
-        })
-        .eq(
-            "id",
-            event.id
-        )
-        .select("id");
+const {
+    data,
+    error
+} = await supabaseClient.functions.invoke(
+    "start-class",
+    {
+        body: {
+            event_id: event.id,
+            room_id: roomId,
+            pin: currentPin
+        }
+    }
+);
 
 
 if (error) {
 
     console.error(
-        "Start class error:",
+        "Start class function error:",
         error
     );
 
@@ -4204,6 +4204,27 @@ if (error) {
 
     return;
 }
+
+
+if (!data || !data.ok || !data.started_at) {
+
+    window.startingClass = false;
+
+    if (startButton) {
+        startButton.disabled = false;
+    }
+
+    alert(
+        data?.error ||
+        "Наставата не е зачувана во базата."
+    );
+
+    return;
+}
+
+
+// Use the timestamp confirmed by the server.
+const startedAt = data.started_at;
 
 
 // NEW: Verify that a row was actually updated
