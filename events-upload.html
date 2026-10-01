@@ -1752,9 +1752,9 @@ async function checkForDuplicateEvents() {
 }
 
 
-  async function importNewEventsToSupabase() {
+async function importNewEventsToSupabase() {
 
-  if (!newEventsForImport.length) {
+  if (!newEventsForImport || !newEventsForImport.length) {
 
     alert("Нема нови настани за импорт.");
 
@@ -1762,15 +1762,13 @@ async function checkForDuplicateEvents() {
   }
 
 
-  const total =
-    newEventsForImport.length;
+  const total = newEventsForImport.length;
 
-  const confirmed =
-    confirm(
-      `Ќе се импортираат ${total} нови настани во Supabase.\n\n` +
-      `Веќе постоечки/дупликати: ${duplicateEvents.length}\n\n` +
-      `Дали сакате да продолжите?`
-    );
+  const confirmed = confirm(
+    `Ќе се импортираат ${total} нови настани во Supabase.\n\n` +
+    `Веќе постоечки/дупликати: ${duplicateEvents.length}\n\n` +
+    `Дали сакате да продолжите?`
+  );
 
 
   if (!confirmed) {
@@ -1779,9 +1777,7 @@ async function checkForDuplicateEvents() {
 
 
   const button =
-    document.getElementById(
-      "startSupabaseImportBtn"
-    );
+    document.getElementById("startSupabaseImportBtn");
 
 
   if (button) {
@@ -1796,6 +1792,7 @@ async function checkForDuplicateEvents() {
   const batchSize = 250;
 
   let imported = 0;
+  let skipped = 0;
 
 
   try {
@@ -1827,40 +1824,88 @@ async function checkForDuplicateEvents() {
         .select();
 
 
-      if (error) {
+      /*
+       * Normal batch succeeded
+       */
+      if (!error) {
 
-  console.error("=================================");
-  console.error("SUPABASE IMPORT ERROR");
-  console.error("=================================");
+        imported += batch.length;
 
-  console.error("Error object:", error);
-  console.error("Error message:", error.message);
-  console.error("Error details:", error.details);
-  console.error("Error hint:", error.hint);
-  console.error("Error code:", error.code);
+        if (button) {
 
-  console.error("Batch start:", i + 1);
-  console.error("Batch end:", i + batch.length);
-  console.error("Batch size:", batch.length);
+          button.textContent =
+            `⏳ Imported ${imported} / ${total}`;
+        }
 
-  console.error("FAILED BATCH:", batch);
-
-  console.error(
-    "FAILED BATCH JSON:",
-    JSON.stringify(batch, null, 2)
-  );
-
-  throw error;
-}
+        continue;
+      }
 
 
-      imported += batch.length;
+      /*
+       * Batch failed.
+       * Now try each event individually.
+       */
+      console.warn(
+        `Batch ${i + 1}-${i + batch.length} failed.`
+      );
+
+      console.warn(
+        "Batch error:",
+        error
+      );
 
 
-      if (button) {
+      console.log(
+        "Trying events individually..."
+      );
 
-        button.textContent =
-          `⏳ Imported ${imported} / ${total}`;
+
+      for (let j = 0; j < batch.length; j++) {
+
+        const event = batch[j];
+
+
+        const {
+          data: singleData,
+          error: singleError
+        } = await supabaseClient
+          .from("events")
+          .insert([event])
+          .select();
+
+
+        if (singleError) {
+
+          /*
+           * Duplicate / database rejected event.
+           */
+          skipped++;
+
+
+          console.warn(
+            "SKIPPED EVENT:",
+            event
+          );
+
+          console.warn(
+            "Reason:",
+            singleError
+          );
+
+
+          continue;
+        }
+
+
+        imported++;
+
+
+        if (button) {
+
+          button.textContent =
+            `⏳ Imported ${imported} / ${total} | Skipped ${skipped}`;
+        }
+
       }
 
     }
@@ -1875,8 +1920,18 @@ async function checkForDuplicateEvents() {
     );
 
     console.log(
-      "Imported:",
+      "Successfully imported:",
       imported
+    );
+
+    console.log(
+      "Skipped:",
+      skipped
+    );
+
+    console.log(
+      "Total processed:",
+      imported + skipped
     );
 
     console.log(
@@ -1887,16 +1942,17 @@ async function checkForDuplicateEvents() {
     if (button) {
 
       button.textContent =
-        `✅ Imported ${imported} events`;
+        `✅ Imported ${imported} | Skipped ${skipped}`;
 
       button.disabled = true;
     }
 
 
     alert(
-      `Успешен импорт!\n\n` +
-      `Импортирани: ${imported} нови настани.\n` +
-      `Прескокнати дупликати: ${duplicateEvents.length}.`
+      `Импортот е завршен!\n\n` +
+      `Импортирани: ${imported}\n` +
+      `Прескокнати: ${skipped}\n` +
+      `Вкупно обработени: ${imported + skipped}`
     );
 
 
@@ -1913,12 +1969,12 @@ async function checkForDuplicateEvents() {
       button.disabled = false;
 
       button.textContent =
-        `⬆️ Retry import (${total} events)`;
+        "⬆️ Retry import";
     }
 
 
     alert(
-      "Импортот не е завршен.\n\n" +
+      "Импортот не е целосно завршен.\n\n" +
       "Провери ја Console за деталите."
     );
 
