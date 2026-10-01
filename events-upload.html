@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="mk">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,12 +8,8 @@
 
   <!-- PapaParse -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -64,8 +59,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
       margin-top: 20px;
     }
@@ -108,7 +102,6 @@
       padding: 10px;
       text-align: left;
       white-space: nowrap;
-      z-index: 2;
     }
 
     td {
@@ -151,92 +144,48 @@
       margin-top: 15px;
     }
 
-    .warning {
-      color: #92400e;
-      background: #fef3c7;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 15px;
-    }
-
     .hidden {
       display: none;
     }
 
+
     .status-success {
-      color: #166534;
-      font-weight: bold;
-    }
+  color: #166534;
+  font-weight: bold;
+}
 
-    .status-warning {
-      color: #92400e;
-      font-weight: bold;
-    }
+.status-warning {
+  color: #92400e;
+  font-weight: bold;
+}
 
-    .status-error {
-      color: #b91c1c;
-      font-weight: bold;
-    }
+.status-error {
+  color: #b91c1c;
+  font-weight: bold;
+}
 
-    .primary-button {
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 16px;
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 12px;
-    }
 
-    .primary-button:hover {
-      background: #1d4ed8;
-    }
 
-    .secondary-button {
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 16px;
-      background: #64748b;
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 12px;
-    }
 
-    code {
-      background: #f1f5f9;
-      padding: 2px 5px;
-      border-radius: 4px;
-    }
-
+    
   </style>
-
 </head>
-
 
 <body>
 
 <div class="container">
 
   <h1>📅 Events Upload</h1>
-
   <p class="subtitle">
     Преглед на CSV распоред пред импорт во Supabase
   </p>
 
-
-  <!-- ==========================================
-       UPLOAD
-       ========================================== -->
-
+  <!-- Upload -->
   <div class="card">
 
     <div class="upload-area">
 
-      <strong>
-        Изберете CSV датотека
-      </strong>
+      <strong>Изберете CSV датотека</strong>
 
       <br>
 
@@ -250,100 +199,44 @@
 
     </div>
 
-    <div
-      id="errorBox"
-      class="error hidden">
-    </div>
+    <div id="errorBox" class="error hidden"></div>
 
   </div>
 
+<div id="supabaseCard" class="card">
 
-  <!-- ==========================================
-       SUPABASE
-       ========================================== -->
+  <h2>🗄️ Supabase</h2>
 
-  <div
-    id="supabaseCard"
-    class="card">
-
-    <h2>🗄️ Supabase</h2>
-
-    <div id="supabaseStatus">
-      ⏳ Се поврзувам со Supabase...
-    </div>
-
+  <div id="supabaseStatus">
+    ⏳ Се поврзувам со Supabase...
   </div>
 
-
-  <!-- ==========================================
-       CSV STATISTICS
-       ========================================== -->
-
-  <div
-    id="statsCard"
-    class="card hidden">
+</div>
+  <!-- Statistics -->
+  <div id="statsCard" class="card hidden">
 
     <h2>📊 CSV статистика</h2>
 
     <div class="stats">
 
       <div class="stat">
-
-        <div class="stat-label">
-          Вкупно записи
-        </div>
-
-        <div
-          class="stat-value"
-          id="rowCount">
-          0
-        </div>
-
+        <div class="stat-label">Вкупно записи</div>
+        <div class="stat-value" id="rowCount">0</div>
       </div>
 
-
       <div class="stat">
-
-        <div class="stat-label">
-          Предмети
-        </div>
-
-        <div
-          class="stat-value"
-          id="subjectCount">
-          0
-        </div>
-
+        <div class="stat-label">Предмети</div>
+        <div class="stat-value" id="subjectCount">0</div>
       </div>
 
-
       <div class="stat">
-
-        <div class="stat-label">
-          Програми
-        </div>
-
-        <div
-          class="stat-value"
-          id="programCount">
-          0
-        </div>
-
+        <div class="stat-label">Програми</div>
+        <div class="stat-value" id="programCount">0</div>
       </div>
 
-
       <div class="stat">
-
-        <div class="stat-label">
-          Семестри
-        </div>
-
-        <div
-          class="stat-value"
-          id="semesterCount">
-          0
-        </div>
-
+        <div class="stat-label">Семестри</div>
+        <div class="stat-value" id="semesterCount">0</div>
       </div>
 
     </div>
@@ -351,35 +244,20 @@
   </div>
 
 
-  <!-- ==========================================
-       SUBJECT LIST
-       ========================================== -->
-
-  <div
-    id="subjectsCard"
-    class="card hidden">
+  <!-- Subjects -->
+  <div id="subjectsCard" class="card hidden">
 
     <h2>📚 Предмети</h2>
 
-    <div
-      id="subjects"
-      class="subject-list">
-    </div>
+    <div id="subjects" class="subject-list"></div>
 
   </div>
 
 
-  <!-- ==========================================
-       ORIGINAL CSV PREVIEW
-       ========================================== -->
+  <!-- Preview -->
+  <div id="previewCard" class="card hidden">
 
-  <div
-    id="previewCard"
-    class="card hidden">
-
-    <h2>
-      👁️ Преглед — првите 20 записи
-    </h2>
+    <h2>👁️ Преглед — првите 20 записи</h2>
 
     <div class="table-wrapper">
 
@@ -395,352 +273,148 @@
 
   </div>
 
-
-  <!-- ==========================================
-       REVIEW EXPORT
-       ========================================== -->
-
-  <div
-    id="reviewExportCard"
-    class="card"
-    style="display:none;">
-
-    <h2>
-      📝 Events for Review
-    </h2>
-
-    <div
-      id="reviewExportInfo">
-    </div>
-
-    <button
-      id="exportReviewButton"
-      type="button"
-      class="primary-button">
-
-      ⬇️ Export rows for review
-
-    </button>
-
-  </div>
-
-
-  <!-- ==========================================
-       MATCHED EVENTS PREVIEW
-       ========================================== -->
-
-  <div
-    id="matchedEventsCard"
-    class="card"
-    style="display:none;">
-
-    <h2>
-      ✅ Matched Events — Ready for Import
-    </h2>
-
-    <div
-      id="matchedEventsSummary">
-    </div>
-
-    <div class="table-wrapper">
-
-      <table id="matchedEventsTable">
-
-        <thead>
-
-          <tr>
-
-            <th>Date</th>
-            <th>Time</th>
-            <th>Room</th>
-            <th>Study Program</th>
-            <th>Semester</th>
-            <th>Subject</th>
-            <th>Type</th>
-            <th>Professor</th>
-            <th>Groups</th>
-
-          </tr>
-
-        </thead>
-
-        <tbody
-          id="matchedEventsBody">
-        </tbody>
-
-      </table>
-
-    </div>
-
-  </div>
-
-
 </div>
 
 
 <script>
-
-
-/* =========================================================
-   SUPABASE
-   ========================================================= */
-
 const supabaseUrl =
   'https://elmxwpwhyewgjlvoadtb.supabase.co';
 
-
 const supabaseKey =
   'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
-
 
 const supabaseClient =
   window.supabase.createClient(
     supabaseUrl,
     supabaseKey
   );
+const fileInput = document.getElementById("csvFile");
 
+const statsCard = document.getElementById("statsCard");
+const subjectsCard = document.getElementById("subjectsCard");
+const previewCard = document.getElementById("previewCard");
 
-/* =========================================================
-   GLOBAL ELEMENTS
-   ========================================================= */
+const errorBox = document.getElementById("errorBox");
 
-const fileInput =
-  document.getElementById(
-    "csvFile"
-  );
+fileInput.addEventListener("change", function () {
 
+  const file = this.files[0];
 
-const statsCard =
-  document.getElementById(
-    "statsCard"
-  );
+  if (!file) return;
 
+  resetPage();
 
-const subjectsCard =
-  document.getElementById(
-    "subjectsCard"
-  );
+  document.getElementById("fileInfo").innerHTML =
+    `<div class="success">
+      Избрана датотека: <strong>${escapeHtml(file.name)}</strong>
+    </div>`;
 
+Papa.parse(file, {
 
-const previewCard =
-  document.getElementById(
-    "previewCard"
-  );
+  header: true,
 
+  delimiter: "",
 
-const errorBox =
-  document.getElementById(
-    "errorBox"
-  );
+  skipEmptyLines: true,
 
+  encoding: "UTF-8",
 
-/* =========================================================
-   ROOM ALIASES
-   ========================================================= */
+  transformHeader: function(header) {
+    return header.trim();
+  },
 
-const roomAliases = {
+  transform: function(value) {
+    return value.trim();
+  },
 
-  "Инст. за микро.":
-    "Инст. за Микробиологија"
+  complete: function(results) {
 
-};
+    console.log("CSV result:", results);
 
+    if (results.errors && results.errors.length > 0) {
+      console.warn("CSV parsing warnings:", results.errors);
+    }
 
-/* =========================================================
-   CSV UPLOAD
-   ========================================================= */
+    const data = results.data;
 
-fileInput.addEventListener(
-  "change",
-  function () {
-
-    const file =
-      this.files[0];
-
-    if (!file) {
+    if (!data.length) {
+      showError("CSV датотеката нема записи.");
       return;
     }
 
+    console.log(
+      "Detected columns:",
+      Object.keys(data[0])
+    );
 
-    resetPage();
+    console.log(
+      "Total rows:",
+      data.length
+    );
 
+    processCSV(data);
+  },
 
-    document.getElementById(
-      "fileInfo"
-    ).innerHTML = `
+  error: function(error) {
 
-      <div class="success">
-
-        Избрана датотека:
-
-        <strong>
-          ${escapeHtml(file.name)}
-        </strong>
-
-      </div>
-
-    `;
-
-
-    Papa.parse(
-      file,
-      {
-
-        header: true,
-
-        delimiter: "",
-
-        skipEmptyLines: true,
-
-        encoding: "UTF-8",
-
-        transformHeader:
-          function (header) {
-
-            return header
-              .trim();
-
-          },
-
-        transform:
-          function (value) {
-
-            return String(
-              value || ""
-            ).trim();
-
-          },
-
-        complete:
-          function (results) {
-
-            console.log(
-              "CSV result:",
-              results
-            );
-
-
-            if (
-              results.errors &&
-              results.errors.length
-            ) {
-
-              console.warn(
-                "CSV parsing warnings:",
-                results.errors
-              );
-
-            }
-
-
-            const data =
-              results.data;
-
-
-            if (
-              !data.length
-            ) {
-
-              showError(
-                "CSV датотеката нема записи."
-              );
-
-              return;
-
-            }
-
-
-            console.log(
-              "Detected columns:",
-              Object.keys(data[0])
-            );
-
-
-            console.log(
-              "Total rows:",
-              data.length
-            );
-
-
-            processCSV(
-              data
-            );
-
-          },
-
-        error:
-          function (error) {
-
-            showError(
-              "Не може да се прочита CSV датотеката: " +
-              error.message
-            );
-
-          }
-
-      }
+    showError(
+      "Не може да се прочита CSV датотеката: " +
+      error.message
     );
 
   }
-);
 
+});
 
-/* =========================================================
-   PROCESS CSV
-   ========================================================= */
+});
+
 
 function processCSV(data) {
 
-  window.currentCSVData =
-    data;
+  window.currentCSVData = data;
+  console.log("Columns:", Object.keys(data[0]));
 
+  console.log("Rows:", data.length);
 
-  console.log(
-    "Columns:",
-    Object.keys(data[0])
-  );
-
-
-  console.log(
-    "Rows:",
-    data.length
-  );
-
+  /*
+   * Expected source columns:
+   *
+   * Недела
+   * Ден
+   * Датум
+   * Час
+   * Просторија
+   * Студиска програма
+   * Семестар
+   * предмет
+   * тип на настава
+   * проф/асс
+   * Групи
+   */
 
   const subjectColumn =
-    findColumn(
-      data[0],
-      [
-        "предмет",
-        "Предмет",
-        "subject",
-        "Subject"
-      ]
-    );
-
+    findColumn(data[0], [
+      "предмет",
+      "Предмет",
+      "subject",
+      "Subject"
+    ]);
 
   const programColumn =
-    findColumn(
-      data[0],
-      [
-        "Студиска програма",
-        "студиска програма",
-        "program",
-        "Program"
-      ]
-    );
-
+    findColumn(data[0], [
+      "Студиска програма",
+      "студиска програма",
+      "program",
+      "Program"
+    ]);
 
   const semesterColumn =
-    findColumn(
-      data[0],
-      [
-        "Семестар",
-        "семестар",
-        "semester",
-        "Semester"
-      ]
-    );
+    findColumn(data[0], [
+      "Семестар",
+      "семестар",
+      "semester",
+      "Semester"
+    ]);
 
 
   if (!subjectColumn) {
@@ -750,658 +424,264 @@ function processCSV(data) {
     );
 
     return;
-
   }
 
 
-  /* -----------------------------------------------
-     Statistics
-     ----------------------------------------------- */
+  /*
+   * Statistics
+   */
 
-  const subjects =
-    uniqueValues(
-      data.map(
-        row =>
-          row[subjectColumn]
+  const subjects = uniqueValues(
+    data.map(row => row[subjectColumn])
+  );
+
+  const programs = programColumn
+    ? uniqueValues(
+        data.map(row => row[programColumn])
       )
-    );
+    : [];
+
+  const semesters = semesterColumn
+    ? uniqueValues(
+        data.map(row => row[semesterColumn])
+      )
+    : [];
 
 
-  const programs =
-    programColumn
-      ? uniqueValues(
-          data.map(
-            row =>
-              row[programColumn]
-          )
-        )
-      : [];
-
-
-  const semesters =
-    semesterColumn
-      ? uniqueValues(
-          data.map(
-            row =>
-              row[semesterColumn]
-          )
-        )
-      : [];
-
-
-  document.getElementById(
-    "rowCount"
-  ).textContent =
+  document.getElementById("rowCount").textContent =
     data.length;
 
-
-  document.getElementById(
-    "subjectCount"
-  ).textContent =
+  document.getElementById("subjectCount").textContent =
     subjects.length;
 
-
-  document.getElementById(
-    "programCount"
-  ).textContent =
+  document.getElementById("programCount").textContent =
     programs.length;
 
-
-  document.getElementById(
-    "semesterCount"
-  ).textContent =
+  document.getElementById("semesterCount").textContent =
     semesters.length;
 
 
-  statsCard.classList.remove(
-    "hidden"
-  );
+  statsCard.classList.remove("hidden");
 
 
-  /* -----------------------------------------------
-     Subject list
-     ----------------------------------------------- */
+  /*
+   * Subject list
+   */
 
   const subjectContainer =
-    document.getElementById(
-      "subjects"
-    );
+    document.getElementById("subjects");
 
-
-  subjectContainer.innerHTML =
-    "";
-
+  subjectContainer.innerHTML = "";
 
   subjects
-    .sort(
-      (a, b) =>
-        a.localeCompare(
-          b,
-          "mk"
-        )
-    )
-    .forEach(
-      subject => {
+    .sort((a,b) => a.localeCompare(b, "mk"))
+    .forEach(subject => {
 
-        const tag =
-          document.createElement(
-            "span"
-          );
+      const tag =
+        document.createElement("span");
 
+      tag.className = "tag";
 
-        tag.className =
-          "tag";
+      tag.textContent = subject;
+
+      subjectContainer.appendChild(tag);
+
+    });
+
+  subjectsCard.classList.remove("hidden");
 
 
-        tag.textContent =
-          subject;
+  /*
+   * Preview table
+   */
 
+  buildPreview(data);
 
-        subjectContainer
-          .appendChild(tag);
-
-      }
-    );
-
-
-  subjectsCard.classList.remove(
-    "hidden"
-  );
-
-
-  /* -----------------------------------------------
-     Original preview
-     ----------------------------------------------- */
-
-  buildPreview(
-    data
-  );
-
-
-  previewCard.classList.remove(
-    "hidden"
-  );
-
-
-  /* -----------------------------------------------
-     SUBJECT MATCHING
-     ----------------------------------------------- */
+  previewCard.classList.remove("hidden");
 
   const subjectMatches =
-    matchSubjects(
-      data
-    );
+  matchSubjects(data);
 
+console.log(
+  "Subject matching results:",
+  subjectMatches
+);
 
-  console.log(
-    "Subject matching results:",
-    subjectMatches
-  );
+window.subjectMatches =
+  subjectMatches;
 
-
-  window.subjectMatches =
-    subjectMatches;
-
-
-  displaySubjectMatches(
-    subjectMatches
-  );
-
-
-  /* -----------------------------------------------
-     ROOM / PROFESSOR MATCHING
-     ----------------------------------------------- */
+displaySubjectMatches(
+  subjectMatches
+);
+updateReviewExportButton();
 
   const roomProfessorMatches =
-    matchRoomsAndProfessors(
-      data
-    );
+  matchRoomsAndProfessors(data);
 
+console.log(
+  "Room / Professor matching results:",
+  roomProfessorMatches
+);
 
-  console.log(
-    "Room / Professor matching results:",
-    roomProfessorMatches
-  );
+window.roomProfessorMatches =
+  roomProfessorMatches;
 
-
-  window.roomProfessorMatches =
-    roomProfessorMatches;
-
-
-  displayRoomProfessorMatches(
-    roomProfessorMatches
-  );
-
-
-  /* -----------------------------------------------
-     REVIEW EXPORT
-     ----------------------------------------------- */
-
-  updateReviewExportButton();
-
-
-  /* -----------------------------------------------
-     MATCHED EVENTS
-     ----------------------------------------------- */
-
-  const matchedEvents =
-    buildMatchedEvents(
-      data
-    );
-
-
-  console.log(
-    "Matched events:",
-    matchedEvents
-  );
-
-
-  window.matchedEvents =
-    matchedEvents;
-
-
-  displayMatchedEvents(
-    matchedEvents
-  );
-
+displayRoomProfessorMatches(
+  roomProfessorMatches
+);
+  
 }
+  
 
-
-/* =========================================================
-   ORIGINAL CSV PREVIEW
-   ========================================================= */
 
 function buildPreview(data) {
 
   const table =
-    document.getElementById(
-      "previewTable"
-    );
-
+    document.getElementById("previewTable");
 
   const thead =
-    table.querySelector(
-      "thead"
-    );
-
+    table.querySelector("thead");
 
   const tbody =
-    table.querySelector(
-      "tbody"
-    );
+    table.querySelector("tbody");
 
-
-  thead.innerHTML =
-    "";
-
-
-  tbody.innerHTML =
-    "";
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
 
 
   const columns =
-    Object.keys(
-      data[0]
-    );
+    Object.keys(data[0]);
 
+
+  /*
+   * Header
+   */
 
   const headerRow =
-    document.createElement(
-      "tr"
-    );
+    document.createElement("tr");
+
+  columns.forEach(column => {
+
+    const th =
+      document.createElement("th");
+
+    th.textContent = column;
+
+    headerRow.appendChild(th);
+
+  });
+
+  thead.appendChild(headerRow);
 
 
-  columns.forEach(
-    column => {
+  /*
+   * First 20 rows
+   */
 
-      const th =
-        document.createElement(
-          "th"
-        );
+  data.slice(0,20).forEach(row => {
 
+    const tr =
+      document.createElement("tr");
 
-      th.textContent =
-        column;
+    columns.forEach(column => {
 
+      const td =
+        document.createElement("td");
 
-      headerRow.appendChild(
-        th
-      );
+      td.textContent =
+        row[column] || "";
 
-    }
-  );
+      tr.appendChild(td);
 
+    });
 
-  thead.appendChild(
-    headerRow
-  );
+    tbody.appendChild(tr);
 
-
-  data
-    .slice(0, 20)
-    .forEach(
-      row => {
-
-        const tr =
-          document.createElement(
-            "tr"
-          );
-
-
-        columns.forEach(
-          column => {
-
-            const td =
-              document.createElement(
-                "td"
-              );
-
-
-            td.textContent =
-              row[column] || "";
-
-
-            tr.appendChild(
-              td
-            );
-
-          }
-        );
-
-
-        tbody.appendChild(
-          tr
-        );
-
-      }
-    );
+  });
 
 }
 
 
-/* =========================================================
-   FIND COLUMN
-   ========================================================= */
-
-function findColumn(
-  row,
-  possibleNames
-) {
+function findColumn(row, possibleNames) {
 
   const columns =
     Object.keys(row);
 
-
-  for (
-    const name
-    of possibleNames
-  ) {
+  for (const name of possibleNames) {
 
     const found =
       columns.find(
         c =>
-          c.trim()
-            .toLowerCase() ===
-          name.trim()
-            .toLowerCase()
+          c.trim().toLowerCase() ===
+          name.trim().toLowerCase()
       );
 
-
-    if (found) {
-      return found;
-    }
+    if (found) return found;
 
   }
-
 
   return null;
 
 }
 
 
-/* =========================================================
-   UNIQUE VALUES
-   ========================================================= */
-
-function uniqueValues(
-  values
-) {
+function uniqueValues(values) {
 
   return [
     ...new Set(
       values
-        .map(
-          v =>
-            String(
-              v || ""
-            ).trim()
-        )
-        .filter(
-          Boolean
-        )
+        .map(v => String(v || "").trim())
+        .filter(Boolean)
     )
   ];
 
 }
 
 
-/* =========================================================
-   ERROR
-   ========================================================= */
+function showError(message) {
 
-function showError(
-  message
-) {
+  errorBox.textContent = message;
 
-  errorBox.textContent =
-    message;
-
-
-  errorBox.classList.remove(
-    "hidden"
-  );
+  errorBox.classList.remove("hidden");
 
 }
 
-
-/* =========================================================
-   RESET PAGE
-   ========================================================= */
 
 function resetPage() {
 
-  errorBox.classList.add(
-    "hidden"
-  );
+  errorBox.classList.add("hidden");
 
+  statsCard.classList.add("hidden");
 
-  statsCard.classList.add(
-    "hidden"
-  );
+  subjectsCard.classList.add("hidden");
 
-
-  subjectsCard.classList.add(
-    "hidden"
-  );
-
-
-  previewCard.classList.add(
-    "hidden"
-  );
-
-
-  const reviewCard =
-    document.getElementById(
-      "reviewExportCard"
-    );
-
-
-  if (reviewCard) {
-
-    reviewCard.style.display =
-      "none";
-
-  }
-
-
-  const matchedCard =
-    document.getElementById(
-      "matchedEventsCard"
-    );
-
-
-  if (matchedCard) {
-
-    matchedCard.style.display =
-      "none";
-
-  }
-
-
-  const subjectCard =
-    document.getElementById(
-      "subjectMatchCard"
-    );
-
-
-  if (subjectCard) {
-
-    subjectCard.remove();
-
-  }
-
-
-  const roomCard =
-    document.getElementById(
-      "roomProfessorMatchCard"
-    );
-
-
-  if (roomCard) {
-
-    roomCard.remove();
-
-  }
-
-
-  window.currentCSVData =
-    null;
-
-
-  window.subjectMatches =
-    [];
-
-
-  window.roomProfessorMatches =
-    null;
-
-
-  window.matchedEvents =
-    [];
+  previewCard.classList.add("hidden");
 
 }
 
 
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
+function escapeHtml(value) {
 
-function escapeHtml(
-  value
-) {
+  return String(value)
 
-  return String(
-    value || ""
-  )
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
+    .replaceAll("&", "&amp;")
+
+    .replaceAll("<", "&lt;")
+
+    .replaceAll(">", "&gt;")
+
+    .replaceAll('"', "&quot;")
+
+    .replaceAll("'", "&#039;");
 
 }
-
-
-/* =========================================================
-   NORMALIZE TEXT
-   ========================================================= */
-
-function normalizeText(
-  value
-) {
-
-  return String(
-    value || ""
-  )
-    .trim()
-    .toLowerCase()
-
-    /*
-     * Cyrillic / Latin look-alike
-     * normalization.
-     *
-     * This fixes things such as:
-     *
-     * д-p
-     *
-     * vs
-     *
-     * д-р
-     */
-
-    .replace(
-      /p/g,
-      "р"
-    )
-
-    .replace(
-      /c/g,
-      "с"
-    )
-
-    .replace(
-      /a/g,
-      "а"
-    )
-
-    .replace(
-      /e/g,
-      "е"
-    )
-
-    .replace(
-      /o/g,
-      "о"
-    )
-
-    .replace(
-      /x/g,
-      "х"
-    )
-
-    .replace(
-      /k/g,
-      "к"
-    )
-
-    .replace(
-      /m/g,
-      "м"
-    )
-
-    .replace(
-      /t/g,
-      "т"
-    )
-
-    .replace(
-      /y/g,
-      "у"
-    )
-
-    .replace(
-      /b/g,
-      "в"
-    )
-
-    .replace(
-      /\s+/g,
-      " ");
-
-}
-
-
-/* =========================================================
-   LOAD SUPABASE REFERENCE DATA
-   ========================================================= */
 
 async function loadSupabaseReferenceData() {
 
-  console.log(
-    "Loading Supabase reference data..."
-  );
-
+  console.log("Loading Supabase reference data...");
 
   const statusElement =
-    document.getElementById(
-      "supabaseStatus"
-    );
-
+    document.getElementById("supabaseStatus");
 
   try {
 
@@ -1412,9 +692,9 @@ async function loadSupabaseReferenceData() {
     `;
 
 
-    /* -----------------------------------------------
-       SUBJECTS
-       ----------------------------------------------- */
+    // -----------------------------------------
+    // Load subjects
+    // -----------------------------------------
 
     const subjectsResult =
       await supabaseClient
@@ -1427,9 +707,7 @@ async function loadSupabaseReferenceData() {
         `);
 
 
-    if (
-      subjectsResult.error
-    ) {
+    if (subjectsResult.error) {
 
       throw new Error(
         "Subjects: " +
@@ -1439,9 +717,9 @@ async function loadSupabaseReferenceData() {
     }
 
 
-    /* -----------------------------------------------
-       ROOMS
-       ----------------------------------------------- */
+    // -----------------------------------------
+    // Load rooms
+    // -----------------------------------------
 
     const roomsResult =
       await supabaseClient
@@ -1454,9 +732,7 @@ async function loadSupabaseReferenceData() {
         `);
 
 
-    if (
-      roomsResult.error
-    ) {
+    if (roomsResult.error) {
 
       throw new Error(
         "Rooms: " +
@@ -1466,9 +742,9 @@ async function loadSupabaseReferenceData() {
     }
 
 
-    /* -----------------------------------------------
-       PROFESSORS
-       ----------------------------------------------- */
+    // -----------------------------------------
+    // Load professors
+    // -----------------------------------------
 
     const professorsResult =
       await supabaseClient
@@ -1481,9 +757,7 @@ async function loadSupabaseReferenceData() {
         `);
 
 
-    if (
-      professorsResult.error
-    ) {
+    if (professorsResult.error) {
 
       throw new Error(
         "Professors: " +
@@ -1493,53 +767,52 @@ async function loadSupabaseReferenceData() {
     }
 
 
-    /* -----------------------------------------------
-       STORE
-       ----------------------------------------------- */
+    // -----------------------------------------
+    // Store results
+    // -----------------------------------------
 
     const subjects =
       subjectsResult.data || [];
 
-
     const rooms =
       roomsResult.data || [];
-
 
     const professors =
       professorsResult.data || [];
 
 
+    // Store globally so the next steps
+    // can use the data.
+
     window.referenceData = {
 
-      subjects:
-        subjects,
+      subjects: subjects,
 
-      rooms:
-        rooms,
+      rooms: rooms,
 
-      professors:
-        professors
+      professors: professors
 
     };
 
+
+    // -----------------------------------------
+    // Console information
+    // -----------------------------------------
 
     console.log(
       "Subjects loaded:",
       subjects.length
     );
 
-
     console.log(
       "Rooms loaded:",
       rooms.length
     );
 
-
     console.log(
       "Professors loaded:",
       professors.length
     );
-
 
     console.log(
       "Reference data:",
@@ -1547,35 +820,30 @@ async function loadSupabaseReferenceData() {
     );
 
 
+    // -----------------------------------------
+    // Display success
+    // -----------------------------------------
+
     statusElement.innerHTML = `
 
       <div class="success">
 
-        ✅
-        <strong>
-          Supabase connection successful
-        </strong>
+        ✅ <strong>Supabase connection successful</strong>
 
         <br><br>
 
         Subjects:
-        <strong>
-          ${subjects.length}
-        </strong>
+        <strong>${subjects.length}</strong>
 
         <br>
 
         Rooms:
-        <strong>
-          ${rooms.length}
-        </strong>
+        <strong>${rooms.length}</strong>
 
         <br>
 
         Professors:
-        <strong>
-          ${professors.length}
-        </strong>
+        <strong>${professors.length}</strong>
 
       </div>
 
@@ -1584,11 +852,12 @@ async function loadSupabaseReferenceData() {
 
     return window.referenceData;
 
-  }
 
-  catch (
-    error
-  ) {
+  } catch (error) {
+
+    // -----------------------------------------
+    // Error handling
+    // -----------------------------------------
 
     console.error(
       "Supabase loading error:",
@@ -1600,16 +869,11 @@ async function loadSupabaseReferenceData() {
 
       <div class="error">
 
-        ❌
-        <strong>
-          Supabase connection failed
-        </strong>
+        ❌ <strong>Supabase connection failed</strong>
 
         <br><br>
 
-        ${escapeHtml(
-          error.message
-        )}
+        ${escapeHtml(error.message)}
 
       </div>
 
@@ -1622,414 +886,152 @@ async function loadSupabaseReferenceData() {
 
 }
 
-
-/* =========================================================
-   MATCH SUBJECTS
-   ========================================================= */
-
-function matchSubjects(
-  csvData
-) {
+  function matchSubjects(csvData) {
 
   const subjects =
-    window.referenceData
-      ?.subjects || [];
+    window.referenceData?.subjects || [];
 
+  if (!subjects.length) {
 
-  if (
-    !subjects.length
-  ) {
-
-    console.error(
-      "Subjects are not loaded."
-    );
-
+    console.error("Subjects are not loaded.");
 
     return [];
 
   }
 
 
+  // -----------------------------------------
+  // Find CSV columns
+  // -----------------------------------------
+
   const subjectColumn =
-    findColumn(
-      csvData[0],
-      [
-        "предмет",
-        "Предмет",
-        "subject",
-        "Subject"
-      ]
-    );
+    findColumn(csvData[0], [
+      "предмет",
+      "Предмет",
+      "subject",
+      "Subject"
+    ]);
 
 
   const semesterColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Семестар",
-        "семестар",
-        "semester",
-        "Semester"
-      ]
-    );
+    findColumn(csvData[0], [
+      "Семестар",
+      "семестар",
+      "semester",
+      "Semester"
+    ]);
 
 
   const programColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Студиска програма",
-        "студиска програма",
-        "program",
-        "Program"
-      ]
-    );
+    findColumn(csvData[0], [
+      "Студиска програма",
+      "студиска програма",
+      "program",
+      "Program"
+    ]);
 
 
   if (!subjectColumn) {
+    console.error("Subject column not found.");
     return [];
   }
 
 
   if (!semesterColumn) {
+    console.error("Semester column not found.");
     return [];
   }
 
 
   if (!programColumn) {
+    console.error("Program column not found.");
     return [];
   }
 
 
-  /* -----------------------------------------------
-     Unique combinations
-     ----------------------------------------------- */
+  // -----------------------------------------
+  // Get unique CSV combinations
+  // -----------------------------------------
 
-  const combinations =
-    new Map();
-
-
-  csvData.forEach(
-    row => {
-
-      const subject =
-        String(
-          row[subjectColumn] || ""
-        ).trim();
+  const combinations = new Map();
 
 
-      const semester =
-        String(
-          row[semesterColumn] || ""
-        ).trim();
+  csvData.forEach(row => {
+
+    const subject =
+      String(row[subjectColumn] || "").trim();
+
+    const semester =
+      String(row[semesterColumn] || "").trim();
+
+    const program =
+      String(row[programColumn] || "").trim();
 
 
-      const program =
-        String(
-          row[programColumn] || ""
-        ).trim();
+    if (!subject) return;
 
 
-      if (!subject) {
-        return;
-      }
+    const key =
+      `${program}|||${semester}|||${subject}`;
 
 
-      const key =
-        `${program}|||` +
-        `${semester}|||` +
-        `${normalizeText(subject)}`;
+    if (!combinations.has(key)) {
 
+      combinations.set(key, {
 
-      if (
-        !combinations.has(
-          key
-        )
-      ) {
+        csvProgram: program,
 
-        combinations.set(
-          key,
-          {
+        csvSemester: semester,
 
-            csvProgram:
-              program,
+        csvSubject: subject
 
-            csvSemester:
-              semester,
-
-            csvSubject:
-              subject
-
-          }
-        );
-
-      }
+      });
 
     }
-  );
 
+  });
+
+
+  // -----------------------------------------
+  // Match every subject
+  // -----------------------------------------
 
   const results = [];
 
 
-  combinations.forEach(
-    item => {
+  combinations.forEach(item => {
 
-      const {
-        csvProgram,
-        csvSemester,
-        csvSubject
-      } = item;
+    const {
+      csvProgram,
+      csvSemester,
+      csvSubject
+    } = item;
 
 
-      let match =
-        null;
+    let match = null;
 
 
-      /* =========================================
-         MAGISTER
-         ========================================= */
+    // =================================================
+    // MAGISTER
+    // =================================================
 
-      if (
-        csvProgram ===
-        "Магистер"
-      ) {
+    if (csvProgram === "Магистер") {
 
 
-        /*
-         * First:
-         * mr-farm-2025
-         */
-
-        match =
-          subjects.find(
-            s =>
-
-              s.program_id ===
-              "mr-farm-2025"
-
-              &&
-
-              String(
-                s.semester
-              ) ===
-              csvSemester
-
-              &&
-
-              normalizeText(
-                s.name
-              ) ===
-              normalizeText(
-                csvSubject
-              )
-
-          );
-
-
-        if (match) {
-
-          results.push({
-
-            csvProgram,
-
-            csvSemester,
-
-            csvSubject,
-
-            databaseProgram:
-              match.program_id,
-
-            databaseSemester:
-              match.semester,
-
-            subjectId:
-              match.id,
-
-            status:
-              "MATCH_2025",
-
-            statusText:
-              "✅ Match — mr-farm-2025"
-
-          });
-
-
-          return;
-
-        }
-
-
-        /*
-         * Second:
-         * mr-farm-nova2021
-         */
-
-        match =
-          subjects.find(
-            s =>
-
-              s.program_id ===
-              "mr-farm-nova2021"
-
-              &&
-
-              String(
-                s.semester
-              ) ===
-              csvSemester
-
-              &&
-
-              normalizeText(
-                s.name
-              ) ===
-              normalizeText(
-                csvSubject
-              )
-
-          );
-
-
-        if (match) {
-
-          results.push({
-
-            csvProgram,
-
-            csvSemester,
-
-            csvSubject,
-
-            databaseProgram:
-              match.program_id,
-
-            databaseSemester:
-              match.semester,
-
-            subjectId:
-              match.id,
-
-            status:
-              "MATCH_2021",
-
-            statusText:
-              "🔄 Match — mr-farm-nova2021"
-
-          });
-
-
-          return;
-
-        }
-
-
-        /*
-         * Same subject exists,
-         * but semester differs.
-         */
-
-        const other2025 =
-          subjects.find(
-            s =>
-
-              s.program_id ===
-              "mr-farm-2025"
-
-              &&
-
-              normalizeText(
-                s.name
-              ) ===
-              normalizeText(
-                csvSubject
-              )
-          );
-
-
-        const other2021 =
-          subjects.find(
-            s =>
-
-              s.program_id ===
-              "mr-farm-nova2021"
-
-              &&
-
-              normalizeText(
-                s.name
-              ) ===
-              normalizeText(
-                csvSubject
-              )
-          );
-
-
-        results.push({
-
-          csvProgram,
-
-          csvSemester,
-
-          csvSubject,
-
-          databaseProgram:
-            other2025
-              ? other2025.program_id
-              : other2021
-                ? other2021.program_id
-                : "",
-
-          databaseSemester:
-            other2025
-              ? other2025.semester
-              : other2021
-                ? other2021.semester
-                : "",
-
-          subjectId:
-            "",
-
-          status:
-            "REVIEW",
-
-          statusText:
-            "⚠️ Semester mismatch / review"
-
-        });
-
-
-        return;
-
-      }
-
-
-      /* =========================================
-         OTHER PROGRAMS
-         ========================================= */
+      // -----------------------------------------
+      // First: mr-farm-2025
+      // -----------------------------------------
 
       match =
-        subjects.find(
-          s =>
+        subjects.find(s =>
 
-            normalizeText(
-              s.name
-            ) ===
-            normalizeText(
-              csvSubject
-            )
+          s.program_id === "mr-farm-2025" &&
 
-            &&
+          String(s.semester) ===
+            csvSemester &&
 
-            String(
-              s.semester
-            ) ===
-            csvSemester
-
-            &&
-
-            s.program_id ===
-            csvProgram
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
 
         );
 
@@ -2054,16 +1056,38 @@ function matchSubjects(
             match.id,
 
           status:
-            "MATCH",
+            "MATCH_2025",
 
           statusText:
-            "✅ Match"
+            "✅ Match — mr-farm-2025"
 
         });
 
+        return;
+
       }
 
-      else {
+
+      // -----------------------------------------
+      // Second: mr-farm-nova2021
+      // -----------------------------------------
+
+      match =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-nova2021" &&
+
+          String(s.semester) ===
+            csvSemester &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      if (match) {
 
         results.push({
 
@@ -2074,26 +1098,166 @@ function matchSubjects(
           csvSubject,
 
           databaseProgram:
-            "",
+            match.program_id,
 
           databaseSemester:
-            "",
+            match.semester,
 
           subjectId:
-            "",
+            match.id,
 
           status:
-            "NOT_FOUND",
+            "MATCH_2021",
 
           statusText:
-            "❌ Subject not found"
+            "🔄 Match — mr-farm-nova2021"
 
         });
 
+        return;
+
       }
 
+
+      // -----------------------------------------
+      // Same subject exists but semester differs
+      // -----------------------------------------
+
+      const other2025 =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-2025" &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      const other2021 =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-nova2021" &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          other2025
+            ? other2025.program_id
+            : other2021
+              ? other2021.program_id
+              : "",
+
+        databaseSemester:
+          other2025
+            ? other2025.semester
+            : other2021
+              ? other2021.semester
+              : "",
+
+        subjectId:
+          "",
+
+        status:
+          "REVIEW",
+
+        statusText:
+          "⚠️ Semester mismatch / review"
+
+      });
+
+      return;
+
     }
-  );
+
+
+    // =================================================
+    // OTHER PROGRAMS
+    // =================================================
+
+    match =
+      subjects.find(s =>
+
+        normalizeText(s.name) ===
+          normalizeText(csvSubject) &&
+
+        String(s.semester) ===
+          csvSemester
+
+      );
+
+
+    if (match) {
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          match.program_id,
+
+        databaseSemester:
+          match.semester,
+
+        subjectId:
+          match.id,
+
+        status:
+          "MATCH",
+
+        statusText:
+          "✅ Match"
+
+      });
+
+    } else {
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          "",
+
+        databaseSemester:
+          "",
+
+        subjectId:
+          "",
+
+        status:
+          "NOT_FOUND",
+
+        statusText:
+          "❌ Subject not found"
+
+      });
+
+    }
+
+  });
 
 
   return results;
@@ -2101,263 +1265,56 @@ function matchSubjects(
 }
 
 
-/* =========================================================
-   DISPLAY SUBJECT MATCHING
-   ========================================================= */
+  const roomAliases = {
 
-function displaySubjectMatches(
-  results
-) {
+  "Инст. за микро.": "Инст. за Микробиологија"
 
-  let card =
-    document.getElementById(
-      "subjectMatchCard"
-    );
+};
 
 
-  if (!card) {
-
-    card =
-      document.createElement(
-        "div"
-      );
-
-
-    card.id =
-      "subjectMatchCard";
-
-
-    card.className =
-      "card";
-
-
-    document
-      .querySelector(
-        ".container"
-      )
-      .appendChild(
-        card
-      );
-
-  }
-
-
-  let html = `
-
-    <h2>
-      🔎 Subject Matching
-    </h2>
-
-    <div class="table-wrapper">
-
-      <table>
-
-        <thead>
-
-          <tr>
-
-            <th>
-              CSV Subject
-            </th>
-
-            <th>
-              CSV Semester
-            </th>
-
-            <th>
-              Database Program
-            </th>
-
-            <th>
-              DB Semester
-            </th>
-
-            <th>
-              Subject ID
-            </th>
-
-            <th>
-              Status
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-  `;
-
-
-  results.forEach(
-    row => {
-
-      let statusClass =
-        "status-error";
-
-
-      if (
-        row.status ===
-        "MATCH_2025"
-      ) {
-
-        statusClass =
-          "status-success";
-
-      }
-
-      else if (
-        row.status ===
-        "MATCH_2021"
-      ) {
-
-        statusClass =
-          "status-warning";
-
-      }
-
-      else if (
-        row.status ===
-        "MATCH"
-      ) {
-
-        statusClass =
-          "status-success";
-
-      }
-
-
-      html += `
-
-        <tr>
-
-          <td>
-            ${escapeHtml(
-              row.csvSubject
-            )}
-          </td>
-
-          <td>
-            ${escapeHtml(
-              row.csvSemester
-            )}
-          </td>
-
-          <td>
-            ${escapeHtml(
-              row.databaseProgram
-            )}
-          </td>
-
-          <td>
-            ${escapeHtml(
-              row.databaseSemester
-            )}
-          </td>
-
-          <td>
-            ${escapeHtml(
-              row.subjectId
-            )}
-          </td>
-
-          <td class="${statusClass}">
-            ${escapeHtml(
-              row.statusText
-            )}
-          </td>
-
-        </tr>
-
-      `;
-
-    }
-  );
-
-
-  html += `
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-  `;
-
-
-  card.innerHTML =
-    html;
-
-}
-
-
-/* =========================================================
-   MATCH ROOMS AND PROFESSORS
-   ========================================================= */
-
-function matchRoomsAndProfessors(
-  csvData
-) {
+  
+  function matchRoomsAndProfessors(csvData) {
 
   const rooms =
-    window.referenceData
-      ?.rooms || [];
-
+    window.referenceData?.rooms || [];
 
   const professors =
-    window.referenceData
-      ?.professors || [];
+    window.referenceData?.professors || [];
 
 
   if (!rooms.length) {
-
-    console.error(
-      "Rooms are not loaded."
-    );
-
-
+    console.error("Rooms are not loaded.");
     return null;
-
   }
-
 
   if (!professors.length) {
-
-    console.error(
-      "Professors are not loaded."
-    );
-
-
+    console.error("Professors are not loaded.");
     return null;
-
   }
 
 
+  // -----------------------------------------
+  // Find CSV columns
+  // -----------------------------------------
+
   const roomColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Просторија",
-        "Просторија ",
-        "просторија",
-        "room",
-        "Room"
-      ]
-    );
+    findColumn(csvData[0], [
+      "Просторија",
+      "Просторија ",
+      "просторија",
+      "room",
+      "Room"
+    ]);
 
 
   const professorColumn =
-    findColumn(
-      csvData[0],
-      [
-        "проф/асс",
-        "проф/ас",
-        "професор",
-        "Professor",
-        "professor"
-      ]
-    );
+    findColumn(csvData[0], [
+      "проф/асс",
+      "проф/ас",
+      "професор",
+      "Professor",
+      "professor"
+    ]);
 
 
   if (!roomColumn) {
@@ -2366,9 +1323,7 @@ function matchRoomsAndProfessors(
       "Room column not found."
     );
 
-
     return null;
-
   }
 
 
@@ -2378,193 +1333,159 @@ function matchRoomsAndProfessors(
       "Professor column not found."
     );
 
-
     return null;
-
   }
 
 
+  // -----------------------------------------
+  // Get unique rooms
+  // -----------------------------------------
+
   const uniqueRooms =
     uniqueValues(
-      csvData.map(
-        row =>
-          row[roomColumn]
+      csvData.map(row =>
+        row[roomColumn]
       )
     );
 
+
+  // -----------------------------------------
+  // Get unique professors
+  // -----------------------------------------
 
   const uniqueProfessors =
     uniqueValues(
-      csvData.map(
-        row =>
-          row[professorColumn]
+      csvData.map(row =>
+        row[professorColumn]
       )
     );
 
 
-  /* -----------------------------------------------
-     Rooms
-     ----------------------------------------------- */
+  // -----------------------------------------
+  // Match rooms
+  // -----------------------------------------
 
   const roomResults =
-    uniqueRooms.map(
-      csvRoom => {
+    uniqueRooms.map(csvRoom => {
 
-        const normalizedCsvRoom =
-          normalizeText(
-            roomAliases[csvRoom]
-              || csvRoom
-          );
+      const normalizedCsvRoom =
+  normalizeText(
+    roomAliases[csvRoom] || csvRoom
+  );
 
 
-        const match =
-          rooms.find(
-            room =>
-              normalizeText(
-                room.name
-              ) ===
-              normalizedCsvRoom
-          );
+const match =
+  rooms.find(room =>
+
+    normalizeText(room.name) ===
+    normalizedCsvRoom
+
+  );
 
 
-        if (match) {
-
-          return {
-
-            csvValue:
-              csvRoom,
-
-            databaseValue:
-              match.name,
-
-            id:
-              match.id,
-
-            status:
-              "MATCH",
-
-            statusText:
-              "✅ Match"
-
-          };
-
-        }
-
+      if (match) {
 
         return {
 
-          csvValue:
-            csvRoom,
+          csvValue: csvRoom,
 
           databaseValue:
-            "",
+            match.name,
 
-          id:
-            "",
+          id: match.id,
 
-          status:
-            "NOT_FOUND",
+          status: "MATCH",
 
-          statusText:
-            "❌ Not found"
+          statusText: "✅ Match"
 
         };
 
       }
-    );
 
 
-  /* -----------------------------------------------
-     Professors
-     ----------------------------------------------- */
+      return {
+
+        csvValue: csvRoom,
+
+        databaseValue: "",
+
+        id: "",
+
+        status: "NOT_FOUND",
+
+        statusText: "❌ Not found"
+
+      };
+
+    });
+
+
+  // -----------------------------------------
+  // Match professors
+  // -----------------------------------------
 
   const professorResults =
-    uniqueProfessors.map(
-      csvProfessor => {
+    uniqueProfessors.map(csvProfessor => {
 
-        const match =
-          professors.find(
-            professor =>
-              normalizeText(
-                professor.name
-              ) ===
-              normalizeText(
-                csvProfessor
-              )
-          );
+      const match =
+        professors.find(professor =>
+
+          normalizeText(professor.name) ===
+          normalizeText(csvProfessor)
+
+        );
 
 
-        if (match) {
-
-          return {
-
-            csvValue:
-              csvProfessor,
-
-            databaseValue:
-              match.name,
-
-            id:
-              match.id,
-
-            status:
-              "MATCH",
-
-            statusText:
-              "✅ Match"
-
-          };
-
-        }
-
+      if (match) {
 
         return {
 
-          csvValue:
-            csvProfessor,
+          csvValue: csvProfessor,
 
           databaseValue:
-            "",
+            match.name,
 
-          id:
-            "",
+          id: match.id,
 
-          status:
-            "NOT_FOUND",
+          status: "MATCH",
 
-          statusText:
-            "❌ Not found"
+          statusText: "✅ Match"
 
         };
 
       }
-    );
+
+
+      return {
+
+        csvValue: csvProfessor,
+
+        databaseValue: "",
+
+        id: "",
+
+        status: "NOT_FOUND",
+
+        statusText: "❌ Not found"
+
+      };
+
+    });
 
 
   return {
 
-    rooms:
-      roomResults,
+    rooms: roomResults,
 
-    professors:
-      professorResults
+    professors: professorResults
 
   };
 
 }
 
+  function displayRoomProfessorMatches(results) {
 
-/* =========================================================
-   DISPLAY ROOM / PROFESSOR MATCHING
-   ========================================================= */
-
-function displayRoomProfessorMatches(
-  results
-) {
-
-  if (!results) {
-    return;
-  }
+  if (!results) return;
 
 
   let card =
@@ -2576,39 +1497,27 @@ function displayRoomProfessorMatches(
   if (!card) {
 
     card =
-      document.createElement(
-        "div"
-      );
-
+      document.createElement("div");
 
     card.id =
       "roomProfessorMatchCard";
 
-
     card.className =
       "card";
 
-
     document
-      .querySelector(
-        ".container"
-      )
-      .appendChild(
-        card
-      );
+      .querySelector(".container")
+      .appendChild(card);
 
   }
 
 
   let html = `
 
-    <h2>
-      🏫 Room & Professor Matching
-    </h2>
+    <h2>🏫 Room & Professor Matching</h2>
 
-    <h3>
-      Rooms
-    </h3>
+
+    <h3>Rooms</h3>
 
     <div class="table-wrapper">
 
@@ -2617,76 +1526,51 @@ function displayRoomProfessorMatches(
         <thead>
 
           <tr>
-
-            <th>
-              CSV Room
-            </th>
-
-            <th>
-              Database Room
-            </th>
-
-            <th>
-              Room ID
-            </th>
-
-            <th>
-              Status
-            </th>
-
+            <th>CSV Room</th>
+            <th>Database Room</th>
+            <th>Room ID</th>
+            <th>Status</th>
           </tr>
 
         </thead>
 
         <tbody>
-
   `;
 
 
-  results.rooms.forEach(
-    row => {
+  results.rooms.forEach(row => {
 
-      const statusClass =
-        row.status ===
-        "MATCH"
-          ? "status-success"
-          : "status-error";
+    const statusClass =
+      row.status === "MATCH"
+        ? "status-success"
+        : "status-error";
 
 
-      html += `
+    html += `
 
-        <tr>
+      <tr>
 
-          <td>
-            ${escapeHtml(
-              row.csvValue
-            )}
-          </td>
+        <td>
+          ${escapeHtml(row.csvValue)}
+        </td>
 
-          <td>
-            ${escapeHtml(
-              row.databaseValue
-            )}
-          </td>
+        <td>
+          ${escapeHtml(row.databaseValue)}
+        </td>
 
-          <td>
-            ${escapeHtml(
-              String(row.id)
-            )}
-          </td>
+        <td>
+          ${escapeHtml(String(row.id))}
+        </td>
 
-          <td class="${statusClass}">
-            ${escapeHtml(
-              row.statusText
-            )}
-          </td>
+        <td class="${statusClass}">
+          ${escapeHtml(row.statusText)}
+        </td>
 
-        </tr>
+      </tr>
 
-      `;
+    `;
 
-    }
-  );
+  });
 
 
   html += `
@@ -2698,11 +1582,8 @@ function displayRoomProfessorMatches(
     </div>
 
 
-    <h3
-      style="margin-top:25px;">
-
+    <h3 style="margin-top:25px;">
       Professors
-
     </h3>
 
 
@@ -2713,22 +1594,144 @@ function displayRoomProfessorMatches(
         <thead>
 
           <tr>
+            <th>CSV Professor</th>
+            <th>Database Professor</th>
+            <th>Professor ID</th>
+            <th>Status</th>
+          </tr>
 
-            <th>
-              CSV Professor
-            </th>
+        </thead>
 
-            <th>
-              Database Professor
-            </th>
+        <tbody>
+  `;
 
-            <th>
-              Professor ID
-            </th>
 
-            <th>
-              Status
-            </th>
+  results.professors.forEach(row => {
+
+    const statusClass =
+      row.status === "MATCH"
+        ? "status-success"
+        : "status-error";
+
+
+    html += `
+
+      <tr>
+
+        <td>
+          ${escapeHtml(row.csvValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.databaseValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(String(row.id))}
+        </td>
+
+        <td class="${statusClass}">
+          ${escapeHtml(row.statusText)}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  `;
+
+
+  card.innerHTML =
+    html;
+
+}
+
+  
+
+  function normalizeText(value) {
+
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+
+    // Cyrillic / Latin look-alike characters
+    .replace(/p/g, "р")
+    .replace(/c/g, "с")
+    .replace(/a/g, "а")
+    .replace(/e/g, "е")
+    .replace(/o/g, "о")
+    .replace(/x/g, "х")
+    .replace(/k/g, "к")
+    .replace(/m/g, "м")
+    .replace(/t/g, "т")
+    .replace(/y/g, "у")
+    .replace(/b/g, "в")
+
+    // Normalize whitespace
+    .replace(/\s+/g, " ");
+
+}
+
+function displaySubjectMatches(results) {
+
+  let card =
+    document.getElementById(
+      "subjectMatchCard"
+    );
+
+
+  if (!card) {
+
+    card =
+      document.createElement("div");
+
+    card.id =
+      "subjectMatchCard";
+
+    card.className =
+      "card";
+
+    document
+      .querySelector(".container")
+      .appendChild(card);
+
+  }
+
+
+  let html = `
+
+    <h2>🔎 Subject Matching</h2>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>CSV Subject</th>
+
+            <th>CSV Semester</th>
+
+            <th>Database Program</th>
+
+            <th>DB Semester</th>
+
+            <th>Subject ID</th>
+
+            <th>Status</th>
 
           </tr>
 
@@ -2736,53 +1739,93 @@ function displayRoomProfessorMatches(
 
         <tbody>
 
+        <div id="reviewExportCard" class="card" style="display:none;">
+
+  <h2>📝 Subjects for Review</h2>
+
+  <p id="reviewExportInfo"></p>
+
+  <button
+    id="exportReviewButton"
+    type="button"
+    class="primary-button">
+    ⬇️ Export rows for review
+  </button>
+
+</div>
   `;
 
 
-  results.professors.forEach(
-    row => {
+  results.forEach(row => {
 
-      const statusClass =
-        row.status ===
-        "MATCH"
-          ? "status-success"
-          : "status-error";
+    let statusClass = "";
 
 
-      html += `
+    if (
+      row.status ===
+      "MATCH_2025"
+    ) {
 
-        <tr>
+      statusClass =
+        "status-success";
 
-          <td>
-            ${escapeHtml(
-              row.csvValue
-            )}
-          </td>
+    } else if (
+      row.status ===
+      "MATCH_2021"
+    ) {
 
-          <td>
-            ${escapeHtml(
-              row.databaseValue
-            )}
-          </td>
+      statusClass =
+        "status-warning";
 
-          <td>
-            ${escapeHtml(
-              String(row.id)
-            )}
-          </td>
+    } else {
 
-          <td class="${statusClass}">
-            ${escapeHtml(
-              row.statusText
-            )}
-          </td>
-
-        </tr>
-
-      `;
+      statusClass =
+        "status-error";
 
     }
-  );
+
+
+    html += `
+
+      <tr>
+
+        <td>
+          ${escapeHtml(row.csvSubject)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.csvSemester)}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.databaseProgram
+          )}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.databaseSemester
+          )}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.subjectId
+          )}
+        </td>
+
+        <td class="${statusClass}">
+          ${escapeHtml(
+            row.statusText
+          )}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
 
 
   html += `
@@ -2802,24 +1845,263 @@ function displayRoomProfessorMatches(
 }
 
 
-/* =========================================================
-   UPDATE REVIEW EXPORT BUTTON
-   ========================================================= */
+  function exportReviewRows(csvData) {
 
-function updateReviewExportButton() {
+  if (!csvData || !csvData.length) {
+
+    alert("Нема CSV записи за export.");
+    return;
+
+  }
+
+
+  if (!window.subjectMatches) {
+
+    alert(
+      "Subject matching не е извршен."
+    );
+
+    return;
+
+  }
+
+
+  // ------------------------------------------------
+  // Create lookup of subject matching results
+  // ------------------------------------------------
+
+  const matchMap = new Map();
+
+
+  window.subjectMatches.forEach(match => {
+
+    const key =
+      `${match.csvProgram}|||` +
+      `${match.csvSemester}|||` +
+      `${normalizeText(match.csvSubject)}`;
+
+
+    matchMap.set(
+      key,
+      match
+    );
+
+  });
+
+
+  // ------------------------------------------------
+  // Find CSV columns
+  // ------------------------------------------------
+
+  const subjectColumn =
+    findColumn(csvData[0], [
+      "предмет",
+      "Предмет",
+      "subject",
+      "Subject"
+    ]);
+
+
+  const semesterColumn =
+    findColumn(csvData[0], [
+      "Семестар",
+      "семестар",
+      "semester",
+      "Semester"
+    ]);
+
+
+  const programColumn =
+    findColumn(csvData[0], [
+      "Студиска програма",
+      "студиска програма",
+      "program",
+      "Program"
+    ]);
+
+
+  if (
+    !subjectColumn ||
+    !semesterColumn ||
+    !programColumn
+  ) {
+
+    alert(
+      "Не можам да ги најдам колоните за предмет, семестар или студиска програма."
+    );
+
+    return;
+
+  }
+
+
+  // ------------------------------------------------
+  // Find all rows that need review
+  // ------------------------------------------------
+
+  const reviewRows = [];
+
+
+  csvData.forEach(row => {
+
+    const subject =
+      String(
+        row[subjectColumn] || ""
+      ).trim();
+
+
+    const semester =
+      String(
+        row[semesterColumn] || ""
+      ).trim();
+
+
+    const program =
+      String(
+        row[programColumn] || ""
+      ).trim();
+
+
+    const key =
+      `${program}|||` +
+      `${semester}|||` +
+      `${normalizeText(subject)}`;
+
+
+    const match =
+      matchMap.get(key);
+
+
+    if (!match) {
+
+      // Safety: if no matching result exists,
+      // include the row for review.
+
+      reviewRows.push(row);
+
+      return;
+
+    }
+
+
+    // ------------------------------------------------
+    // Keep only REVIEW / NOT_FOUND
+    // ------------------------------------------------
+
+    if (
+      match.status === "REVIEW" ||
+      match.status === "NOT_FOUND"
+    ) {
+
+      reviewRows.push(row);
+
+    }
+
+  });
+
+
+  // ------------------------------------------------
+  // Nothing to export
+  // ------------------------------------------------
+
+  if (!reviewRows.length) {
+
+    alert(
+      "Одлично! Нема записи што треба да се прегледаат."
+    );
+
+    return;
+
+  }
+
+
+  // ------------------------------------------------
+  // Create CSV
+  // ------------------------------------------------
+
+  const csv =
+    Papa.unparse(
+      reviewRows,
+      {
+        delimiter: ";",
+        newline: "\r\n"
+      }
+    );
+
+
+  // ------------------------------------------------
+  // UTF-8 BOM
+  // ------------------------------------------------
+
+  const csvWithBOM =
+    "\uFEFF" + csv;
+
+
+  // ------------------------------------------------
+  // Create downloadable file
+  // ------------------------------------------------
+
+  const blob =
+    new Blob(
+      [csvWithBOM],
+      {
+        type:
+          "text/csv;charset=utf-8;"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(blob);
+
+
+  const link =
+    document.createElement("a");
+
+
+  link.href = url;
+
+
+  const now =
+    new Date();
+
+
+  const datePart =
+    now.toISOString()
+      .slice(0, 10);
+
+
+  link.download =
+    `events_review_${datePart}.csv`;
+
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+
+  URL.revokeObjectURL(url);
+
+
+  console.log(
+    "Review CSV exported:",
+    reviewRows.length,
+    "rows"
+  );
+
+}
+  function updateReviewExportButton() {
 
   const results =
     window.subjectMatches || [];
 
 
   const reviewSubjects =
-    results.filter(
-      row =>
-        row.status ===
-          "REVIEW"
-        ||
-        row.status ===
-          "NOT_FOUND"
+    results.filter(row =>
+      row.status === "REVIEW" ||
+      row.status === "NOT_FOUND"
     );
 
 
@@ -2835,1156 +2117,70 @@ function updateReviewExportButton() {
     );
 
 
-  if (
-    !card ||
-    !info
-  ) {
+  if (!card || !info) {
+    return;
+  }
 
-    console.warn(
-      "Review export elements not found."
-    );
 
+  if (!reviewSubjects.length) {
+
+    card.style.display = "none";
 
     return;
 
   }
 
 
-  if (
-    !reviewSubjects.length
-  ) {
-
-    card.style.display =
-      "none";
-
-
-    return;
-
-  }
-
-
-  card.style.display =
-    "block";
-
-
-  const notFound =
-    reviewSubjects.filter(
-      row =>
-        row.status ===
-        "NOT_FOUND"
-    ).length;
-
-
-  const mismatch =
-    reviewSubjects.filter(
-      row =>
-        row.status ===
-        "REVIEW"
-    ).length;
+  card.style.display = "block";
 
 
   info.innerHTML = `
 
-    <div>
+    Пронајдени се
+    <strong>${reviewSubjects.length}</strong>
+    предмети што треба да се прегледаат.
 
-      <strong>
-        ${reviewSubjects.length}
-      </strong>
+    <br><br>
 
-      subject combinations need review.
-
-    </div>
-
-
-    <div
-      style="margin-top:8px;">
-
-      ⚠️ Semester mismatch:
-
-      <strong>
-        ${mismatch}
-      </strong>
-
-      &nbsp;&nbsp;
-
-      ❌ Subject not found:
-
-      <strong>
-        ${notFound}
-      </strong>
-
-    </div>
-
-
-    <div
-      style="margin-top:8px;">
-
-      Exporting will include
-      <strong>
-        all event rows
-      </strong>
-      belonging to these subjects.
-
-    </div>
+    Фајлот ќе ги содржи
+    <strong>сите event записи</strong>
+    за овие предмети.
 
   `;
 
 }
 
 
-/* =========================================================
-   EXPORT REVIEW EVENTS
-   ========================================================= */
 
-function exportReviewRows(
-  csvData
-) {
+  document
+  .getElementById("exportReviewButton")
+  .addEventListener(
+    "click",
+    function() {
 
-  if (
-    !csvData ||
-    !csvData.length
-  ) {
+      if (
+        !window.currentCSVData ||
+        !window.currentCSVData.length
+      ) {
 
-    alert(
-      "Нема CSV записи за export."
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    !window.subjectMatches
-  ) {
-
-    alert(
-      "Subject matching не е извршен."
-    );
-
-
-    return;
-
-  }
-
-
-  const subjectColumn =
-    findColumn(
-      csvData[0],
-      [
-        "предмет",
-        "Предмет",
-        "subject",
-        "Subject"
-      ]
-    );
-
-
-  const semesterColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Семестар",
-        "семестар",
-        "semester",
-        "Semester"
-      ]
-    );
-
-
-  const programColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Студиска програма",
-        "студиска програма",
-        "program",
-        "Program"
-      ]
-    );
-
-
-  if (
-    !subjectColumn ||
-    !semesterColumn ||
-    !programColumn
-  ) {
-
-    alert(
-      "Не можам да ги најдам колоните за предмет, семестар или студиска програма."
-    );
-
-
-    return;
-
-  }
-
-
-  const matchMap =
-    new Map();
-
-
-  window.subjectMatches.forEach(
-    match => {
-
-      const key =
-        `${match.csvProgram}|||` +
-        `${match.csvSemester}|||` +
-        `${normalizeText(
-          match.csvSubject
-        )}`;
-
-
-      matchMap.set(
-        key,
-        match
-      );
-
-    }
-  );
-
-
-  const reviewRows = [];
-
-
-  csvData.forEach(
-    row => {
-
-      const subject =
-        String(
-          row[subjectColumn] ||
-          ""
-        ).trim();
-
-
-      const semester =
-        String(
-          row[semesterColumn] ||
-          ""
-        ).trim();
-
-
-      const program =
-        String(
-          row[programColumn] ||
-          ""
-        ).trim();
-
-
-      const key =
-        `${program}|||` +
-        `${semester}|||` +
-        `${normalizeText(
-          subject
-        )}`;
-
-
-      const match =
-        matchMap.get(
-          key
+        alert(
+          "CSV податоците не се достапни."
         );
-
-
-      if (!match) {
-
-        reviewRows.push(
-          row
-        );
-
 
         return;
 
       }
 
 
-      if (
-        match.status ===
-          "REVIEW"
-        ||
-        match.status ===
-          "NOT_FOUND"
-      ) {
-
-        reviewRows.push(
-          row
-        );
-
-      }
-
-    }
-  );
-
-
-  if (
-    !reviewRows.length
-  ) {
-
-    alert(
-      "Одлично! Нема записи што треба да се прегледаат."
-    );
-
-
-    return;
-
-  }
-
-
-  const csv =
-    Papa.unparse(
-      reviewRows,
-      {
-
-        delimiter:
-          ";",
-
-        newline:
-          "\r\n"
-
-      }
-    );
-
-
-  const csvWithBOM =
-    "\uFEFF" +
-    csv;
-
-
-  const blob =
-    new Blob(
-      [
-        csvWithBOM
-      ],
-      {
-
-        type:
-          "text/csv;charset=utf-8;"
-
-      }
-    );
-
-
-  const url =
-    URL.createObjectURL(
-      blob
-    );
-
-
-  const link =
-    document.createElement(
-      "a"
-    );
-
-
-  link.href =
-    url;
-
-
-  const datePart =
-    new Date()
-      .toISOString()
-      .slice(
-        0,
-        10
-      );
-
-
-  link.download =
-    `events_review_${datePart}.csv`;
-
-
-  document.body.appendChild(
-    link
-  );
-
-
-  link.click();
-
-
-  document.body.removeChild(
-    link
-  );
-
-
-  URL.revokeObjectURL(
-    url
-  );
-
-
-  console.log(
-    "Review CSV exported:",
-    reviewRows.length,
-    "rows"
-  );
-
-}
-
-
-/* =========================================================
-   BUILD MATCHED EVENTS
-   ========================================================= */
-
-function buildMatchedEvents(
-  csvData
-) {
-
-  const subjectMatches =
-    window.subjectMatches || [];
-
-
-  const roomProfessorMatches =
-    window.roomProfessorMatches ||
-    {};
-
-
-  if (
-    !csvData ||
-    !csvData.length
-  ) {
-
-    return [];
-
-  }
-
-
-  if (
-    !subjectMatches.length
-  ) {
-
-    return [];
-
-  }
-
-
-  const rooms =
-    roomProfessorMatches.rooms ||
-    [];
-
-
-  const professors =
-    roomProfessorMatches.professors ||
-    [];
-
-
-  /* -----------------------------------------------
-     Columns
-     ----------------------------------------------- */
-
-  const dateColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Датум",
-        "датум",
-        "date",
-        "Date"
-      ]
-    );
-
-
-  const timeColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Час",
-        "час",
-        "time",
-        "Time"
-      ]
-    );
-
-
-  const roomColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Просторија",
-        "просторија",
-        "room",
-        "Room"
-      ]
-    );
-
-
-  const programColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Студиска програма",
-        "студиска програма",
-        "program",
-        "Program"
-      ]
-    );
-
-
-  const semesterColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Семестар",
-        "семестар",
-        "semester",
-        "Semester"
-      ]
-    );
-
-
-  const subjectColumn =
-    findColumn(
-      csvData[0],
-      [
-        "предмет",
-        "Предмет",
-        "subject",
-        "Subject"
-      ]
-    );
-
-
-  const typeColumn =
-    findColumn(
-      csvData[0],
-      [
-        "тип на настава",
-        "Тип на настава",
-        "type",
-        "Type"
-      ]
-    );
-
-
-  const professorColumn =
-    findColumn(
-      csvData[0],
-      [
-        "проф/асс",
-        "проф/ас",
-        "професор",
-        "Professor",
-        "professor"
-      ]
-    );
-
-
-  const groupsColumn =
-    findColumn(
-      csvData[0],
-      [
-        "Групи",
-        "групи",
-        "groups",
-        "Groups"
-      ]
-    );
-
-
-  if (
-    !dateColumn ||
-    !timeColumn ||
-    !roomColumn ||
-    !programColumn ||
-    !semesterColumn ||
-    !subjectColumn ||
-    !typeColumn ||
-    !professorColumn
-  ) {
-
-    console.error(
-      "Required event columns are missing."
-    );
-
-
-    return [];
-
-  }
-
-
-  /* -----------------------------------------------
-     Subject lookup
-     ----------------------------------------------- */
-
-  const subjectMap =
-    new Map();
-
-
-  subjectMatches.forEach(
-    match => {
-
-      const key =
-        `${match.csvProgram}|||` +
-        `${match.csvSemester}|||` +
-        `${normalizeText(
-          match.csvSubject
-        )}`;
-
-
-      subjectMap.set(
-        key,
-        match
+      exportReviewRows(
+        window.currentCSVData
       );
 
     }
   );
 
-
-  /* -----------------------------------------------
-     Room lookup
-     ----------------------------------------------- */
-
-  const roomMap =
-    new Map();
-
-
-  rooms.forEach(
-    match => {
-
-      roomMap.set(
-        normalizeText(
-          match.csvValue
-        ),
-        match
-      );
-
-    }
-  );
-
-
-  /* -----------------------------------------------
-     Professor lookup
-     ----------------------------------------------- */
-
-  const professorMap =
-    new Map();
-
-
-  professors.forEach(
-    match => {
-
-      professorMap.set(
-        normalizeText(
-          match.csvValue
-        ),
-        match
-      );
-
-    }
-  );
-
-
-  /* -----------------------------------------------
-     Build events
-     ----------------------------------------------- */
-
-  const matchedEvents =
-    [];
-
-
-  csvData.forEach(
-    row => {
-
-      const csvDate =
-        String(
-          row[dateColumn] ||
-          ""
-        ).trim();
-
-
-      const csvTime =
-        String(
-          row[timeColumn] ||
-          ""
-        ).trim();
-
-
-      const csvRoom =
-        String(
-          row[roomColumn] ||
-          ""
-        ).trim();
-
-
-      const csvProgram =
-        String(
-          row[programColumn] ||
-          ""
-        ).trim();
-
-
-      const csvSemester =
-        String(
-          row[semesterColumn] ||
-          ""
-        ).trim();
-
-
-      const csvSubject =
-        String(
-          row[subjectColumn] ||
-          ""
-        ).trim();
-
-
-      const csvType =
-        String(
-          row[typeColumn] ||
-          ""
-        ).trim();
-
-
-      const csvProfessor =
-        String(
-          row[professorColumn] ||
-          ""
-        ).trim();
-
-
-      const csvGroups =
-        groupsColumn
-          ? String(
-              row[groupsColumn] ||
-              ""
-            ).trim()
-          : "";
-
-
-      /* -----------------------------------------
-         SUBJECT
-         ----------------------------------------- */
-
-      const subjectKey =
-        `${csvProgram}|||` +
-        `${csvSemester}|||` +
-        `${normalizeText(
-          csvSubject
-        )}`;
-
-
-      const subjectMatch =
-        subjectMap.get(
-          subjectKey
-        );
-
-
-      if (
-        !subjectMatch
-      ) {
-
-        return;
-
-      }
-
-
-      /*
-       * REVIEW has no subject ID,
-       * so it is automatically excluded.
-       */
-
-      if (
-        !subjectMatch.subjectId
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        !(
-          subjectMatch.status ===
-            "MATCH"
-          ||
-          subjectMatch.status ===
-            "MATCH_2025"
-          ||
-          subjectMatch.status ===
-            "MATCH_2021"
-        )
-      ) {
-
-        return;
-
-      }
-
-
-      /* -----------------------------------------
-         ROOM
-         ----------------------------------------- */
-
-      const normalizedRoom =
-        normalizeText(
-          roomAliases[
-            csvRoom
-          ] ||
-          csvRoom
-        );
-
-
-      const roomMatch =
-        roomMap.get(
-          normalizedRoom
-        );
-
-
-      if (
-        !roomMatch ||
-        roomMatch.status !==
-          "MATCH" ||
-        roomMatch.id === ""
-      ) {
-
-        return;
-
-      }
-
-
-      /* -----------------------------------------
-         PROFESSOR
-         ----------------------------------------- */
-
-      const professorMatch =
-        professorMap.get(
-          normalizeText(
-            csvProfessor
-          )
-        );
-
-
-      if (
-        !professorMatch ||
-        professorMatch.status !==
-          "MATCH" ||
-        professorMatch.id === ""
-      ) {
-
-        return;
-
-      }
-
-
-      /* -----------------------------------------
-         VALID MATCHED EVENT
-         ----------------------------------------- */
-
-      matchedEvents.push({
-
-        event_date:
-          csvDate,
-
-        event_time:
-          csvTime,
-
-        subject_id:
-          subjectMatch.subjectId,
-
-        subject_name:
-          subjectMatch.csvSubject,
-
-        type:
-          csvType,
-
-        groups_text:
-          csvGroups,
-
-        professor_id:
-          professorMatch.id,
-
-        professor_name:
-          professorMatch.databaseValue,
-
-        room_id:
-          roomMatch.id,
-
-        room_name:
-          roomMatch.databaseValue,
-
-        program:
-          csvProgram,
-
-        semester:
-          csvSemester
-
-      });
-
-    }
-  );
-
-
-  return matchedEvents;
-
-}
-
-
-/* =========================================================
-   DISPLAY MATCHED EVENTS
-   ========================================================= */
-
-function displayMatchedEvents(
-  events
-) {
-
-  const card =
-    document.getElementById(
-      "matchedEventsCard"
-    );
-
-
-  const summary =
-    document.getElementById(
-      "matchedEventsSummary"
-    );
-
-
-  const tbody =
-    document.getElementById(
-      "matchedEventsBody"
-    );
-
-
-  if (
-    !card ||
-    !summary ||
-    !tbody
-  ) {
-
-    console.warn(
-      "Matched events HTML elements not found."
-    );
-
-
-    return;
-
-  }
-
-
-  if (
-    !events ||
-    !events.length
-  ) {
-
-    card.style.display =
-      "none";
-
-
-    return;
-
-  }
-
-
-  card.style.display =
-    "block";
-
-
-  summary.innerHTML = `
-
-    <div class="success">
-
-      <strong>
-        ${events.length}
-      </strong>
-
-      events are fully matched
-      and ready for the next
-      import step.
-
-    </div>
-
-  `;
-
-
-  tbody.innerHTML =
-    "";
-
-
-  /*
-   * Display first 200 only.
-   */
-
-  const previewEvents =
-    events.slice(
-      0,
-      200
-    );
-
-
-  previewEvents.forEach(
-    event => {
-
-      const tr =
-        document.createElement(
-          "tr"
-        );
-
-
-      tr.innerHTML = `
-
-        <td>
-          ${escapeHtml(
-            event.event_date
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.event_time
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.room_name
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.program
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.semester
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.subject_name
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.type
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.professor_name
-          )}
-        </td>
-
-        <td>
-          ${escapeHtml(
-            event.groups_text
-          )}
-        </td>
-
-      `;
-
-
-      tbody.appendChild(
-        tr
-      );
-
-    }
-  );
-
-
-  if (
-    events.length > 200
-  ) {
-
-    summary.innerHTML += `
-
-      <div
-        style="margin-top:8px;">
-
-        Showing first
-        <strong>
-          200
-        </strong>
-        events.
-
-        All
-        <strong>
-          ${events.length}
-        </strong>
-        matched events are retained
-        in
-
-        <code>
-          window.matchedEvents
-        </code>.
-
-      </div>
-
-    `;
-
-  }
-
-}
-
-
-/* =========================================================
-   REVIEW EXPORT BUTTON
-   ========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  function () {
-
-    const exportButton =
-      document.getElementById(
-        "exportReviewButton"
-      );
-
-
-    if (
-      !exportButton
-    ) {
-
-      console.warn(
-        "exportReviewButton not found."
-      );
-
-
-      return;
-
-    }
-
-
-    exportButton.addEventListener(
-      "click",
-      function () {
-
-        if (
-          !window.currentCSVData ||
-          !window.currentCSVData.length
-        ) {
-
-          alert(
-            "CSV податоците не се достапни."
-          );
-
-
-          return;
-
-        }
-
-
-        exportReviewRows(
-          window.currentCSVData
-        );
-
-      }
-    );
-
-  }
-);
-
-
-/* =========================================================
-   START
-   ========================================================= */
-
-loadSupabaseReferenceData();
-
-
+  loadSupabaseReferenceData();
 </script>
 
 </body>
-
 </html>
