@@ -1829,13 +1829,29 @@ async function checkForDuplicateEvents() {
 
       if (error) {
 
-        console.error(
-          "Supabase import error:",
-          error
-        );
+  console.error("=================================");
+  console.error("SUPABASE IMPORT ERROR");
+  console.error("=================================");
 
-        throw error;
-      }
+  console.error("Error object:", error);
+  console.error("Error message:", error.message);
+  console.error("Error details:", error.details);
+  console.error("Error hint:", error.hint);
+  console.error("Error code:", error.code);
+
+  console.error("Batch start:", i + 1);
+  console.error("Batch end:", i + batch.length);
+  console.error("Batch size:", batch.length);
+
+  console.error("FAILED BATCH:", batch);
+
+  console.error(
+    "FAILED BATCH JSON:",
+    JSON.stringify(batch, null, 2)
+  );
+
+  throw error;
+}
 
 
       imported += batch.length;
