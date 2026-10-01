@@ -359,6 +359,9 @@ const supabaseClient =
   let matchedEvents = [];
   let eventsNotReadyForImport = [];
 
+  let newEventsForImport = [];
+let duplicateEvents = [];
+
   
 const fileInput = document.getElementById("csvFile");
 
@@ -1266,7 +1269,7 @@ window.matchedEvents =
 
 window.eventsNotReadyForImport =
   eventsNotReadyForImport;
-
+checkForDuplicateEvents();
 return matchedEvents;
 }
 
@@ -1487,6 +1490,385 @@ function parseEventDate(value) {
 
   return `${hour}:${minute}:${second}`;
 }
+
+
+
+
+  function eventFingerprint(event) {
+
+  return [
+    event.event_date || "",
+    event.event_time || "",
+    event.subject_id || "",
+    event.type || "",
+    event.groups_text || "",
+    event.professor_id || "",
+    event.room_id || ""
+  ].join("|||");
+
+}
+
+async function checkForDuplicateEvents() {
+
+  console.log(
+    "Checking existing events in Supabase..."
+  );
+
+  if (!matchedEvents.length) {
+
+    console.warn(
+      "No matched events available."
+    );
+
+    return;
+  }
+
+
+  /*
+   * Determine date range from the CSV.
+   */
+  const dates = matchedEvents
+    .map(event => event.event_date)
+    .filter(Boolean)
+    .sort();
+
+
+  if (!dates.length) {
+
+    console.error(
+      "No valid event dates found."
+    );
+
+    return;
+  }
+
+
+  const minDate = dates[0];
+  const maxDate = dates[dates.length - 1];
+
+
+  console.log(
+    "Checking Supabase date range:",
+    minDate,
+    "to",
+    maxDate
+  );
+
+
+  /*
+   * Supabase normally returns a limited number
+   * of rows per request, so load in pages.
+   */
+  const pageSize = 1000;
+
+  let from = 0;
+
+  let existingEvents = [];
+
+
+  while (true) {
+
+    const {
+      data,
+      error
+    } = await supabase
+      .from("events")
+      .select(`
+        event_date,
+        event_time,
+        subject_id,
+        type,
+        groups_text,
+        professor_id,
+        room_id
+      `)
+      .gte(
+        "event_date",
+        minDate
+      )
+      .lte(
+        "event_date",
+        maxDate
+      )
+      .range(
+        from,
+        from + pageSize - 1
+      );
+
+
+    if (error) {
+
+      console.error(
+        "Error loading existing events:",
+        error
+      );
+
+      alert(
+        "Грешка при проверка на постоечки настани."
+      );
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+      break;
+    }
+
+
+    existingEvents.push(...data);
+
+
+    console.log(
+      "Loaded existing events:",
+      existingEvents.length
+    );
+
+
+    if (data.length < pageSize) {
+      break;
+    }
+
+
+    from += pageSize;
+  }
+
+
+  console.log(
+    "Total existing events:",
+    existingEvents.length
+  );
+
+
+  /*
+   * Create a Set of existing event fingerprints.
+   */
+  const existingFingerprints =
+    new Set(
+      existingEvents.map(event =>
+        eventFingerprint(event)
+      )
+    );
+
+
+  /*
+   * Protect against duplicates
+   * INSIDE the CSV itself as well.
+   */
+  const incomingFingerprints =
+    new Set();
+
+
+  newEventsForImport = [];
+  duplicateEvents = [];
+
+
+  matchedEvents.forEach(event => {
+
+    const fingerprint =
+      eventFingerprint(event);
+
+
+    /*
+     * Already exists in Supabase
+     */
+    if (
+      existingFingerprints.has(fingerprint)
+    ) {
+
+      duplicateEvents.push({
+        ...event,
+        _duplicate_reason:
+          "Already exists in Supabase"
+      });
+
+      return;
+    }
+
+
+    /*
+     * Duplicate somewhere else
+     * in the same CSV.
+     */
+    if (
+      incomingFingerprints.has(fingerprint)
+    ) {
+
+      duplicateEvents.push({
+        ...event,
+        _duplicate_reason:
+          "Duplicate inside CSV"
+      });
+
+      return;
+    }
+
+
+    incomingFingerprints.add(
+      fingerprint
+    );
+
+    newEventsForImport.push(event);
+
+  });
+
+
+  console.log(
+    "================================="
+  );
+
+  console.log(
+    "CSV events:",
+    matchedEvents.length
+  );
+
+  console.log(
+    "Existing/duplicate:",
+    duplicateEvents.length
+  );
+
+  console.log(
+    "NEW events:",
+    newEventsForImport.length
+  );
+
+  console.log(
+    "================================="
+  );
+
+
+  window.newEventsForImport =
+    newEventsForImport;
+
+  window.duplicateEvents =
+    duplicateEvents;
+
+
+  /*
+   * Show import preview.
+   */
+  showImportPreview();
+
+}
+
+  function showImportPreview() {
+
+  let card =
+    document.getElementById(
+      "supabaseImportPreview"
+    );
+
+
+  if (!card) {
+
+    card =
+      document.createElement("div");
+
+    card.id =
+      "supabaseImportPreview";
+
+    card.className =
+      "card";
+
+
+    const container =
+      document.querySelector("main") ||
+      document.body;
+
+
+    container.appendChild(card);
+  }
+
+
+  card.innerHTML = `
+
+    <h2>🚀 Supabase Import Preview</h2>
+
+    <div style="
+      display:grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+      margin:15px 0;
+    ">
+
+      <div class="stat-card">
+        <div>CSV events</div>
+        <strong>
+          ${matchedEvents.length}
+        </strong>
+      </div>
+
+
+      <div class="stat-card">
+        <div>Already exist / duplicates</div>
+        <strong>
+          ${duplicateEvents.length}
+        </strong>
+      </div>
+
+
+      <div class="stat-card">
+        <div>NEW events</div>
+        <strong>
+          ${newEventsForImport.length}
+        </strong>
+      </div>
+
+    </div>
+
+
+    <p>
+      Only <strong>
+        ${newEventsForImport.length}
+      </strong>
+      new events will be imported.
+    </p>
+
+
+    ${
+      newEventsForImport.length > 0
+      ? `
+        <button
+          id="startSupabaseImportBtn"
+          type="button"
+        >
+          ⬆️ Import ${newEventsForImport.length}
+          new events to Supabase
+        </button>
+      `
+      : `
+        <div style="
+          padding:15px;
+          border-radius:8px;
+          background:#e8f5e9;
+        ">
+          ✅ All matched events already exist
+          in Supabase.
+        </div>
+      `
+    }
+
+  `;
+
+
+  const importButton =
+    document.getElementById(
+      "startSupabaseImportBtn"
+    );
+
+
+  if (importButton) {
+
+    importButton.addEventListener(
+      "click",
+      importNewEventsToSupabase
+    );
+
+  }
+
+}
+  
 
   function exportSemesterMismatchCSV() {
 
