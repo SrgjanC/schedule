@@ -801,13 +801,18 @@ function analyzeEventMatches(
      * but the subject itself is in REVIEW
      */
     if (
-      subjectMatch.status === "REVIEW"
-    ) {
+  subjectMatch.status === "REVIEW"
+) {
 
-      semesterMismatch++;
+  semesterMismatch++;
 
-      return;
-    }
+  semesterMismatchEvents.push({
+    ...row,
+    _status: "Semester mismatch"
+  });
+
+  return;
+}
 
 
     /*
