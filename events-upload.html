@@ -1252,22 +1252,28 @@ if (mismatchCard && mismatchCount) {
   return matchedEvents;
 }
 
-  function parseEventDate(value) {
+function parseEventDate(value) {
 
-  if (!value) {
+  if (value === null || value === undefined || value === "") {
     return null;
   }
 
-  const text =
-    String(value).trim();
+  const text = String(value).trim();
+
+  /*
+   * Academic year:
+   * 01.10.2026 → 30.09.2027
+   */
+  const ACADEMIC_START_YEAR = 2026;
+  const ACADEMIC_END_YEAR = 2027;
+
 
   /*
    * Already ISO:
    * 2026-10-05
+   * 2027-03-15
    */
-  if (
-    /^\d{4}-\d{2}-\d{2}$/.test(text)
-  ) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
     return text;
   }
 
@@ -1275,21 +1281,15 @@ if (mismatchCard && mismatchCount) {
   /*
    * DD.MM.YYYY
    */
-  let match =
-    text.match(
-      /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
-    );
+  let match = text.match(
+    /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
+  );
 
   if (match) {
 
-    const day =
-      match[1].padStart(2, "0");
-
-    const month =
-      match[2].padStart(2, "0");
-
-    const year =
-      match[3];
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    const year = match[3];
 
     return `${year}-${month}-${day}`;
   }
@@ -1298,23 +1298,126 @@ if (mismatchCard && mismatchCount) {
   /*
    * DD/MM/YYYY
    */
-  match =
-    text.match(
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
-    );
+  match = text.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  );
 
   if (match) {
 
-    const day =
-      match[1].padStart(2, "0");
-
-    const month =
-      match[2].padStart(2, "0");
-
-    const year =
-      match[3];
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    const year = match[3];
 
     return `${year}-${month}-${day}`;
+  }
+
+
+  /*
+   * DD-MM-YYYY
+   */
+  match = text.match(
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/
+  );
+
+  if (match) {
+
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    const year = match[3];
+
+    return `${year}-${month}-${day}`;
+  }
+
+
+  /*
+   * Formats such as:
+   *
+   * 5-Oct
+   * 05-Oct
+   * 5-October
+   * 05-Oct
+   *
+   * Determine the year from the academic year.
+   */
+  match = text.match(
+    /^(\d{1,2})[-\s\/]([A-Za-zА-Яа-я]+)$/
+  );
+
+  if (match) {
+
+    const day = parseInt(match[1], 10);
+    const monthText = match[2].toLowerCase();
+
+    const monthMap = {
+
+      jan: 1,
+      january: 1,
+
+      feb: 2,
+      february: 2,
+
+      mar: 3,
+      march: 3,
+
+      apr: 4,
+      april: 4,
+
+      may: 5,
+
+      jun: 6,
+      june: 6,
+
+      jul: 7,
+      july: 7,
+
+      aug: 8,
+      august: 8,
+
+      sep: 9,
+      sept: 9,
+      september: 9,
+
+      oct: 10,
+      october: 10,
+
+      nov: 11,
+      november: 11,
+
+      dec: 12,
+      december: 12
+    };
+
+    const month =
+      monthMap[monthText];
+
+    if (!month) {
+
+      console.warn(
+        "Unknown month in event date:",
+        value
+      );
+
+      return null;
+    }
+
+
+    /*
+     * Academic year rule:
+     *
+     * Oct-Dec → 2026
+     * Jan-Sep → 2027
+     */
+    const year =
+      month >= 10
+        ? ACADEMIC_START_YEAR
+        : ACADEMIC_END_YEAR;
+
+
+    return [
+      year,
+      String(month).padStart(2, "0"),
+      String(day).padStart(2, "0")
+    ].join("-");
   }
 
 
