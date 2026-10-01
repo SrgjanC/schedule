@@ -1069,25 +1069,7 @@ if (mismatchCard && mismatchCount) {
   /*
    * Subject lookup
    */
-  const subjectMap = new Map();
-
-  subjectMatches.forEach(match => {
-
-    if (
-      match.subjectId &&
-      match.status !== "REVIEW" &&
-      match.status !== "NOT_FOUND"
-    ) {
-
-      const key =
-        `${match.csvProgram}|||` +
-        `${match.csvSemester}|||` +
-        `${normalizeText(match.csvSubject)}`;
-
-      subjectMap.set(key, match);
-    }
-
-  });
+  
 
 
   /*
@@ -1152,24 +1134,29 @@ if (mismatchCard && mismatchCount) {
     /*
      * Find subject
      */
-    const subjectKey =
-      `${csvProgram}|||` +
-      `${csvSemester}|||` +
-      `${normalizeText(csvSubject)}`;
+   const subjectMatch = subjectMatches.find(match =>
+  normalizeText(match.csvSubject) ===
+    normalizeText(csvSubject) &&
 
-    const subjectMatch =
-      subjectMap.get(subjectKey);
+  normalizeText(match.csvProgram) ===
+    normalizeText(csvProgram) &&
 
-    if (!subjectMatch) {
+  String(match.csvSemester).trim() ===
+    String(csvSemester).trim() &&
+
+  match.status !== "REVIEW"
+);
+
+if (!subjectMatch) {
 
   eventsNotReadyForImport.push({
     ...row,
-    _import_problem: "Subject match not found in buildMatchedEvents"
+    _import_problem:
+      "Subject match not found in buildMatchedEvents"
   });
 
   return;
 }
-
 
     /*
      * Find room
