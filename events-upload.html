@@ -356,6 +356,7 @@ const supabaseClient =
 
 
   let semesterMismatchEvents = [];
+  let matchedEvents = [];
 
   
 const fileInput = document.getElementById("csvFile");
@@ -598,6 +599,18 @@ displaySubjectMatches(
   displayRoomProfessorMatches(
     roomProfessorMatches
   );
+
+  const readyEvents =
+  buildMatchedEvents(
+    data,
+    subjectMatches,
+    roomProfessorMatches
+  );
+
+console.log(
+  "READY FOR SUPABASE:",
+  readyEvents.length
+);
 
   // NEW: analyze every CSV event
   analyzeEventMatches(
@@ -972,6 +985,386 @@ if (mismatchCard && mismatchCount) {
 
 }
 
+}
+
+  function buildMatchedEvents(
+  data,
+  subjectMatches,
+  roomProfessorMatches
+) {
+
+  matchedEvents = [];
+
+  if (!subjectMatches || !roomProfessorMatches) {
+    console.error("Missing matching data.");
+    return [];
+  }
+
+  const subjectColumn = findColumn(data[0], [
+    "предмет",
+    "Предмет",
+    "subject",
+    "Subject"
+  ]);
+
+  const programColumn = findColumn(data[0], [
+    "Студиска програма",
+    "студиска програма",
+    "program",
+    "Program"
+  ]);
+
+  const semesterColumn = findColumn(data[0], [
+    "Семестар",
+    "семестар",
+    "semester",
+    "Semester"
+  ]);
+
+  const dateColumn = findColumn(data[0], [
+    "Датум",
+    "датум",
+    "date",
+    "Date"
+  ]);
+
+  const timeColumn = findColumn(data[0], [
+    "Час",
+    "час",
+    "time",
+    "Time"
+  ]);
+
+  const roomColumn = findColumn(data[0], [
+    "Просторија",
+    "просторија",
+    "room",
+    "Room"
+  ]);
+
+  const typeColumn = findColumn(data[0], [
+    "тип на настава",
+    "Тип на настава",
+    "type",
+    "Type"
+  ]);
+
+  const professorColumn = findColumn(data[0], [
+    "проф/асс",
+    "проф/ас",
+    "професор",
+    "Professor",
+    "professor"
+  ]);
+
+  const groupsColumn = findColumn(data[0], [
+    "Групи",
+    "групи",
+    "groups",
+    "Groups"
+  ]);
+
+  /*
+   * Subject lookup
+   */
+  const subjectMap = new Map();
+
+  subjectMatches.forEach(match => {
+
+    if (
+      match.subjectId &&
+      match.status !== "REVIEW" &&
+      match.status !== "NOT_FOUND"
+    ) {
+
+      const key =
+        `${match.csvProgram}|||` +
+        `${match.csvSemester}|||` +
+        `${normalizeText(match.csvSubject)}`;
+
+      subjectMap.set(key, match);
+    }
+
+  });
+
+
+  /*
+   * Room lookup
+   */
+  const roomMap = new Map();
+
+  roomProfessorMatches.rooms.forEach(room => {
+
+    if (room.status === "MATCH") {
+
+      roomMap.set(
+        normalizeText(room.csvValue),
+        room
+      );
+
+    }
+
+  });
+
+
+  /*
+   * Professor lookup
+   */
+  const professorMap = new Map();
+
+  roomProfessorMatches.professors.forEach(professor => {
+
+    if (professor.status === "MATCH") {
+
+      professorMap.set(
+        normalizeText(professor.csvValue),
+        professor
+      );
+
+    }
+
+  });
+
+
+  /*
+   * Process every CSV row
+   */
+  data.forEach(row => {
+
+    const csvSubject =
+      String(row[subjectColumn] || "").trim();
+
+    const csvProgram =
+      String(row[programColumn] || "").trim();
+
+    const csvSemester =
+      String(row[semesterColumn] || "").trim();
+
+    const csvRoom =
+      String(row[roomColumn] || "").trim();
+
+    const csvProfessor =
+      String(row[professorColumn] || "").trim();
+
+
+    /*
+     * Find subject
+     */
+    const subjectKey =
+      `${csvProgram}|||` +
+      `${csvSemester}|||` +
+      `${normalizeText(csvSubject)}`;
+
+    const subjectMatch =
+      subjectMap.get(subjectKey);
+
+    if (!subjectMatch) {
+      return;
+    }
+
+
+    /*
+     * Find room
+     */
+    const roomMatch =
+      roomMap.get(
+        normalizeText(csvRoom)
+      );
+
+    if (
+      csvRoom &&
+      !roomMatch
+    ) {
+      return;
+    }
+
+
+    /*
+     * Find professor
+     */
+    const professorMatch =
+      professorMap.get(
+        normalizeText(csvProfessor)
+      );
+
+    if (
+      csvProfessor &&
+      !professorMatch
+    ) {
+      return;
+    }
+
+
+    /*
+     * Create Supabase event
+     */
+    matchedEvents.push({
+
+      event_date:
+        parseEventDate(
+          row[dateColumn]
+        ),
+
+      event_time:
+        parseEventTime(
+          row[timeColumn]
+        ),
+
+      subject_id:
+        subjectMatch.subjectId,
+
+      type:
+        String(
+          row[typeColumn] || ""
+        ).trim(),
+
+      groups_text:
+        String(
+          row[groupsColumn] || ""
+        ).trim() || null,
+
+      comment:
+        null,
+
+      professor_id:
+        professorMatch
+          ? professorMatch.id
+          : null,
+
+      room_id:
+        roomMatch
+          ? roomMatch.id
+          : null
+
+    });
+
+  });
+
+
+  console.log(
+    "Matched events ready for Supabase:",
+    matchedEvents.length
+  );
+
+  window.matchedEvents =
+    matchedEvents;
+
+  return matchedEvents;
+}
+
+  function parseEventDate(value) {
+
+  if (!value) {
+    return null;
+  }
+
+  const text =
+    String(value).trim();
+
+  /*
+   * Already ISO:
+   * 2026-10-05
+   */
+  if (
+    /^\d{4}-\d{2}-\d{2}$/.test(text)
+  ) {
+    return text;
+  }
+
+
+  /*
+   * DD.MM.YYYY
+   */
+  let match =
+    text.match(
+      /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
+    );
+
+  if (match) {
+
+    const day =
+      match[1].padStart(2, "0");
+
+    const month =
+      match[2].padStart(2, "0");
+
+    const year =
+      match[3];
+
+    return `${year}-${month}-${day}`;
+  }
+
+
+  /*
+   * DD/MM/YYYY
+   */
+  match =
+    text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+    );
+
+  if (match) {
+
+    const day =
+      match[1].padStart(2, "0");
+
+    const month =
+      match[2].padStart(2, "0");
+
+    const year =
+      match[3];
+
+    return `${year}-${month}-${day}`;
+  }
+
+
+  console.warn(
+    "Could not parse event date:",
+    value
+  );
+
+  return null;
+}
+
+  function parseEventTime(value) {
+
+  if (!value) {
+    return null;
+  }
+
+  const text =
+    String(value).trim();
+
+  /*
+   * 8:00
+   * 08:00
+   * 8:00:00
+   */
+  const match =
+    text.match(
+      /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/
+    );
+
+  if (!match) {
+
+    console.warn(
+      "Could not parse event time:",
+      value
+    );
+
+    return null;
+  }
+
+  const hour =
+    match[1].padStart(2, "0");
+
+  const minute =
+    match[2];
+
+  const second =
+    match[3] || "00";
+
+  return `${hour}:${minute}:${second}`;
 }
 
   function exportSemesterMismatchCSV() {
