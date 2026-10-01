@@ -1263,6 +1263,15 @@ async function loadSupabaseReferenceData() {
 
 }
 
+
+  const roomAliases = {
+
+  "Инст. за микро.": "Инст. за Микробиологија"
+
+};
+
+
+  
   function matchRoomsAndProfessors(csvData) {
 
   const rooms =
@@ -1358,13 +1367,19 @@ async function loadSupabaseReferenceData() {
   const roomResults =
     uniqueRooms.map(csvRoom => {
 
-      const match =
-        rooms.find(room =>
+      const normalizedCsvRoom =
+  normalizeText(
+    roomAliases[csvRoom] || csvRoom
+  );
 
-          normalizeText(room.name) ===
-          normalizeText(csvRoom)
 
-        );
+const match =
+  rooms.find(room =>
+
+    normalizeText(room.name) ===
+    normalizedCsvRoom
+
+  );
 
 
       if (match) {
@@ -1646,11 +1661,23 @@ async function loadSupabaseReferenceData() {
   function normalizeText(value) {
 
   return String(value || "")
-
     .trim()
-
     .toLowerCase()
 
+    // Cyrillic / Latin look-alike characters
+    .replace(/p/g, "р")
+    .replace(/c/g, "с")
+    .replace(/a/g, "а")
+    .replace(/e/g, "е")
+    .replace(/o/g, "о")
+    .replace(/x/g, "х")
+    .replace(/k/g, "к")
+    .replace(/m/g, "м")
+    .replace(/t/g, "т")
+    .replace(/y/g, "у")
+    .replace(/b/g, "в")
+
+    // Normalize whitespace
     .replace(/\s+/g, " ");
 
 }
