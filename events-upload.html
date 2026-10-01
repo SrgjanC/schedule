@@ -1793,7 +1793,7 @@ async function importNewEventsToSupabase() {
 
   let imported = 0;
   let skipped = 0;
-
+const skippedEvents = [];
 
   try {
 
@@ -1881,16 +1881,37 @@ async function importNewEventsToSupabase() {
            */
           skipped++;
 
+skippedEvents.push({
+  event: { ...event },
+  error: {
+    code: singleError?.code || "",
+    message: singleError?.message || "",
+    details: singleError?.details || "",
+    hint: singleError?.hint || ""
+  }
+});
 
-          console.warn(
-            "SKIPPED EVENT:",
-            event
-          );
+console.warn(
+  "=============================="
+);
 
-          console.warn(
-            "Reason:",
-            singleError
-          );
+console.warn(
+  "SKIPPED EVENT #" + skipped
+);
+
+console.warn(
+  JSON.stringify(event, null, 2)
+);
+
+console.warn(
+  "ERROR:",
+  JSON.stringify({
+    code: singleError?.code,
+    message: singleError?.message,
+    details: singleError?.details,
+    hint: singleError?.hint
+  }, null, 2)
+);
 
 
           continue;
@@ -1933,6 +1954,34 @@ async function importNewEventsToSupabase() {
       "Total processed:",
       imported + skipped
     );
+    console.log(
+  "================================="
+);
+
+console.log(
+  "SKIPPED EVENTS:",
+  skippedEvents.length
+);
+
+console.table(
+  skippedEvents.map((x, index) => ({
+    no: index + 1,
+    date: x.event.event_date,
+    time: x.event.event_time,
+    subject_id: x.event.subject_id,
+    type: x.event.type,
+    groups: x.event.groups_text,
+    professor_id: x.event.professor_id,
+    room_id: x.event.room_id,
+    error_code: x.error.code,
+    error: x.error.message
+  }))
+);
+
+console.log(
+  "FULL SKIPPED EVENTS:",
+  skippedEvents
+);
 
     console.log(
       "================================="
