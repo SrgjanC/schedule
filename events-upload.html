@@ -270,51 +270,62 @@ fileInput.addEventListener("change", function () {
       Избрана датотека: <strong>${escapeHtml(file.name)}</strong>
     </div>`;
 
-  Papa.parse(file, {
+Papa.parse(file, {
 
-    header: true,
+  header: true,
 
-    skipEmptyLines: true,
+  delimiter: "",
 
-    encoding: "UTF-8",
+  skipEmptyLines: true,
 
-    complete: function(results) {
+  encoding: "UTF-8",
 
-      console.log("CSV result:", results);
+  transformHeader: function(header) {
+    return header.trim();
+  },
 
-      if (results.errors && results.errors.length > 0) {
+  transform: function(value) {
+    return value.trim();
+  },
 
-        showError(
-          "CSV грешка: " +
-          results.errors[0].message
-        );
+  complete: function(results) {
 
-        return;
-      }
+    console.log("CSV result:", results);
 
-      const data = results.data;
-
-      if (!data.length) {
-
-        showError("CSV датотеката нема записи.");
-
-        return;
-      }
-
-      processCSV(data);
-
-    },
-
-    error: function(error) {
-
-      showError(
-        "Не може да се прочита CSV датотеката: " +
-        error.message
-      );
-
+    if (results.errors && results.errors.length > 0) {
+      console.warn("CSV parsing warnings:", results.errors);
     }
 
-  });
+    const data = results.data;
+
+    if (!data.length) {
+      showError("CSV датотеката нема записи.");
+      return;
+    }
+
+    console.log(
+      "Detected columns:",
+      Object.keys(data[0])
+    );
+
+    console.log(
+      "Total rows:",
+      data.length
+    );
+
+    processCSV(data);
+  },
+
+  error: function(error) {
+
+    showError(
+      "Не може да се прочита CSV датотеката: " +
+      error.message
+    );
+
+  }
+
+});
 
 });
 
