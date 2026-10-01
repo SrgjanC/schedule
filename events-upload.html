@@ -944,7 +944,84 @@ function analyzeEventMatches(
     "eventMatchStatsCard"
   ).classList.remove("hidden");
 
+  const mismatchCard =
+  document.getElementById(
+    "semesterMismatchExportCard"
+  );
+
+const mismatchCount =
+  document.getElementById(
+    "semesterMismatchCount"
+  );
+
+if (mismatchCard && mismatchCount) {
+
+  mismatchCount.textContent =
+    semesterMismatchEvents.length;
+
+  if (semesterMismatchEvents.length > 0) {
+    mismatchCard.classList.remove("hidden");
+  } else {
+    mismatchCard.classList.add("hidden");
+  }
+
 }
+
+}
+
+  function exportSemesterMismatchCSV() {
+
+  if (!semesterMismatchEvents.length) {
+    alert("Нема настани со mismatch на семестар.");
+    return;
+  }
+
+  const csv = Papa.unparse(
+    semesterMismatchEvents,
+    {
+      delimiter: ";",
+      quotes: true
+    }
+  );
+
+  const blob = new Blob(
+    ["\uFEFF" + csv],
+    {
+      type: "text/csv;charset=utf-8;"
+    }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "semester-mismatch-events.csv";
+
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+
+  document.addEventListener("DOMContentLoaded", function () {
+
+  const exportSemesterMismatchBtn =
+    document.getElementById("exportSemesterMismatchBtn");
+
+  if (exportSemesterMismatchBtn) {
+
+    exportSemesterMismatchBtn.addEventListener(
+      "click",
+      exportSemesterMismatchCSV
+    );
+
+  }
+
+});
+  
 
 function buildPreview(data) {
 
