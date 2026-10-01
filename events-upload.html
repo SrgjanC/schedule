@@ -357,6 +357,7 @@ const supabaseClient =
 
   let semesterMismatchEvents = [];
   let matchedEvents = [];
+  let eventsNotReadyForImport = [];
 
   
 const fileInput = document.getElementById("csvFile");
@@ -994,6 +995,7 @@ if (mismatchCard && mismatchCount) {
 ) {
 
   matchedEvents = [];
+    eventsNotReadyForImport = [];
 
   if (!subjectMatches || !roomProfessorMatches) {
     console.error("Missing matching data.");
@@ -1159,8 +1161,14 @@ if (mismatchCard && mismatchCount) {
       subjectMap.get(subjectKey);
 
     if (!subjectMatch) {
-      return;
-    }
+
+  eventsNotReadyForImport.push({
+    ...row,
+    _import_problem: "Subject match not found in buildMatchedEvents"
+  });
+
+  return;
+}
 
 
     /*
@@ -1172,11 +1180,17 @@ if (mismatchCard && mismatchCount) {
       );
 
     if (
-      csvRoom &&
-      !roomMatch
-    ) {
-      return;
-    }
+  csvRoom &&
+  !roomMatch
+) {
+
+  eventsNotReadyForImport.push({
+    ...row,
+    _import_problem: "Room match not found"
+  });
+
+  return;
+}
 
 
     /*
@@ -1188,11 +1202,17 @@ if (mismatchCard && mismatchCount) {
       );
 
     if (
-      csvProfessor &&
-      !professorMatch
-    ) {
-      return;
-    }
+  csvProfessor &&
+  !professorMatch
+) {
+
+  eventsNotReadyForImport.push({
+    ...row,
+    _import_problem: "Professor match not found"
+  });
+
+  return;
+}
 
 
     /*
@@ -1240,16 +1260,27 @@ if (mismatchCard && mismatchCount) {
 
   });
 
+console.log(
+  "Matched events ready for Supabase:",
+  matchedEvents.length
+);
 
-  console.log(
-    "Matched events ready for Supabase:",
-    matchedEvents.length
-  );
+console.log(
+  "Events NOT ready for import:",
+  eventsNotReadyForImport.length
+);
 
-  window.matchedEvents =
-    matchedEvents;
+console.table(
+  eventsNotReadyForImport
+);
 
-  return matchedEvents;
+window.matchedEvents =
+  matchedEvents;
+
+window.eventsNotReadyForImport =
+  eventsNotReadyForImport;
+
+return matchedEvents;
 }
 
 function parseEventDate(value) {
