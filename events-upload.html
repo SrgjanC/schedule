@@ -1751,6 +1751,165 @@ async function checkForDuplicateEvents() {
 
 }
 
+
+  async function importNewEventsToSupabase() {
+
+  if (!newEventsForImport.length) {
+
+    alert("Нема нови настани за импорт.");
+
+    return;
+  }
+
+
+  const total =
+    newEventsForImport.length;
+
+  const confirmed =
+    confirm(
+      `Ќе се импортираат ${total} нови настани во Supabase.\n\n` +
+      `Веќе постоечки/дупликати: ${duplicateEvents.length}\n\n` +
+      `Дали сакате да продолжите?`
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const button =
+    document.getElementById(
+      "startSupabaseImportBtn"
+    );
+
+
+  if (button) {
+
+    button.disabled = true;
+
+    button.textContent =
+      "⏳ Importing...";
+  }
+
+
+  const batchSize = 500;
+
+  let imported = 0;
+
+
+  try {
+
+    for (
+      let i = 0;
+      i < newEventsForImport.length;
+      i += batchSize
+    ) {
+
+      const batch =
+        newEventsForImport.slice(
+          i,
+          i + batchSize
+        );
+
+
+      console.log(
+        `Importing ${i + 1}-${i + batch.length} of ${total}...`
+      );
+
+
+      const {
+        data,
+        error
+      } = await supabaseClient
+        .from("events")
+        .insert(batch)
+        .select();
+
+
+      if (error) {
+
+        console.error(
+          "Supabase import error:",
+          error
+        );
+
+        throw error;
+      }
+
+
+      imported += batch.length;
+
+
+      if (button) {
+
+        button.textContent =
+          `⏳ Imported ${imported} / ${total}`;
+      }
+
+    }
+
+
+    console.log(
+      "================================="
+    );
+
+    console.log(
+      "IMPORT COMPLETE"
+    );
+
+    console.log(
+      "Imported:",
+      imported
+    );
+
+    console.log(
+      "================================="
+    );
+
+
+    if (button) {
+
+      button.textContent =
+        `✅ Imported ${imported} events`;
+
+      button.disabled = true;
+    }
+
+
+    alert(
+      `Успешен импорт!\n\n` +
+      `Импортирани: ${imported} нови настани.\n` +
+      `Прескокнати дупликати: ${duplicateEvents.length}.`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "IMPORT FAILED:",
+      error
+    );
+
+
+    if (button) {
+
+      button.disabled = false;
+
+      button.textContent =
+        `⬆️ Retry import (${total} events)`;
+    }
+
+
+    alert(
+      "Импортот не е завршен.\n\n" +
+      "Провери ја Console за деталите."
+    );
+
+  }
+
+}
+
   function showImportPreview() {
 
   let card =
