@@ -292,6 +292,22 @@
   </div>
 
 </div>
+  <div id="semesterMismatchExportCard" class="card hidden">
+
+  <h2>🟡 Semester mismatch</h2>
+
+  <p>
+    <strong id="semesterMismatchCount">0</strong>
+    events require review.
+  </p>
+
+  <button
+    id="exportSemesterMismatchBtn"
+    type="button">
+    ⬇️ Export semester mismatches CSV
+  </button>
+
+</div>
 
   <!-- Subjects -->
   <div id="subjectsCard" class="card hidden">
@@ -337,6 +353,11 @@ const supabaseClient =
     supabaseUrl,
     supabaseKey
   );
+
+
+  let semesterMismatchEvents = [];
+
+  
 const fileInput = document.getElementById("csvFile");
 
 const statsCard = document.getElementById("statsCard");
@@ -701,6 +722,7 @@ function analyzeEventMatches(
   let professorNotFound = 0;
   let other = 0;
 
+  semesterMismatchEvents = [];
 
   /*
    * Analyze EVERY CSV EVENT
@@ -753,17 +775,22 @@ function analyzeEventMatches(
 
 
       if (
-        sameSubject &&
-        sameSubject.status === "REVIEW"
-      ) {
+  sameSubject &&
+  sameSubject.status === "REVIEW"
+) {
 
-        semesterMismatch++;
+  semesterMismatch++;
 
-      } else {
+  semesterMismatchEvents.push({
+    ...row,
+    _status: "Semester mismatch"
+  });
 
-        subjectNotFound++;
+} else {
 
-      }
+  subjectNotFound++;
+
+}
 
       return;
     }
