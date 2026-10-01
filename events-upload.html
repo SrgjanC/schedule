@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Events Upload</title>
+
+  <!-- PapaParse -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.3/papaparse.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin-top: 0;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+
+    .upload-area {
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      background: #f8fafc;
+    }
+
+    input[type="file"] {
+      margin-top: 15px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 15px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 500px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #1f2937;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    .subject-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      background: #e0f2fe;
+      color: #075985;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .error {
+      color: #b91c1c;
+      background: #fee2e2;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .success {
+      color: #166534;
+      background: #dcfce7;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>📅 Events Upload</h1>
+  <p class="subtitle">
+    Преглед на CSV распоред пред импорт во Supabase
+  </p>
+
+  <!-- Upload -->
+  <div class="card">
+
+    <div class="upload-area">
+
+      <strong>Изберете CSV датотека</strong>
+
+      <br>
+
+      <input
+        type="file"
+        id="csvFile"
+        accept=".csv,text/csv"
+      >
+
+      <div id="fileInfo"></div>
+
+    </div>
+
+    <div id="errorBox" class="error hidden"></div>
+
+  </div>
+
+
+  <!-- Statistics -->
+  <div id="statsCard" class="card hidden">
+
+    <h2>📊 CSV статистика</h2>
+
+    <div class="stats">
+
+      <div class="stat">
+        <div class="stat-label">Вкупно записи</div>
+        <div class="stat-value" id="rowCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Предмети</div>
+        <div class="stat-value" id="subjectCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Програми</div>
+        <div class="stat-value" id="programCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-label">Семестри</div>
+        <div class="stat-value" id="semesterCount">0</div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- Subjects -->
+  <div id="subjectsCard" class="card hidden">
+
+    <h2>📚 Предмети</h2>
+
+    <div id="subjects" class="subject-list"></div>
+
+  </div>
+
+
+  <!-- Preview -->
+  <div id="previewCard" class="card hidden">
+
+    <h2>👁️ Преглед — првите 20 записи</h2>
+
+    <div class="table-wrapper">
+
+      <table id="previewTable">
+
+        <thead></thead>
+
+        <tbody></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const fileInput = document.getElementById("csvFile");
+
+const statsCard = document.getElementById("statsCard");
+const subjectsCard = document.getElementById("subjectsCard");
+const previewCard = document.getElementById("previewCard");
+
+const errorBox = document.getElementById("errorBox");
+
+fileInput.addEventListener("change", function () {
+
+  const file = this.files[0];
+
+  if (!file) return;
+
+  resetPage();
+
+  document.getElementById("fileInfo").innerHTML =
+    `<div class="success">
+      Избрана датотека: <strong>${escapeHtml(file.name)}</strong>
+    </div>`;
+
+  Papa.parse(file, {
+
+    header: true,
+
+    skipEmptyLines: true,
+
+    encoding: "UTF-8",
+
+    complete: function(results) {
+
+      console.log("CSV result:", results);
+
+      if (results.errors && results.errors.length > 0) {
+
+        showError(
+          "CSV грешка: " +
+          results.errors[0].message
+        );
+
+        return;
+      }
+
+      const data = results.data;
+
+      if (!data.length) {
+
+        showError("CSV датотеката нема записи.");
+
+        return;
+      }
+
+      processCSV(data);
+
+    },
+
+    error: function(error) {
+
+      showError(
+        "Не може да се прочита CSV датотеката: " +
+        error.message
+      );
+
+    }
+
+  });
+
+});
+
+
+function processCSV(data) {
+
+  console.log("Columns:", Object.keys(data[0]));
+
+  console.log("Rows:", data.length);
+
+  /*
+   * Expected source columns:
+   *
+   * Недела
+   * Ден
+   * Датум
+   * Час
+   * Просторија
+   * Студиска програма
+   * Семестар
+   * предмет
+   * тип на настава
+   * проф/асс
+   * Групи
+   */
+
+  const subjectColumn =
+    findColumn(data[0], [
+      "предмет",
+      "Предмет",
+      "subject",
+      "Subject"
+    ]);
+
+  const programColumn =
+    findColumn(data[0], [
+      "Студиска програма",
+      "студиска програма",
+      "program",
+      "Program"
+    ]);
+
+  const semesterColumn =
+    findColumn(data[0], [
+      "Семестар",
+      "семестар",
+      "semester",
+      "Semester"
+    ]);
+
+
+  if (!subjectColumn) {
+
+    showError(
+      "Не е пронајдена колоната за предмет."
+    );
+
+    return;
+  }
+
+
+  /*
+   * Statistics
+   */
+
+  const subjects = uniqueValues(
+    data.map(row => row[subjectColumn])
+  );
+
+  const programs = programColumn
+    ? uniqueValues(
+        data.map(row => row[programColumn])
+      )
+    : [];
+
+  const semesters = semesterColumn
+    ? uniqueValues(
+        data.map(row => row[semesterColumn])
+      )
+    : [];
+
+
+  document.getElementById("rowCount").textContent =
+    data.length;
+
+  document.getElementById("subjectCount").textContent =
+    subjects.length;
+
+  document.getElementById("programCount").textContent =
+    programs.length;
+
+  document.getElementById("semesterCount").textContent =
+    semesters.length;
+
+
+  statsCard.classList.remove("hidden");
+
+
+  /*
+   * Subject list
+   */
+
+  const subjectContainer =
+    document.getElementById("subjects");
+
+  subjectContainer.innerHTML = "";
+
+  subjects
+    .sort((a,b) => a.localeCompare(b, "mk"))
+    .forEach(subject => {
+
+      const tag =
+        document.createElement("span");
+
+      tag.className = "tag";
+
+      tag.textContent = subject;
+
+      subjectContainer.appendChild(tag);
+
+    });
+
+  subjectsCard.classList.remove("hidden");
+
+
+  /*
+   * Preview table
+   */
+
+  buildPreview(data);
+
+  previewCard.classList.remove("hidden");
+
+}
+
+
+function buildPreview(data) {
+
+  const table =
+    document.getElementById("previewTable");
+
+  const thead =
+    table.querySelector("thead");
+
+  const tbody =
+    table.querySelector("tbody");
+
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+
+  const columns =
+    Object.keys(data[0]);
+
+
+  /*
+   * Header
+   */
+
+  const headerRow =
+    document.createElement("tr");
+
+  columns.forEach(column => {
+
+    const th =
+      document.createElement("th");
+
+    th.textContent = column;
+
+    headerRow.appendChild(th);
+
+  });
+
+  thead.appendChild(headerRow);
+
+
+  /*
+   * First 20 rows
+   */
+
+  data.slice(0,20).forEach(row => {
+
+    const tr =
+      document.createElement("tr");
+
+    columns.forEach(column => {
+
+      const td =
+        document.createElement("td");
+
+      td.textContent =
+        row[column] || "";
+
+      tr.appendChild(td);
+
+    });
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+function findColumn(row, possibleNames) {
+
+  const columns =
+    Object.keys(row);
+
+  for (const name of possibleNames) {
+
+    const found =
+      columns.find(
+        c =>
+          c.trim().toLowerCase() ===
+          name.trim().toLowerCase()
+      );
+
+    if (found) return found;
+
+  }
+
+  return null;
+
+}
+
+
+function uniqueValues(values) {
+
+  return [
+    ...new Set(
+      values
+        .map(v => String(v || "").trim())
+        .filter(Boolean)
+    )
+  ];
+
+}
+
+
+function showError(message) {
+
+  errorBox.textContent = message;
+
+  errorBox.classList.remove("hidden");
+
+}
+
+
+function resetPage() {
+
+  errorBox.classList.add("hidden");
+
+  statsCard.classList.add("hidden");
+
+  subjectsCard.classList.add("hidden");
+
+  previewCard.classList.add("hidden");
+
+}
+
+
+function escapeHtml(value) {
+
+  return String(value)
+
+    .replaceAll("&", "&amp;")
+
+    .replaceAll("<", "&lt;")
+
+    .replaceAll(">", "&gt;")
+
+    .replaceAll('"', "&quot;")
+
+    .replaceAll("'", "&#039;");
+
+}
+
+</script>
+
+</body>
+</html>
