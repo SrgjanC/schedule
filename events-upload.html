@@ -8,7 +8,7 @@
 
   <!-- PapaParse -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -182,7 +182,15 @@
 
   </div>
 
+<div id="supabaseCard" class="card">
 
+  <h2>🗄️ Supabase</h2>
+
+  <div id="supabaseStatus">
+    ⏳ Се поврзувам со Supabase...
+  </div>
+
+</div>
   <!-- Statistics -->
   <div id="statsCard" class="card hidden">
 
@@ -248,7 +256,17 @@
 
 
 <script>
+const supabaseUrl =
+  'https://elmxwpwhyewgjlvoadtb.supabase.co';
 
+const supabaseKey =
+  'sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
+
+const supabaseClient =
+  window.supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+  );
 const fileInput = document.getElementById("csvFile");
 
 const statsCard = document.getElementById("statsCard");
@@ -604,6 +622,218 @@ function escapeHtml(value) {
 
 }
 
+async function loadSupabaseReferenceData() {
+
+  console.log("Loading Supabase reference data...");
+
+  const statusElement =
+    document.getElementById("supabaseStatus");
+
+  try {
+
+    statusElement.innerHTML = `
+      <div>
+        ⏳ Се вчитуваат податоците од Supabase...
+      </div>
+    `;
+
+
+    // -----------------------------------------
+    // Load subjects
+    // -----------------------------------------
+
+    const subjectsResult =
+      await supabaseClient
+        .from("subjects")
+        .select(`
+          id,
+          program_id,
+          semester,
+          name
+        `);
+
+
+    if (subjectsResult.error) {
+
+      throw new Error(
+        "Subjects: " +
+        subjectsResult.error.message
+      );
+
+    }
+
+
+    // -----------------------------------------
+    // Load rooms
+    // -----------------------------------------
+
+    const roomsResult =
+      await supabaseClient
+        .from("rooms")
+        .select(`
+          id,
+          name,
+          type,
+          capacity
+        `);
+
+
+    if (roomsResult.error) {
+
+      throw new Error(
+        "Rooms: " +
+        roomsResult.error.message
+      );
+
+    }
+
+
+    // -----------------------------------------
+    // Load professors
+    // -----------------------------------------
+
+    const professorsResult =
+      await supabaseClient
+        .from("professors")
+        .select(`
+          id,
+          name,
+          email,
+          active
+        `);
+
+
+    if (professorsResult.error) {
+
+      throw new Error(
+        "Professors: " +
+        professorsResult.error.message
+      );
+
+    }
+
+
+    // -----------------------------------------
+    // Store results
+    // -----------------------------------------
+
+    const subjects =
+      subjectsResult.data || [];
+
+    const rooms =
+      roomsResult.data || [];
+
+    const professors =
+      professorsResult.data || [];
+
+
+    // Store globally so the next steps
+    // can use the data.
+
+    window.referenceData = {
+
+      subjects: subjects,
+
+      rooms: rooms,
+
+      professors: professors
+
+    };
+
+
+    // -----------------------------------------
+    // Console information
+    // -----------------------------------------
+
+    console.log(
+      "Subjects loaded:",
+      subjects.length
+    );
+
+    console.log(
+      "Rooms loaded:",
+      rooms.length
+    );
+
+    console.log(
+      "Professors loaded:",
+      professors.length
+    );
+
+    console.log(
+      "Reference data:",
+      window.referenceData
+    );
+
+
+    // -----------------------------------------
+    // Display success
+    // -----------------------------------------
+
+    statusElement.innerHTML = `
+
+      <div class="success">
+
+        ✅ <strong>Supabase connection successful</strong>
+
+        <br><br>
+
+        Subjects:
+        <strong>${subjects.length}</strong>
+
+        <br>
+
+        Rooms:
+        <strong>${rooms.length}</strong>
+
+        <br>
+
+        Professors:
+        <strong>${professors.length}</strong>
+
+      </div>
+
+    `;
+
+
+    return window.referenceData;
+
+
+  } catch (error) {
+
+    // -----------------------------------------
+    // Error handling
+    // -----------------------------------------
+
+    console.error(
+      "Supabase loading error:",
+      error
+    );
+
+
+    statusElement.innerHTML = `
+
+      <div class="error">
+
+        ❌ <strong>Supabase connection failed</strong>
+
+        <br><br>
+
+        ${escapeHtml(error.message)}
+
+      </div>
+
+    `;
+
+
+    return null;
+
+  }
+
+}
+
+
+  loadSupabaseReferenceData();
 </script>
 
 </body>
