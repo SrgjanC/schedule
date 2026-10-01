@@ -147,6 +147,27 @@
     .hidden {
       display: none;
     }
+
+
+    .status-success {
+  color: #166534;
+  font-weight: bold;
+}
+
+.status-warning {
+  color: #92400e;
+  font-weight: bold;
+}
+
+.status-error {
+  color: #b91c1c;
+  font-weight: bold;
+}
+
+
+
+
+    
   </style>
 </head>
 
@@ -477,6 +498,20 @@ function processCSV(data) {
 
   previewCard.classList.remove("hidden");
 
+  const subjectMatches =
+  matchSubjects(data);
+
+console.log(
+  "Subject matching results:",
+  subjectMatches
+);
+
+window.subjectMatches =
+  subjectMatches;
+
+displaySubjectMatches(
+  subjectMatches
+);
 }
 
 
@@ -832,6 +867,543 @@ async function loadSupabaseReferenceData() {
 
 }
 
+  function matchSubjects(csvData) {
+
+  const subjects =
+    window.referenceData?.subjects || [];
+
+  if (!subjects.length) {
+
+    console.error("Subjects are not loaded.");
+
+    return [];
+
+  }
+
+
+  // -----------------------------------------
+  // Find CSV columns
+  // -----------------------------------------
+
+  const subjectColumn =
+    findColumn(csvData[0], [
+      "предмет",
+      "Предмет",
+      "subject",
+      "Subject"
+    ]);
+
+
+  const semesterColumn =
+    findColumn(csvData[0], [
+      "Семестар",
+      "семестар",
+      "semester",
+      "Semester"
+    ]);
+
+
+  const programColumn =
+    findColumn(csvData[0], [
+      "Студиска програма",
+      "студиска програма",
+      "program",
+      "Program"
+    ]);
+
+
+  if (!subjectColumn) {
+    console.error("Subject column not found.");
+    return [];
+  }
+
+
+  if (!semesterColumn) {
+    console.error("Semester column not found.");
+    return [];
+  }
+
+
+  if (!programColumn) {
+    console.error("Program column not found.");
+    return [];
+  }
+
+
+  // -----------------------------------------
+  // Get unique CSV combinations
+  // -----------------------------------------
+
+  const combinations = new Map();
+
+
+  csvData.forEach(row => {
+
+    const subject =
+      String(row[subjectColumn] || "").trim();
+
+    const semester =
+      String(row[semesterColumn] || "").trim();
+
+    const program =
+      String(row[programColumn] || "").trim();
+
+
+    if (!subject) return;
+
+
+    const key =
+      `${program}|||${semester}|||${subject}`;
+
+
+    if (!combinations.has(key)) {
+
+      combinations.set(key, {
+
+        csvProgram: program,
+
+        csvSemester: semester,
+
+        csvSubject: subject
+
+      });
+
+    }
+
+  });
+
+
+  // -----------------------------------------
+  // Match every subject
+  // -----------------------------------------
+
+  const results = [];
+
+
+  combinations.forEach(item => {
+
+    const {
+      csvProgram,
+      csvSemester,
+      csvSubject
+    } = item;
+
+
+    let match = null;
+
+
+    // =================================================
+    // MAGISTER
+    // =================================================
+
+    if (csvProgram === "Магистер") {
+
+
+      // -----------------------------------------
+      // First: mr-farm-2025
+      // -----------------------------------------
+
+      match =
+        subjects.find(s =>
+
+          s.program_id === "mr-farm-2025" &&
+
+          String(s.semester) ===
+            csvSemester &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      if (match) {
+
+        results.push({
+
+          csvProgram,
+
+          csvSemester,
+
+          csvSubject,
+
+          databaseProgram:
+            match.program_id,
+
+          databaseSemester:
+            match.semester,
+
+          subjectId:
+            match.id,
+
+          status:
+            "MATCH_2025",
+
+          statusText:
+            "✅ Match — mr-farm-2025"
+
+        });
+
+        return;
+
+      }
+
+
+      // -----------------------------------------
+      // Second: mr-farm-nova2021
+      // -----------------------------------------
+
+      match =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-nova2021" &&
+
+          String(s.semester) ===
+            csvSemester &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      if (match) {
+
+        results.push({
+
+          csvProgram,
+
+          csvSemester,
+
+          csvSubject,
+
+          databaseProgram:
+            match.program_id,
+
+          databaseSemester:
+            match.semester,
+
+          subjectId:
+            match.id,
+
+          status:
+            "MATCH_2021",
+
+          statusText:
+            "🔄 Match — mr-farm-nova2021"
+
+        });
+
+        return;
+
+      }
+
+
+      // -----------------------------------------
+      // Same subject exists but semester differs
+      // -----------------------------------------
+
+      const other2025 =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-2025" &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      const other2021 =
+        subjects.find(s =>
+
+          s.program_id ===
+            "mr-farm-nova2021" &&
+
+          normalizeText(s.name) ===
+            normalizeText(csvSubject)
+
+        );
+
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          other2025
+            ? other2025.program_id
+            : other2021
+              ? other2021.program_id
+              : "",
+
+        databaseSemester:
+          other2025
+            ? other2025.semester
+            : other2021
+              ? other2021.semester
+              : "",
+
+        subjectId:
+          "",
+
+        status:
+          "REVIEW",
+
+        statusText:
+          "⚠️ Semester mismatch / review"
+
+      });
+
+      return;
+
+    }
+
+
+    // =================================================
+    // OTHER PROGRAMS
+    // =================================================
+
+    match =
+      subjects.find(s =>
+
+        normalizeText(s.name) ===
+          normalizeText(csvSubject) &&
+
+        String(s.semester) ===
+          csvSemester
+
+      );
+
+
+    if (match) {
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          match.program_id,
+
+        databaseSemester:
+          match.semester,
+
+        subjectId:
+          match.id,
+
+        status:
+          "MATCH",
+
+        statusText:
+          "✅ Match"
+
+      });
+
+    } else {
+
+      results.push({
+
+        csvProgram,
+
+        csvSemester,
+
+        csvSubject,
+
+        databaseProgram:
+          "",
+
+        databaseSemester:
+          "",
+
+        subjectId:
+          "",
+
+        status:
+          "NOT_FOUND",
+
+        statusText:
+          "❌ Subject not found"
+
+      });
+
+    }
+
+  });
+
+
+  return results;
+
+}
+
+
+  function normalizeText(value) {
+
+  return String(value || "")
+
+    .trim()
+
+    .toLowerCase()
+
+    .replace(/\s+/g, " ");
+
+}
+
+function displaySubjectMatches(results) {
+
+  let card =
+    document.getElementById(
+      "subjectMatchCard"
+    );
+
+
+  if (!card) {
+
+    card =
+      document.createElement("div");
+
+    card.id =
+      "subjectMatchCard";
+
+    card.className =
+      "card";
+
+    document
+      .querySelector(".container")
+      .appendChild(card);
+
+  }
+
+
+  let html = `
+
+    <h2>🔎 Subject Matching</h2>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>CSV Subject</th>
+
+            <th>CSV Semester</th>
+
+            <th>Database Program</th>
+
+            <th>DB Semester</th>
+
+            <th>Subject ID</th>
+
+            <th>Status</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+
+  results.forEach(row => {
+
+    let statusClass = "";
+
+
+    if (
+      row.status ===
+      "MATCH_2025"
+    ) {
+
+      statusClass =
+        "status-success";
+
+    } else if (
+      row.status ===
+      "MATCH_2021"
+    ) {
+
+      statusClass =
+        "status-warning";
+
+    } else {
+
+      statusClass =
+        "status-error";
+
+    }
+
+
+    html += `
+
+      <tr>
+
+        <td>
+          ${escapeHtml(row.csvSubject)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.csvSemester)}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.databaseProgram
+          )}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.databaseSemester
+          )}
+        </td>
+
+        <td>
+          ${escapeHtml(
+            row.subjectId
+          )}
+        </td>
+
+        <td class="${statusClass}">
+          ${escapeHtml(
+            row.statusText
+          )}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  `;
+
+
+  card.innerHTML =
+    html;
+
+}
+  
 
   loadSupabaseReferenceData();
 </script>
