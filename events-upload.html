@@ -512,7 +512,25 @@ window.subjectMatches =
 displaySubjectMatches(
   subjectMatches
 );
+
+
+  const roomProfessorMatches =
+  matchRoomsAndProfessors(data);
+
+console.log(
+  "Room / Professor matching results:",
+  roomProfessorMatches
+);
+
+window.roomProfessorMatches =
+  roomProfessorMatches;
+
+displayRoomProfessorMatches(
+  roomProfessorMatches
+);
+  
 }
+  
 
 
 function buildPreview(data) {
@@ -1245,6 +1263,385 @@ async function loadSupabaseReferenceData() {
 
 }
 
+  function matchRoomsAndProfessors(csvData) {
+
+  const rooms =
+    window.referenceData?.rooms || [];
+
+  const professors =
+    window.referenceData?.professors || [];
+
+
+  if (!rooms.length) {
+    console.error("Rooms are not loaded.");
+    return null;
+  }
+
+  if (!professors.length) {
+    console.error("Professors are not loaded.");
+    return null;
+  }
+
+
+  // -----------------------------------------
+  // Find CSV columns
+  // -----------------------------------------
+
+  const roomColumn =
+    findColumn(csvData[0], [
+      "Просторија",
+      "Просторија ",
+      "просторија",
+      "room",
+      "Room"
+    ]);
+
+
+  const professorColumn =
+    findColumn(csvData[0], [
+      "проф/асс",
+      "проф/ас",
+      "професор",
+      "Professor",
+      "professor"
+    ]);
+
+
+  if (!roomColumn) {
+
+    console.error(
+      "Room column not found."
+    );
+
+    return null;
+  }
+
+
+  if (!professorColumn) {
+
+    console.error(
+      "Professor column not found."
+    );
+
+    return null;
+  }
+
+
+  // -----------------------------------------
+  // Get unique rooms
+  // -----------------------------------------
+
+  const uniqueRooms =
+    uniqueValues(
+      csvData.map(row =>
+        row[roomColumn]
+      )
+    );
+
+
+  // -----------------------------------------
+  // Get unique professors
+  // -----------------------------------------
+
+  const uniqueProfessors =
+    uniqueValues(
+      csvData.map(row =>
+        row[professorColumn]
+      )
+    );
+
+
+  // -----------------------------------------
+  // Match rooms
+  // -----------------------------------------
+
+  const roomResults =
+    uniqueRooms.map(csvRoom => {
+
+      const match =
+        rooms.find(room =>
+
+          normalizeText(room.name) ===
+          normalizeText(csvRoom)
+
+        );
+
+
+      if (match) {
+
+        return {
+
+          csvValue: csvRoom,
+
+          databaseValue:
+            match.name,
+
+          id: match.id,
+
+          status: "MATCH",
+
+          statusText: "✅ Match"
+
+        };
+
+      }
+
+
+      return {
+
+        csvValue: csvRoom,
+
+        databaseValue: "",
+
+        id: "",
+
+        status: "NOT_FOUND",
+
+        statusText: "❌ Not found"
+
+      };
+
+    });
+
+
+  // -----------------------------------------
+  // Match professors
+  // -----------------------------------------
+
+  const professorResults =
+    uniqueProfessors.map(csvProfessor => {
+
+      const match =
+        professors.find(professor =>
+
+          normalizeText(professor.name) ===
+          normalizeText(csvProfessor)
+
+        );
+
+
+      if (match) {
+
+        return {
+
+          csvValue: csvProfessor,
+
+          databaseValue:
+            match.name,
+
+          id: match.id,
+
+          status: "MATCH",
+
+          statusText: "✅ Match"
+
+        };
+
+      }
+
+
+      return {
+
+        csvValue: csvProfessor,
+
+        databaseValue: "",
+
+        id: "",
+
+        status: "NOT_FOUND",
+
+        statusText: "❌ Not found"
+
+      };
+
+    });
+
+
+  return {
+
+    rooms: roomResults,
+
+    professors: professorResults
+
+  };
+
+}
+
+  function displayRoomProfessorMatches(results) {
+
+  if (!results) return;
+
+
+  let card =
+    document.getElementById(
+      "roomProfessorMatchCard"
+    );
+
+
+  if (!card) {
+
+    card =
+      document.createElement("div");
+
+    card.id =
+      "roomProfessorMatchCard";
+
+    card.className =
+      "card";
+
+    document
+      .querySelector(".container")
+      .appendChild(card);
+
+  }
+
+
+  let html = `
+
+    <h2>🏫 Room & Professor Matching</h2>
+
+
+    <h3>Rooms</h3>
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>CSV Room</th>
+            <th>Database Room</th>
+            <th>Room ID</th>
+            <th>Status</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+
+  results.rooms.forEach(row => {
+
+    const statusClass =
+      row.status === "MATCH"
+        ? "status-success"
+        : "status-error";
+
+
+    html += `
+
+      <tr>
+
+        <td>
+          ${escapeHtml(row.csvValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.databaseValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(String(row.id))}
+        </td>
+
+        <td class="${statusClass}">
+          ${escapeHtml(row.statusText)}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+    <h3 style="margin-top:25px;">
+      Professors
+    </h3>
+
+
+    <div class="table-wrapper">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>CSV Professor</th>
+            <th>Database Professor</th>
+            <th>Professor ID</th>
+            <th>Status</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+  `;
+
+
+  results.professors.forEach(row => {
+
+    const statusClass =
+      row.status === "MATCH"
+        ? "status-success"
+        : "status-error";
+
+
+    html += `
+
+      <tr>
+
+        <td>
+          ${escapeHtml(row.csvValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(row.databaseValue)}
+        </td>
+
+        <td>
+          ${escapeHtml(String(row.id))}
+        </td>
+
+        <td class="${statusClass}">
+          ${escapeHtml(row.statusText)}
+        </td>
+
+      </tr>
+
+    `;
+
+  });
+
+
+  html += `
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  `;
+
+
+  card.innerHTML =
+    html;
+
+}
+
+  
 
   function normalizeText(value) {
 
