@@ -242,7 +242,56 @@
     </div>
 
   </div>
+<!-- Event Matching Statistics -->
+<div id="eventMatchStatsCard" class="card hidden">
 
+  <h2>📊 Event Matching Summary</h2>
+
+  <div class="stats">
+
+    <div class="stat">
+      <div class="stat-label">Вкупно CSV настани</div>
+      <div class="stat-value" id="eventTotal">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">🟢 Целосно совпаднати</div>
+      <div class="stat-value" id="eventMatched">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">🟡 Семестар mismatch</div>
+      <div class="stat-value" id="eventSemesterMismatch">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">🔴 Предмет не е пронајден</div>
+      <div class="stat-value" id="eventSubjectNotFound">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">🔴 Просторија не е пронајдена</div>
+      <div class="stat-value" id="eventRoomNotFound">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">🔴 Професор не е пронајден</div>
+      <div class="stat-value" id="eventProfessorNotFound">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">⚠️ Друго</div>
+      <div class="stat-value" id="eventOther">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">📋 Вкупно категоризирани</div>
+      <div class="stat-value" id="eventAccounted">0</div>
+    </div>
+
+  </div>
+
+</div>
 
   <!-- Subjects -->
   <div id="subjectsCard" class="card hidden">
@@ -514,24 +563,361 @@ displaySubjectMatches(
 );
 
 
-  const roomProfessorMatches =
-  matchRoomsAndProfessors(data);
+    const roomProfessorMatches =
+    matchRoomsAndProfessors(data);
 
-console.log(
-  "Room / Professor matching results:",
-  roomProfessorMatches
-);
+  console.log(
+    "Room / Professor matching results:",
+    roomProfessorMatches
+  );
 
-window.roomProfessorMatches =
-  roomProfessorMatches;
+  window.roomProfessorMatches =
+    roomProfessorMatches;
 
-displayRoomProfessorMatches(
-  roomProfessorMatches
-);
-  
+  displayRoomProfessorMatches(
+    roomProfessorMatches
+  );
+
+  // NEW: analyze every CSV event
+  analyzeEventMatches(
+    data,
+    subjectMatches,
+    roomProfessorMatches
+  );
+
 }
   
+function analyzeEventMatches(
+  data,
+  subjectMatches,
+  roomProfessorMatches
+) {
 
+  console.log("Analyzing event-level matches...");
+
+  const subjectColumn = findColumn(data[0], [
+    "предмет",
+    "Предмет",
+    "subject",
+    "Subject"
+  ]);
+
+  const programColumn = findColumn(data[0], [
+    "Студиска програма",
+    "студиска програма",
+    "program",
+    "Program"
+  ]);
+
+  const semesterColumn = findColumn(data[0], [
+    "Семестар",
+    "семестар",
+    "semester",
+    "Semester"
+  ]);
+
+  const roomColumn = findColumn(data[0], [
+    "Просторија",
+    "Просторија ",
+    "просторија",
+    "room",
+    "Room"
+  ]);
+
+  const professorColumn = findColumn(data[0], [
+    "проф/асс",
+    "проф/ас",
+    "професор",
+    "Professor",
+    "professor"
+  ]);
+
+
+  /*
+   * Create quick lookup maps.
+   *
+   * subjectMatches contains UNIQUE
+   * program + semester + subject combinations.
+   */
+  const subjectMap = new Map();
+
+  subjectMatches.forEach(match => {
+
+    const key =
+      `${match.csvProgram}|||` +
+      `${match.csvSemester}|||` +
+      `${normalizeText(match.csvSubject)}`;
+
+    subjectMap.set(key, match);
+
+  });
+
+
+  /*
+   * Room lookup
+   */
+  const roomMap = new Map();
+
+  if (roomProfessorMatches?.rooms) {
+
+    roomProfessorMatches.rooms.forEach(room => {
+
+      roomMap.set(
+        normalizeText(room.csvValue),
+        room
+      );
+
+    });
+
+  }
+
+
+  /*
+   * Professor lookup
+   */
+  const professorMap = new Map();
+
+  if (roomProfessorMatches?.professors) {
+
+    roomProfessorMatches.professors.forEach(professor => {
+
+      professorMap.set(
+        normalizeText(professor.csvValue),
+        professor
+      );
+
+    });
+
+  }
+
+
+  /*
+   * Counters
+   */
+  let matched = 0;
+  let semesterMismatch = 0;
+  let subjectNotFound = 0;
+  let roomNotFound = 0;
+  let professorNotFound = 0;
+  let other = 0;
+
+
+  /*
+   * Analyze EVERY CSV EVENT
+   */
+  data.forEach(row => {
+
+    const csvSubject =
+      String(row[subjectColumn] || "").trim();
+
+    const csvProgram =
+      String(row[programColumn] || "").trim();
+
+    const csvSemester =
+      String(row[semesterColumn] || "").trim();
+
+    const csvRoom =
+      String(row[roomColumn] || "").trim();
+
+    const csvProfessor =
+      String(row[professorColumn] || "").trim();
+
+
+    /*
+     * Subject matching
+     */
+    const subjectKey =
+      `${csvProgram}|||` +
+      `${csvSemester}|||` +
+      `${normalizeText(csvSubject)}`;
+
+    const subjectMatch =
+      subjectMap.get(subjectKey);
+
+
+    /*
+     * Subject not found
+     */
+    if (!subjectMatch) {
+
+      /*
+       * Check whether the subject exists
+       * but the semester differs.
+       */
+      const sameSubject =
+        subjectMatches.find(match =>
+          normalizeText(match.csvSubject) ===
+          normalizeText(csvSubject) &&
+          match.csvProgram === csvProgram
+        );
+
+
+      if (
+        sameSubject &&
+        sameSubject.status === "REVIEW"
+      ) {
+
+        semesterMismatch++;
+
+      } else {
+
+        subjectNotFound++;
+
+      }
+
+      return;
+    }
+
+
+    /*
+     * Subject exists and semester matches,
+     * but the subject itself is in REVIEW
+     */
+    if (
+      subjectMatch.status === "REVIEW"
+    ) {
+
+      semesterMismatch++;
+
+      return;
+    }
+
+
+    /*
+     * Room
+     */
+    const roomMatch =
+      roomMap.get(
+        normalizeText(csvRoom)
+      );
+
+
+    if (
+      csvRoom &&
+      (!roomMatch ||
+       roomMatch.status !== "MATCH")
+    ) {
+
+      roomNotFound++;
+
+      return;
+    }
+
+
+    /*
+     * Professor
+     */
+    const professorMatch =
+      professorMap.get(
+        normalizeText(csvProfessor)
+      );
+
+
+    if (
+      csvProfessor &&
+      (!professorMatch ||
+       professorMatch.status !== "MATCH")
+    ) {
+
+      professorNotFound++;
+
+      return;
+    }
+
+
+    /*
+     * Everything matched
+     */
+    matched++;
+
+  });
+
+
+  /*
+   * Calculate total
+   */
+  const total = data.length;
+
+  const accounted =
+    matched +
+    semesterMismatch +
+    subjectNotFound +
+    roomNotFound +
+    professorNotFound +
+    other;
+
+
+  /*
+   * Save globally
+   */
+  window.eventMatchStats = {
+
+    total,
+
+    matched,
+
+    semesterMismatch,
+
+    subjectNotFound,
+
+    roomNotFound,
+
+    professorNotFound,
+
+    other,
+
+    accounted
+
+  };
+
+
+  console.log(
+    "EVENT MATCH STATISTICS:",
+    window.eventMatchStats
+  );
+
+
+  /*
+   * Display
+   */
+  document.getElementById(
+    "eventTotal"
+  ).textContent = total;
+
+  document.getElementById(
+    "eventMatched"
+  ).textContent = matched;
+
+  document.getElementById(
+    "eventSemesterMismatch"
+  ).textContent = semesterMismatch;
+
+  document.getElementById(
+    "eventSubjectNotFound"
+  ).textContent = subjectNotFound;
+
+  document.getElementById(
+    "eventRoomNotFound"
+  ).textContent = roomNotFound;
+
+  document.getElementById(
+    "eventProfessorNotFound"
+  ).textContent = professorNotFound;
+
+  document.getElementById(
+    "eventOther"
+  ).textContent = other;
+
+  document.getElementById(
+    "eventAccounted"
+  ).textContent = accounted;
+
+
+  document.getElementById(
+    "eventMatchStatsCard"
+  ).classList.remove("hidden");
+
+}
 
 function buildPreview(data) {
 
