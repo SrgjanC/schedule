@@ -1571,7 +1571,7 @@ async function checkForDuplicateEvents() {
     const {
       data,
       error
-    } = await supabase
+    } = await supabaseClient
       .from("events")
       .select(`
         event_date,
