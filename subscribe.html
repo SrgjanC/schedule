@@ -583,6 +583,25 @@ let professorSelect = null;
 
 }
 
+function getAcademicYearRange(){
+    const startYear = Number(
+        document.getElementById("yearFilter").value
+    );
+
+    return {
+        start: `${startYear}-10-01`,
+        end: `${startYear + 1}-09-30`
+    };
+}
+
+function applyAcademicYearFilter(query){
+    const range = getAcademicYearRange();
+
+    return query
+        .gte("event_date", range.start)
+        .lte("event_date", range.end);
+}
+
 async function loadPrograms(){
 
     const select =
@@ -950,7 +969,11 @@ function initSubjectSelection(){
 }
 
 
+let professorLoadRequest = 0;
+
 async function loadProfessors() {
+
+    const requestId = ++professorLoadRequest;
 
     const programId =
         document.getElementById("programFilter").value;
@@ -960,13 +983,22 @@ async function loadProfessors() {
 
     const select =
         document.getElementById("professorFilter");
+
     const currentProfessor =
-    select.value;
+        select.value;
 
-    if (!programId)
+    if (!programId){
+        if (professorSelect) {
+            professorSelect.destroy();
+            professorSelect = null;
+        }
+
+        select.innerHTML =
+            `<option value="">All Professors</option>`;
+
         return;
+    }
 
-    // Selected subjects
     const selectedSubjects =
         [...document.querySelectorAll(".subjectCheck:checked")]
         .map(c => Number(c.value));
@@ -981,90 +1013,88 @@ async function loadProfessors() {
                 name
             ),
             subjects!inner(
+                id,
                 program_id,
                 semester
             )
         `)
         .eq("subjects.program_id", programId);
 
+    const range = getAcademicYearRange();
+
+    query = query
+        .gte("event_date", range.start)
+        .lte("event_date", range.end);
+
     if (semester) {
-
-        query =
-            query.eq(
-                "subjects.semester",
-                semester
-            );
-
+        query = query.eq(
+            "subjects.semester",
+            semester
+        );
     }
 
     if (selectedSubjects.length > 0) {
-
-        query =
-            query.in(
-                "subject_id",
-                selectedSubjects
-            );
-
+        query = query.in(
+            "subject_id",
+            selectedSubjects
+        );
     }
 
     const { data, error } =
         await query;
 
-    if (error) {
-
-        console.error(error);
-
+    // Ignore an older request if the user changed a filter while it was running.
+    if (requestId !== professorLoadRequest)
         return;
 
+    if (error) {
+        console.error("loadProfessors:", error);
+        return;
     }
 
-    const unique = [];
+    const uniqueMap = new Map();
 
-    data.forEach(row => {
-
+    (data || []).forEach(row => {
         if (!row.professors)
             return;
 
-        if (
-            !unique.find(
-                p => p.id === row.professors.id
-            )
-        ) {
-
-            unique.push(row.professors);
-
-        }
-
+        uniqueMap.set(
+            row.professors.id,
+            row.professors
+        );
     });
 
-    unique.sort((a, b) =>
-        a.name.localeCompare(
-            b.name,
-            "mk"
-        )
-    );
+    const unique =
+        [...uniqueMap.values()]
+        .sort((a, b) =>
+            a.name.localeCompare(b.name, "mk")
+        );
+
+    // Destroy TomSelect BEFORE replacing the native options.
+    if (professorSelect) {
+        professorSelect.destroy();
+        professorSelect = null;
+    }
 
     select.innerHTML =
         `<option value="">All Professors</option>`;
 
     unique.forEach(p => {
+        select.innerHTML += `
+            <option value="${p.id}">
+                ${p.name}
+            </option>
+        `;
+    });
 
-    select.innerHTML += `
-<option value="${p.id}">
-${p.name}
-</option>
-`;
+    // Keep the old professor only if it still exists in the current filter.
+    const stillExists =
+        unique.some(p =>
+            String(p.id) === String(currentProfessor)
+        );
 
-});
-
-select.value = currentProfessor;
-    
-    
-    if (professorSelect) {
-
-        professorSelect.destroy();
-
-    }
+    select.value =
+        stillExists ? currentProfessor : "";
 
     professorSelect =
         new TomSelect(
@@ -1075,7 +1105,7 @@ select.value = currentProfessor;
                 placeholder:"Search professor..."
             }
         );
-    
+
     professorSelect.on("change",()=>{
         updatePreviewStats();
         refreshPreview();
@@ -1132,51 +1162,43 @@ select.value = currentProfessor;
             programId
         );
 
-    if(semester){
+    // IMPORTANT: academic year is Oct 1 -> Sep 30.
+    query = applyAcademicYearFilter(query);
 
+    if(semester){
         query =
             query.eq(
                 "subjects.semester",
                 semester
             );
-
     }
 
     if(selectedSubjects.length){
-
         query =
             query.in(
                 "subject_id",
                 selectedSubjects
             );
-
     }
 
     if(professorId){
-
         query =
             query.eq(
                 "professor_id",
                 professorId
             );
-
     }
 
     const {data,error} =
         await query;
 
     if(error){
-
-        console.error(error);
-
+        console.error("getFilteredEvents:", error);
         return [];
-
     }
-console.log(data[0]);
-    return data;
 
+    return data || [];
 }
-
 
         function getSelectedSubjects(){
 
@@ -1206,7 +1228,11 @@ async function createSubscription(){
             getSelectedSubjects(),
 
         professor:
-            document.getElementById("professorFilter").value || null
+            document.getElementById("professorFilter").value || null,
+        academicYearStart:
+            getAcademicYearRange().start,
+        academicYearEnd:
+            getAcademicYearRange().end
 
     };
 
@@ -1470,110 +1496,6 @@ Showing first 20 of ${events.length} events
     }
 
 }
-        
-
-        async function loadPreview(){
-
-    const programId =
-        document.getElementById("programFilter").value;
-
-    if(!programId){
-
-        document.getElementById("previewEvents").innerText = "0";
-        document.getElementById("previewList").innerHTML =
-            `<div class="emptyPreview">
-                Select a program.
-            </div>`;
-
-        return;
-
-    }
-
-    const semester =
-        document.getElementById("semesterFilter").value;
-
-    const professor =
-        document.getElementById("professorFilter").value;
-
-    const selectedSubjects =
-        [...document.querySelectorAll(".subjectCheck:checked")]
-        .map(c => Number(c.value));
-
-    let query =
-        supabase
-        .from("events")
-        .select(`
-            *,
-            subjects(
-                name,
-                semester
-            ),
-            professors(
-                name
-            ),
-            rooms(
-                name
-            )
-        `);
-
-    if(selectedSubjects.length){
-
-        query =
-            query.in(
-                "subject_id",
-                selectedSubjects
-            );
-
-    }else{
-
-        // Filter by program using joined subjects
-        query =
-            query.eq(
-                "subjects.program_id",
-                programId
-            );
-
-        if(semester){
-
-            query =
-                query.eq(
-                    "subjects.semester",
-                    semester
-                );
-
-        }
-
-    }
-
-    if(professor){
-
-        query =
-            query.eq(
-                "professor_id",
-                professor
-            );
-
-    }
-
-    const { data, error } =
-        await query;
-
-    if(error){
-
-        console.error(error);
-
-        return;
-
-    }
-
-    document.getElementById(
-        "previewEvents"
-    ).innerText = data.length;
-
-    renderPreview(data);
-
-}
-
 
         function addOneHour(time){
 
@@ -1595,6 +1517,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadAcademicYears();
 
     await loadPrograms();
+
+document
+.getElementById("yearFilter")
+.addEventListener(
+    "change",
+    async () => {
+
+        // Academic year affects every event/professor query.
+        await loadProfessors();
+        await refreshPreview();
+
+    }
+);
 
 document
 .getElementById("programFilter")
