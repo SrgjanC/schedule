@@ -761,7 +761,7 @@ function buildWeekRows(
                             ${e.program}<br>
                             Сем: ${e.semester}<br>
                             ${e.type || ""}<br>
-                            ${e.professorName || ""}
+                            ${e.professorName || ""}<br>${e.groups ? "Групи: " + e.groups : ""}
                         </small>
                     </div>
                 `;
@@ -853,7 +853,7 @@ html += `
             ${e.program}<br>
             Сем: ${e.semester}<br>
             ${e.type || ""}<br>
-            ${e.professorName || ""}
+            ${e.professorName || ""}<br>${e.groups ? "Групи: " + e.groups : ""}
         </small>
     </div>
 `;
@@ -960,6 +960,8 @@ ${currentCalendarEvent.professorName}
 
 <b>Тип:</b>
 ${currentCalendarEvent.type}
+
+${currentCalendarEvent.groups ? `<br><b>Групи:</b> ${currentCalendarEvent.groups}<br>` : ""}
 
 `;
 
