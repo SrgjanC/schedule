@@ -1083,42 +1083,7 @@ for (const hour of targetTimes) {
     }
 }
     
-    const roomParallelAllowed = [
-    "Испит",
-    "Практичен испит",
-    "Колоквиум 1",
-    "Колоквиум 2"
-];
 
-const roomConflict =
-    events.find(e => {
-
-        if (
-            e.date !== currentDate ||
-            e.time !== targetTime ||
-            Number(e.room_id) !== Number(selectedRoomId) ||
-            String(e.id) === String(editingId)
-        ) {
-            return false;
-        }
-
-        // allow parallel exam-like events
-        if (
-            roomParallelAllowed.includes(type) &&
-            roomParallelAllowed.includes(e.type)
-        ) {
-            return false;
-        }
-
-        return true;
-    });
-
-if(roomConflict){
-
-    alert("Просторијата е зафатена.");
-
-    return;
-}
 
     const basePayload = {
         event_date: currentDate,
