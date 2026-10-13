@@ -196,6 +196,9 @@ th{
 <label>Час (ист датум)</label>
 <select id="timeSelect"></select>
 
+<label>Број на часови (само за нов настан)</label>
+<input type="number" id="durationInput" min="1" max="13" step="1" value="1">
+
 <label>Програма</label>
 <select id="programSelect"></select>
 
@@ -858,6 +861,8 @@ function fillEventSelect(eventList){
             };
 
             document.getElementById("timeSelect").value = currentTime;
+            document.getElementById("durationInput").value = "1";
+            document.getElementById("durationInput").disabled = false;
             renderForm();
 
             return;
@@ -872,6 +877,8 @@ function fillEventSelect(eventList){
 
         editingId = existing.id;
         document.getElementById("timeSelect").value = existing.time;
+        document.getElementById("durationInput").value = "1";
+        document.getElementById("durationInput").disabled = true;
 
         formState = {
 
@@ -955,6 +962,10 @@ window.openSlot = function(cell){
     if(existing){
         document.getElementById("eventSelect").value =
             existing.id;
+        document.getElementById("durationInput").disabled = true;
+    } else {
+        document.getElementById("durationInput").value = "1";
+        document.getElementById("durationInput").disabled = false;
     }
 
     renderForm();
@@ -985,6 +996,22 @@ document.getElementById("saveBtn")
         alert("Изберете час.");
         return;
     }
+
+    const durationInput = document.getElementById("durationInput");
+    const duration = editingId ? 1 : Number(durationInput.value);
+
+    if (!Number.isInteger(duration) || duration < 1 || duration > TIMES.length) {
+        alert("Внесете валиден број на часови (1–13).");
+        return;
+    }
+
+    const startIndex = TIMES.indexOf(targetTime);
+    if (startIndex < 0 || startIndex + duration > TIMES.length) {
+        alert("Избраниот почетен час и бројот на часови го надминуваат работното време (08:00–20:00).");
+        return;
+    }
+
+    const targetTimes = editingId ? [targetTime] : TIMES.slice(startIndex, startIndex + duration);
 
     const subjectId =
         Number(
@@ -1026,44 +1053,34 @@ const parallelAllowed = [
     "Практичен испит"
 ];
 
-const sameGroupConflict = events.find(e => {
+for (const hour of targetTimes) {
+    const sameGroupConflict = events.find(e => {
+        if (e.date !== currentDate || e.time !== hour || String(e.id) === String(editingId)) return false;
+        const sameProgram = String(e.programId) === String(selectedProgramId);
+        const sameSemester = String(e.semester) === String(selectedSemester);
+        if (!sameProgram || !sameSemester) return false;
+        if (parallelAllowed.includes(type) && parallelAllowed.includes(e.type)) return type !== e.type;
+        return true;
+    });
 
-    if (
-        e.date !== currentDate ||
-        e.time !== targetTime ||
-        String(e.id) === String(editingId)
-    ) {
-        return false;
+    if (sameGroupConflict) {
+        alert("Конфликт: програмата и семестарот веќе имаат настава во " + hour + ". Не е зачуван ниту еден час.");
+        return;
     }
 
-    const sameProgram =
-        String(e.programId) === String(selectedProgramId);
+    const roomParallelAllowed = ["Испит", "Практичен испит", "Колоквиум 1", "Колоквиум 2"];
+    const roomConflict = events.find(e => {
+        if (e.date !== currentDate || e.time !== hour ||
+            Number(e.room_id) !== Number(selectedRoomId) ||
+            String(e.id) === String(editingId)) return false;
+        if (roomParallelAllowed.includes(type) && roomParallelAllowed.includes(e.type)) return false;
+        return true;
+    });
 
-    const sameSemester =
-        String(e.semester) === String(selectedSemester);
-
-    if (!sameProgram || !sameSemester) {
-        return false;
+    if (roomConflict) {
+        alert("Конфликт: просторијата е зафатена во " + hour + ". Не е зачуван ниту еден час.");
+        return;
     }
-
-    // RULE:
-    // - Same TYPE allowed (e.g. Вежби + Вежби)
-    // - Different TYPES blocked inside same program+semester+time
-
-    if (parallelAllowed.includes(type) &&
-        parallelAllowed.includes(e.type)) {
-
-        return type !== e.type; // true = conflict, false = allowed
-    }
-
-    // everything else: block if same program+semester+time
-    return true;
-});
-
-if (sameGroupConflict) {
-
-    alert("Оваа програма и семестар веќе имаат настава во истиот термин.");
-    return;
 }
     
     const roomParallelAllowed = [
@@ -1103,60 +1120,31 @@ if(roomConflict){
     return;
 }
 
-    const payload = {
-
+    const basePayload = {
         event_date: currentDate,
-
-        event_time: targetTime,
-
         room_id: selectedRoomId,
-
         subject_id: subjectId,
-
         type,
-
         professor_id,
-
         groups_text: groups,
-
         comment
     };
 
     let error;
 
-    if(editingId){
-
-    ({ error } =
-        await supabase
-        .from('events')
-        .update(payload)
-        .eq('id', editingId)
-    );
-
-    if(!error){
-
-        await addLog(
-            "UPDATE",
-            payload
-        );
+    if (editingId) {
+        const payload = { ...basePayload, event_time: targetTime };
+        ({ error } = await supabase.from('events').update(payload).eq('id', editingId));
+        if (!error) await addLog("UPDATE", { ...payload, event_id: editingId });
+    } else {
+        // Batch insert: all requested hours are saved together after validation.
+        const payloads = targetTimes.map(hour => ({ ...basePayload, event_time: hour }));
+        const { error: insertError } = await supabase.from('events').insert(payloads);
+        error = insertError;
+        if (!error) {
+            for (const row of payloads) await addLog("ADD", row);
+        }
     }
-}
-    else{
-
-    ({ error } =
-        await supabase
-        .from('events')
-        .insert([payload])
-    );
-
-    if(!error){
-
-        await addLog(
-            "ADD",
-            payload
-        );
-    }
-}
 
     console.log(error);
 
