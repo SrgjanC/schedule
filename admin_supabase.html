@@ -192,6 +192,10 @@ th{
 <h3>Распоред</h3>
 <label>Избери настан</label>
 <select id="eventSelect"></select>
+
+<label>Час (ист датум)</label>
+<select id="timeSelect"></select>
+
 <label>Програма</label>
 <select id="programSelect"></select>
 
@@ -222,7 +226,7 @@ th{
 
 <button class="close-btn" id="closeBtn">Cancel</button>
 
-<button class="save-btn" id="saveBtn">Save</button>
+<button class="save-btn" id="saveBtn">Зачувај / Премести</button>
 
 </div>
 
@@ -325,6 +329,15 @@ function todayISO(){
     }-${
         String(t.getDate()).padStart(2,"0")
     }`;
+}
+
+function fillTimes(){
+    const sel = document.getElementById("timeSelect");
+    sel.innerHTML = "";
+
+    TIMES.forEach(time => {
+        sel.innerHTML += `<option value="${time}">${time}</option>`;
+    });
 }
 
 function fillRooms(){
@@ -632,6 +645,7 @@ lessonTypes = lt || [];
     rooms = p4 || [];
 
     fillRooms();
+    fillTimes();
     fillProfessors();
     fillPrograms();
     fillLessonTypes();
@@ -843,6 +857,7 @@ function fillEventSelect(eventList){
                 comment: ""
             };
 
+            document.getElementById("timeSelect").value = currentTime;
             renderForm();
 
             return;
@@ -856,6 +871,7 @@ function fillEventSelect(eventList){
         if(!existing) return;
 
         editingId = existing.id;
+        document.getElementById("timeSelect").value = existing.time;
 
         formState = {
 
@@ -894,6 +910,8 @@ window.openSlot = function(cell){
 
     currentTime =
         cell.dataset.time;
+
+    document.getElementById("timeSelect").value = currentTime;
 
     const roomId =
         Number(cell.dataset.room);
@@ -960,6 +978,14 @@ document.getElementById("saveBtn")
             document.getElementById("roomSelect").value
         );
 
+    const targetTime =
+        document.getElementById("timeSelect").value;
+
+    if (!targetTime) {
+        alert("Изберете час.");
+        return;
+    }
+
     const subjectId =
         Number(
             document.getElementById("subjectSelect").value
@@ -1004,7 +1030,7 @@ const sameGroupConflict = events.find(e => {
 
     if (
         e.date !== currentDate ||
-        e.time !== currentTime ||
+        e.time !== targetTime ||
         String(e.id) === String(editingId)
     ) {
         return false;
@@ -1052,7 +1078,7 @@ const roomConflict =
 
         if (
             e.date !== currentDate ||
-            e.time !== currentTime ||
+            e.time !== targetTime ||
             Number(e.room_id) !== Number(selectedRoomId) ||
             String(e.id) === String(editingId)
         ) {
@@ -1081,7 +1107,7 @@ if(roomConflict){
 
         event_date: currentDate,
 
-        event_time: currentTime,
+        event_time: targetTime,
 
         room_id: selectedRoomId,
 
