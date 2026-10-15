@@ -196,13 +196,20 @@ function formatDateTime(ts){
 
 function render(){
 
-    const filter =
-        document.getElementById("actionFilter").value;
-
     const tbody =
         document.getElementById("tbody");
 
     tbody.innerHTML = "";
+
+    document.getElementById("pageInfo").textContent =
+        `Страна ${currentPage} од ${totalPages}`;
+    document.getElementById("prevPage").disabled = currentPage <= 1;
+    document.getElementById("nextPage").disabled = currentPage >= totalPages;
+
+    if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Нема промени за избраните филтри.</td></tr>';
+        return;
+    }
 
     logs.forEach(l => {
 
