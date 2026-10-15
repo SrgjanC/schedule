@@ -76,6 +76,12 @@ tr:nth-child(even){
 <button id="clearEventFilter">Clear</button>
 </div>
 
+<div class="controls" id="pagination">
+    <button id="prevPage" disabled>← Претходна</button>
+    <span id="pageInfo">Страна 1</span>
+    <button id="nextPage" disabled>Следна →</button>
+</div>
+
 <table>
 <thead>
 <tr>
@@ -113,26 +119,45 @@ const supabase =
     
 
 
+const PAGE_SIZE = 10;
 let logs = [];
 let eventDateFilter = "";
+let currentPage = 1;
+let totalPages = 1;
+let reloadTimeout;
 
-    
-async function loadLogs(){
+async function loadLogs() {
+    const filter = document.getElementById("actionFilter").value;
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-    const { data, error } =
-        await supabase
+    let query = supabase
         .from("logs")
-        .select("*")
+        .select("*", { count: "exact" })
         .order("id", { ascending: false });
 
-    console.log(error);
+    if (filter) query = query.eq("action", filter);
+    if (eventDateFilter) query = query.eq("event_date", eventDateFilter);
+
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) {
+        console.error(error);
+        document.getElementById("tbody").innerHTML =
+            `<tr><td colspan="10">Грешка при вчитување: ${error.message}</td></tr>`;
+        return;
+    }
 
     logs = data || [];
+    totalPages = Math.max(1, Math.ceil((count || 0) / PAGE_SIZE));
+
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+        return loadLogs();
+    }
 
     render();
 }
-
-let reloadTimeout;
 
 function subscribeLogs() {
 
@@ -168,24 +193,7 @@ function formatDateTime(ts){
            `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-    async function refreshLogs() {
 
-    const { data, error } = await supabase
-        .from('logs')
-        .select('*')
-        .order('id', { ascending: false })
-        .limit(200);
-
-    if (error) {
-        console.error(error);
-        return;
-    }
-
-    renderLogs(data);
-}
-
-
-    
 function render(){
 
     const filter =
@@ -196,19 +204,7 @@ function render(){
 
     tbody.innerHTML = "";
 
-    logs
-.filter(l => {
-
-    const actionMatch =
-        !filter || l.action === filter;
-
-    const eventDateMatch =
-        !eventDateFilter ||
-        l.event_date === eventDateFilter;
-
-    return actionMatch && eventDateMatch;
-})
-    .forEach(l => {
+    logs.forEach(l => {
 
         tbody.innerHTML += `
         <tr>
@@ -230,27 +226,42 @@ function render(){
     });
 }
 
-document
-.getElementById("actionFilter")
-.addEventListener("change", render);
+document.getElementById("actionFilter")
+.addEventListener("change", () => {
+    currentPage = 1;
+    loadLogs();
+});
 
-loadLogs();
-subscribeLogs();
- document.getElementById("eventDateFilter")
+document.getElementById("eventDateFilter")
 .addEventListener("change", (e) => {
-
     eventDateFilter = e.target.value;
-    render();
+    currentPage = 1;
+    loadLogs();
 });
 
 document.getElementById("clearEventFilter")
 .addEventListener("click", () => {
-
     eventDateFilter = "";
     document.getElementById("eventDateFilter").value = "";
-    render();
-});
+    currentPage = 1;
     loadLogs();
+});
+
+document.getElementById("prevPage").addEventListener("click", () => {
+    if (currentPage > 1) {
+        currentPage--;
+        loadLogs();
+    }
+});
+
+document.getElementById("nextPage").addEventListener("click", () => {
+    if (currentPage < totalPages) {
+        currentPage++;
+        loadLogs();
+    }
+});
+
+loadLogs();
 subscribeLogs();
 </script>
 
