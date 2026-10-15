@@ -376,9 +376,13 @@ const subjectSearch =
 
 if (subjectSearch !== "") {
 
-    // entire academic year
-    fromDate = "2025-09-01";
-    toDate   = "2026-08-31";
+    // Current academic year: 1 October through 30 September.
+    const now = new Date();
+    const academicYearStart =
+        now.getFullYear() - (now.getMonth() < 9 ? 1 : 0);
+
+    fromDate = `${academicYearStart}-10-01`;
+    toDate = `${academicYearStart + 1}-09-30`;
 
     return;
 }
@@ -669,8 +673,9 @@ if(holiday){
 
 }else if (subjectSearchActive) {
 
+    const academicYearStart = Number(fromDate.substring(0, 4));
     document.getElementById("viewInfo").textContent =
-        `Пребарување предмет: "${subjectF}"`;
+        `Пребарување предмет: "${subjectF}" (академска година ${academicYearStart}/${academicYearStart + 1})`;
 
 } else {
 
