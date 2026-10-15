@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Фармацевтски факултет — Дневен распоред</title>
+<style>
+:root{--navy:#102a43;--blue:#3f69b1;--ink:#172b4d;--muted:#52667a;--line:#d9e2ec;--green:#e3fcef;--gold:#fff3c4}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:var(--ink)}
+body{display:flex;flex-direction:column}
+header{height:100px;flex-shrink:0;background:var(--navy);color:white;padding:16px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{font-size:25px;font-weight:800}.subtitle{font-size:14px;color:#c9d9e8;margin-top:5px}
+.clock{text-align:right;white-space:nowrap}.clock .date{font-size:17px}.clock .time{font-size:29px;font-weight:800;margin-top:3px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;padding:16px 20px}
+.schedule-panel,.logs-panel{background:white;border-radius:12px;box-shadow:0 5px 18px #102a4310;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:13px 16px;background:#eaf1f8;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.panel-head h2{font-size:19px;margin:0;color:var(--navy)}.hint{font-size:12px;color:var(--muted);text-align:right}
+.table-wrap{overflow:hidden;flex:1;min-height:0;position:relative}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+th{background:var(--blue);color:white;text-align:left;font-size:13px;padding:9px 8px;position:sticky;top:0;z-index:1}
+td{border-bottom:1px solid #e4ebf2;padding:8px;font-size:14px;line-height:1.25;vertical-align:middle;overflow-wrap:anywhere}
+tr:nth-child(even){background:#f8fafc}
+tr.current{background:#d9f5e5!important;box-shadow:inset 5px 0 #219653}
+tr.next{background:#fff3c4!important;box-shadow:inset 5px 0 #e0a800}
+.time{font-weight:800;white-space:nowrap}.room{font-weight:800}
+.empty{padding:28px;text-align:center;color:var(--muted);font-size:18px}
+.legend{display:flex;gap:14px;align-items:center;font-size:12px;color:var(--muted);white-space:nowrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dot.green{background:#219653}.dot.gold{background:#e0a800}
+.logs-list{overflow:hidden;flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.log-card{border:1px solid var(--line);border-left:5px solid #7b8794;border-radius:7px;padding:9px 10px;min-height:0}
+.log-card.ADD{border-left-color:#2e7d32}.log-card.UPDATE{border-left-color:#e0a800}.log-card.DELETE{border-left-color:#c62828}
+.log-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px}
+.badge{font-size:10px;font-weight:800;padding:3px 6px;border-radius:4px;color:white;background:#52667a;white-space:nowrap}
+.badge.ADD{background:#2e7d32}.badge.UPDATE{background:#b78103}.badge.DELETE{background:#c62828}
+.log-subject{font-size:14px;font-weight:800;line-height:1.2}.log-detail{font-size:12px;color:var(--muted);line-height:1.3;margin-top:4px}.log-date{font-size:10px;color:var(--muted);white-space:nowrap}
+.logs-footer{padding:9px 12px;background:#f8fafc;border-top:1px solid var(--line);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+footer{height:34px;flex-shrink:0;background:#e2eaf2;padding:0 22px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#486581}
+.status-error{color:#b42318;font-weight:700}
+@media(max-width:1050px){main{grid-template-columns:minmax(0,1fr) 280px;padding:10px;gap:10px}header{padding:12px 18px}.brand{font-size:21px}td{font-size:12px;padding:6px}th{font-size:11px;padding:7px 5px}.panel-head h2{font-size:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">ФАРМАЦЕВТСКИ ФАКУЛТЕТ — УКИМ</div><div class="subtitle">Дневен распоред за наставни простории</div></div>
+  <div class="clock"><div class="date" id="today"></div><div class="time" id="clock"></div></div>
+</header>
+<main>
+  <section class="schedule-panel">
+    <div class="panel-head"><h2>Денешна настава — сите простории</h2><div class="legend"><span><i class="dot green"></i>Во тек</span><span><i class="dot gold"></i>Следно</span></div></div>
+    <div class="table-wrap" id="scheduleWrap">
+      <table>
+        <thead><tr><th style="width:105px">Час</th><th style="width:95px">Просторија</th><th>Предмет</th><th style="width:150px">Програма</th><th style="width:125px">Проф./асс.</th><th style="width:95px">Групи</th></tr></thead>
+        <tbody id="scheduleBody"><tr><td colspan="6" class="empty">Се вчитува денешниот распоред…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <aside class="logs-panel">
+    <div class="panel-head"><h2>Последни измени</h2><div class="hint">Најнови 5</div></div>
+    <div class="logs-list" id="logsList"><div class="empty">Се вчитуваат измените…</div></div>
+    <div class="logs-footer"><span id="logsStatus">Се поврзува…</span><span>Supabase</span></div>
+  </aside>
+</main>
+<footer><span id="updateStatus">Се вчитуваат податоците…</span><span>Целосен распоред: srgjanc.github.io/schedule</span></footer>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm?v=3.9.2';
+const supabaseUrl='https://elmxwpwhyewgjlvoadtb.supabase.co';
+const supabaseKey='sb_publishable_yUCov2V1dKGEc-rBwt6v2A_dBkHEiYd';
+const supabase=createClient(supabaseUrl,supabaseKey);
+const $=id=>document.getElementById(id);
+let lastGoodEvents=null,lastGoodLogs=null,refreshBusy=false,scrollTimer=null,scrollDirection=1;
+const REFRESH_MS=60000;
+function esc(v=''){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function updateClock(){const n=new Date();$('today').textContent=n.toLocaleDateString('mk-MK',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('clock').textContent=n.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'});}
+function dateTime(v){if(!v)return '';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('mk-MK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function minutesFromTime(v){if(!v)return null;const m=String(v).match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;}
+function classForEvent(e,nowMinutes,nextId){
+ const start=minutesFromTime(e.time);if(start===null)return '';
+ // Events may have duration fields in some deployments; otherwise highlight from start until the next event begins.
+ if(e.id===nextId)return 'next';
+ if(start<=nowMinutes && nowMinutes<start+120)return 'current';
+ return '';
+}
+async function loadEvents(){
+ const date=todayISO();
+ const {data,error}=await supabase.from('events').select(`
+   id,event_date,event_time,type,groups_text,
+   subjects(name,semester,programs(name)),
+   professors(name),
+   rooms(name)
+ `).eq('event_date',date).order('event_time',{ascending:true}).range(0,999);
+ if(error)throw error;
+ return (data||[]).map(e=>({
+   id:e.id,date:e.event_date,time:e.event_time?String(e.event_time).substring(0,5):'',
+   room:e.rooms?.name||'—',subject:e.subjects?.name||'Предметот не е наведен',
+   program:e.subjects?.programs?.name||'',professor:e.professors?.name||'',
+   type:e.type||'',groups:e.groups_text||''
+ })).sort((a,b)=>a.time.localeCompare(b.time,'mk')||a.room.localeCompare(b.room,'mk'));
+}
+function renderEvents(events){
+ const body=$('scheduleBody');
+ if(!events.length){body.innerHTML='<tr><td colspan="6" class="empty">Нема внесени часови за денес.</td></tr>';return;}
+ const now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes();
+ const next=events.find(e=>{const t=minutesFromTime(e.time);return t!==null&&t>=nowMinutes;});
+ body.innerHTML=events.map(e=>{
+   const t=minutesFromTime(e.time);
+   let cls='';
+   if(t!==null&&t<=nowMinutes&&nowMinutes<t+120)cls='current';
+   else if(next&&e.id===next.id)cls='next';
+   const timeLabel=e.time||'';
+   return `<tr class="${cls}"><td class="time">${esc(timeLabel)}</td><td class="room">${esc(e.room)}</td><td><strong>${esc(e.subject)}</strong><div style="font-size:11px;color:#52667a;margin-top:3px">${esc(e.type)}</div></td><td>${esc(e.program)}</td><td>${esc(e.professor)}</td><td>${esc(e.groups)}</td></tr>`;
+ }).join('');
+}
+function renderLogs(logs){
+ const list=$('logsList');
+ if(!logs.length){list.innerHTML='<div class="empty">Нема евидентирани измени.</div>';return;}
+ list.innerHTML=logs.map(l=>{
+   const action=String(l.action||'').toUpperCase();
+   const label={ADD:'ДОДАДЕНО',UPDATE:'ИЗМЕНЕТО',DELETE:'ИЗБРИШАНО'}[action]||action||'ИЗМЕНА';
+   const details=[l.event_date,l.event_time,l.room_name].filter(Boolean).join(' · ');
+   const subject=l.subject_name||'Настан во распоредот';
+   const prof=l.professor_name?`Професор: ${l.professor_name}`:'';
+   const comment=l.comment||'';
+   return `<article class="log-card ${esc(action)}"><div class="log-top"><span class="badge ${esc(action)}">${esc(label)}</span><span class="log-date">${esc(dateTime(l.created_at))}</span></div><div class="log-subject">${esc(subject)}</div><div class="log-detail">${esc(details)}</div>${prof?`<div class="log-detail">${esc(prof)}</div>`:''}${comment?`<div class="log-detail">${esc(comment)}</div>`:''}</article>`;
+ }).join('');
+}
+async function refresh(){
+ if(refreshBusy)return;refreshBusy=true;
+ try{
+   const [events,logsResult]=await Promise.all([
+     loadEvents(),
+     supabase.from('logs').select('id,action,created_at,event_date,event_time,room_name,subject_name,professor_name,type,groups_text,comment').order('id',{ascending:false}).limit(5)
+   ]);
+   if(logsResult.error)throw logsResult.error;
+   lastGoodEvents=events;lastGoodLogs=logsResult.data||[];
+   renderEvents(lastGoodEvents);renderLogs(lastGoodLogs);
+   const time=new Date().toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+   $('updateStatus').textContent=`Податоците се освежени: ${time}`;
+   $('logsStatus').textContent='Ажурирано '+time;
+ }catch(err){
+   console.error(err);
+   $('updateStatus').innerHTML='<span class="status-error">Проблем со поврзување — ќе се обиде повторно.</span>';
+   $('logsStatus').textContent='Грешка при освежување';
+   if(!lastGoodEvents)$('scheduleBody').innerHTML='<tr><td colspan="6" class="empty status-error">Не може да се вчита распоредот. Проверете ја интернет-врската.</td></tr>';
+   if(!lastGoodLogs)$('logsList').innerHTML='<div class="empty status-error">Не може да се вчитаат измените.</div>';
+ }finally{refreshBusy=false;}
+}
+function startAutoScroll(){
+ const wrap=$('scheduleWrap');
+ if(scrollTimer)clearInterval(scrollTimer);
+ scrollTimer=setInterval(()=>{
+   if(!wrap||wrap.scrollHeight<=wrap.clientHeight+4)return;
+   const max=wrap.scrollHeight-wrap.clientHeight;
+   let next=wrap.scrollTop+scrollDirection*110;
+   if(next>=max){next=max;scrollDirection=-1;}
+   else if(next<=0){next=0;scrollDirection=1;}
+   wrap.scrollTo({top:next,behavior:'smooth'});
+ },7000);
+}
+updateClock();refresh();startAutoScroll();
+setInterval(updateClock,1000);
+setInterval(refresh,REFRESH_MS);
+// Refresh promptly when a browser tab regains focus after a restart or display change.
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+supabase.channel('hall-screen-events')
+ .on('postgres_changes',{event:'*',schema:'public',table:'events'},()=>refresh())
+ .on('postgres_changes',{event:'*',schema:'public',table:'logs'},()=>refresh())
+ .subscribe();
+</script>
+</body>
+</html>

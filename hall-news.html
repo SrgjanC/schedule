@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="mk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Фармацевтски факултет — Новости</title>
+<style>
+:root{--navy:#102a43;--blue:#3f69b1;--pale:#eaf1f8;--ink:#172b4d;--muted:#52667a;--gold:#f4c95d}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:var(--ink)}
+body{display:flex;flex-direction:column}
+header{height:112px;flex-shrink:0;background:var(--navy);color:white;padding:18px 34px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{font-size:28px;font-weight:800;letter-spacing:.3px}.subtitle{font-size:16px;color:#c9d9e8;margin-top:6px}
+.clock{text-align:right;white-space:nowrap}.clock .date{font-size:20px;font-weight:700}.clock .time{font-size:30px;font-weight:800;margin-top:4px}
+main{flex:1;min-height:0;display:flex;padding:28px 34px;gap:28px}
+.story{flex:1;min-width:0;display:flex;flex-direction:column;background:white;border-radius:18px;box-shadow:0 8px 26px #102a4314;overflow:hidden}
+.story-top{padding:18px 28px;background:var(--pale);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.kicker{font-size:16px;text-transform:uppercase;letter-spacing:1.3px;color:var(--blue);font-weight:800}
+.counter{font-size:15px;color:var(--muted);font-weight:700}
+.story-content{padding:30px 34px 20px;display:flex;flex-direction:column;flex:1;min-height:0}
+.category{font-size:17px;color:var(--blue);font-weight:800;margin-bottom:14px}
+h1{font-size:36px;line-height:1.16;margin:0 0 18px;color:var(--navy);overflow-wrap:anywhere}
+.summary{font-size:23px;line-height:1.45;color:#334e68;white-space:pre-line;overflow:hidden}
+.story-footer{margin-top:auto;padding-top:18px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.meta{font-size:16px;color:var(--muted);line-height:1.4}
+.qr-wrap{display:flex;align-items:center;gap:12px;flex-shrink:0}.qr-wrap img{width:92px;height:92px;object-fit:contain;border:1px solid #d9e2ec;border-radius:8px}.qr-label{font-size:13px;color:var(--muted);max-width:105px;line-height:1.3}
+.side{width:270px;flex-shrink:0;display:flex;flex-direction:column;gap:16px}
+.panel{background:white;border-radius:16px;padding:20px;box-shadow:0 8px 26px #102a4314}
+.panel h2{font-size:19px;margin:0 0 12px;color:var(--navy)}
+.panel p{font-size:16px;line-height:1.4;color:var(--muted);margin:0}
+.link-list{display:flex;flex-direction:column;gap:12px}.link-item{border-left:4px solid var(--blue);padding-left:11px;font-size:16px;line-height:1.35;font-weight:700}.link-item a{color:var(--ink);text-decoration:none}
+.status{margin-top:auto;font-size:13px;color:var(--muted);line-height:1.4}
+footer{height:42px;flex-shrink:0;background:#e2eaf2;padding:0 34px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#486581}
+.progress{height:4px;background:#d9e2ec;flex-shrink:0}.progress span{display:block;height:100%;width:0;background:var(--gold);transition:width .2s linear}
+.error{color:#b42318}
+@media(max-width:1000px){header{padding:14px 22px}.brand{font-size:22px}main{padding:18px 22px;gap:16px}.side{width:220px}h1{font-size:29px}.summary{font-size:20px}.story-content{padding:24px}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand">ФАРМАЦЕВТСКИ ФАКУЛТЕТ — УКИМ</div><div class="subtitle">Новости и известувања за студентите</div></div>
+  <div class="clock"><div class="date" id="today"></div><div class="time" id="clock"></div></div>
+</header>
+<main>
+  <section class="story">
+    <div class="story-top"><div class="kicker">Најнови известувања</div><div class="counter" id="counter">Се вчитуваат новости…</div></div>
+    <div class="story-content">
+      <div class="category" id="category">ФАКУЛТЕТСКИ ИЗВЕСТУВАЊА</div>
+      <h1 id="headline">Се вчитуваат најновите известувања…</h1>
+      <div class="summary" id="summary">Ве молиме почекајте.</div>
+      <div class="story-footer">
+        <div class="meta" id="meta">ff.ukim.edu.mk</div>
+        <div class="qr-wrap"><img id="qr" alt="QR код за известувањето" hidden><div class="qr-label" id="qrLabel">Скенирајте за целосна објава</div></div>
+      </div>
+    </div>
+    <div class="progress"><span id="progress"></span></div>
+  </section>
+  <aside class="side">
+    <section class="panel"><h2>Студентски известувања</h2><p>Конкурси, рокови, пријави и информации за студентите.</p></section>
+    <section class="panel"><h2>Најнови објави</h2><div class="link-list" id="latestLinks"><div class="link-item">Се вчитуваат…</div></div></section>
+    <section class="panel"><h2>Корисни линкови</h2><div class="link-list">
+      <div class="link-item"><a href="https://ff.ukim.edu.mk/category/students/">Известувања за студенти ↗</a></div>
+      <div class="link-item"><a href="https://ff.ukim.edu.mk/category/naslovna/">Новости на факултетот ↗</a></div>
+      <div class="link-item"><a href="https://srgjanc.github.io/schedule/index_supabase.html">Електронски распоред ↗</a></div>
+    </div></section>
+    <div class="status" id="status">Се поврзува со веб-страницата…</div>
+  </aside>
+</main>
+<footer><span>Официјална веб-страница: ff.ukim.edu.mk</span><span>Информациите се освежуваат автоматски</span></footer>
+<script>
+const API='https://ff.ukim.edu.mk/wp-json/wp/v2';
+const CATEGORY_SLUGS=[['students','Студенти'],['naslovna','Новости на факултетот']];
+const ROTATE_MS=18000, REFRESH_MS=300000;
+let posts=[],current=0,startedAt=Date.now(),lastLoaded=null;
+const $=id=>document.getElementById(id);
+function escapeHTML(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function plain(html=''){const d=document.createElement('div');d.innerHTML=html;return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
+function dateText(s){if(!s)return '';const d=new Date(s);return Number.isNaN(d.getTime())?s:d.toLocaleDateString('mk-MK',{day:'2-digit',month:'long',year:'numeric'});}
+async function fetchPostsForSlug(slug,label){
+  const catRes=await fetch(`${API}/categories?slug=${encodeURIComponent(slug)}&per_page=1`);
+  if(!catRes.ok)throw new Error(`WordPress категоријата "${slug}" не е достапна (${catRes.status})`);
+  const cats=await catRes.json();if(!cats.length)return [];
+  const url=`${API}/posts?categories=${cats[0].id}&per_page=10&orderby=date&order=desc&_embed=1`;
+  const r=await fetch(url);if(!r.ok)throw new Error(`Не може да се вчитаат објавите (${r.status})`);
+  const items=await r.json();
+  return items.map(p=>({id:p.id,title:plain(p.title?.rendered)||'Без наслов',summary:plain(p.excerpt?.rendered)||'Отворете ја објавата за повеќе информации.',url:p.link,date:p.date,category:label,modified:p.modified, image:p._embedded?.['wp:featuredmedia']?.[0]?.source_url||''}));
+}
+function renderLinks(){
+  $('latestLinks').innerHTML=posts.slice(0,4).map((p,i)=>`<div class="link-item"><a href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.title)}</a><div style="font-size:12px;font-weight:400;color:#627d98;margin-top:4px">${escapeHTML(dateText(p.date))}</div></div>`).join('')||'<div class="link-item">Нема достапни објави.</div>';
+}
+function renderPost(){
+  if(!posts.length)return;
+  current=current%posts.length;const p=posts[current];
+  $('category').textContent=p.category.toUpperCase();
+  $('headline').textContent=p.title;
+  $('summary').textContent=p.summary;
+  $('meta').textContent=`Објавено: ${dateText(p.date)}  •  ff.ukim.edu.mk`;
+  $('counter').textContent=`Објава ${current+1} од ${posts.length}`;
+  $('qr').src=`https://api.qrserver.com/v1/create-qr-code/?size=184x184&data=${encodeURIComponent(p.url)}`;
+  $('qr').hidden=false;$('qrLabel').textContent='Скенирајте за целосна објава';
+  startedAt=Date.now();$('progress').style.width='0%';
+}
+async function loadNews(){
+  try{
+    const results=await Promise.all(CATEGORY_SLUGS.map(([slug,label])=>fetchPostsForSlug(slug,label)));
+    const all=results.flat();
+    const unique=[...new Map(all.map(p=>[p.id,p])).values()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    if(unique.length){
+      const oldId=posts[current]?.id;posts=unique;
+      const idx=posts.findIndex(p=>p.id===oldId);current=idx>=0?idx:0;
+      renderLinks();renderPost();lastLoaded=new Date();
+      $('status').textContent=`Последно успешно освежување: ${lastLoaded.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'})}`;
+    }else{
+      $('headline').textContent='Во моментов нема достапни објави.';
+      $('summary').textContent='Проверете ја веб-страницата на факултетот за најнови информации.';
+      $('status').textContent='Нема објави за прикажување.';
+    }
+  }catch(e){
+    console.error(e);$('status').innerHTML=`<span class="error">Проблем со вчитување новости.</span> Последни податоци: ${lastLoaded?lastLoaded.toLocaleTimeString('mk-MK'):'нема'}`;
+    if(!posts.length){$('headline').textContent='Новости моментално не се достапни';$('summary').textContent='Проверете ја интернет-врската или отворете ја официјалната веб-страница.';}
+  }
+}
+function updateClock(){
+ const now=new Date();$('today').textContent=now.toLocaleDateString('mk-MK',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('clock').textContent=now.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(()=>{updateClock();if(posts.length){const elapsed=Date.now()-startedAt;$('progress').style.width=`${Math.min(100,elapsed/ROTATE_MS*100)}%`;if(elapsed>=ROTATE_MS){current=(current+1)%posts.length;renderPost();}}},500);
+setInterval(loadNews,REFRESH_MS);updateClock();loadNews();
+</script>
+</body>
+</html>
