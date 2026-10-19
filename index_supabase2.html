@@ -56,6 +56,17 @@ th {
     border-left: 4px solid rgba(0,0,0,0.15);
     margin: 1px 0;
 }
+
+.lecture-status {
+    margin-top: 5px;
+    padding: 5px 4px;
+    border-radius: 4px;
+    background: #16a34a;
+    color: #fff;
+    font-weight: bold;
+    font-size: 11px;
+    text-align: center;
+}
 </style>
 </head>
 
@@ -538,6 +549,7 @@ if (view === "week") {
 else {
     render(events);
 }
+updateLectureStatuses();
 }
 
 // ================= RENDER MATRIX =================
@@ -763,6 +775,7 @@ function buildWeekRows(
                             ${e.type || ""}<br>
                             ${e.professorName || ""}<br>${e.groups ? "Групи: " + e.groups : ""}
                         </small>
+                        <div class="lecture-status" data-event-id="${e.id}" style="display:${isEventInProgress(e) ? "block" : "none"}">Наставата е во тек</div>
                     </div>
                 `;
             });
@@ -855,6 +868,7 @@ html += `
             ${e.type || ""}<br>
             ${e.professorName || ""}<br>${e.groups ? "Групи: " + e.groups : ""}
         </small>
+        <div class="lecture-status" data-event-id="${e.id}" style="display:${isEventInProgress(e) ? "block" : "none"}">Наставата е во тек</div>
     </div>
 `;
                 });
@@ -916,6 +930,69 @@ function getLectureTimes(event) {
 }
 
     
+function getEventInterval(event) {
+    const rows = events
+        .filter(e =>
+            e.subjectId === event.subjectId &&
+            e.date === event.date &&
+            e.room === event.room &&
+            e.type === event.type
+        )
+        .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+
+    if (!rows.length) return null;
+
+    let index = rows.findIndex(e => e.id === event.id);
+    if (index < 0) index = rows.findIndex(e => e.time === event.time);
+    if (index < 0) return null;
+
+    const hourNumber = time => Number((time || "0:00").substring(0, 2));
+    let first = index;
+    let last = index;
+
+    while (first > 0 &&
+        hourNumber(rows[first].time) - hourNumber(rows[first - 1].time) === 1) {
+        first--;
+    }
+    while (last < rows.length - 1 &&
+        hourNumber(rows[last + 1].time) - hourNumber(rows[last].time) === 1) {
+        last++;
+    }
+
+    const endDate = new Date(`${event.date}T${rows[last].time || "00:00"}:00`);
+    endDate.setHours(endDate.getHours() + 1);
+
+    return {
+        start: rows[first].time,
+        end: `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`
+    };
+}
+
+function isEventInProgress(event) {
+    if (!event || event.date !== toISO(new Date())) return false;
+
+    const interval = getEventInterval(event);
+    if (!interval || !interval.start || !interval.end) return false;
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const [startHour, startMinute] = interval.start.split(":").map(Number);
+    const [endHour, endMinute] = interval.end.split(":").map(Number);
+
+    return currentMinutes >= startHour * 60 + startMinute &&
+           currentMinutes < endHour * 60 + endMinute;
+}
+
+function updateLectureStatuses() {
+    document.querySelectorAll(".lecture-status[data-event-id]").forEach(el => {
+        const event = events.find(e => String(e.id) === el.dataset.eventId);
+        const active = isEventInProgress(event);
+        el.style.display = active ? "block" : "none";
+        el.textContent = active ? "Наставата е во тек" : "";
+    });
+}
+
+
     window.showCalendarPopup = function(id){
 
     currentCalendarEvent =
@@ -1657,6 +1734,9 @@ document
     .addEventListener("change", load);
     
 
+
+// Update only the status labels; no page refresh is needed.
+setInterval(updateLectureStatuses, 30 * 1000);
 
 </script>
 
