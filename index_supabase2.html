@@ -524,6 +524,7 @@ else {
     id: e.id,
     date: e.event_date,
     time: e.event_time?.substring(0,5),
+    started_at: e.started_at || null,
 
     room: e.rooms?.name || "",
         
@@ -550,6 +551,7 @@ else {
     render(events);
 }
 updateLectureStatuses();
+refreshStartedEvents();
 }
 
 // ================= RENDER MATRIX =================
@@ -968,19 +970,21 @@ function getEventInterval(event) {
     };
 }
 
+function getStartedGroupKey(event) {
+    // Group hourly entries for the same class. Room is intentionally excluded,
+    // so parallel room entries for the same class can share the started status.
+    return JSON.stringify([
+        event?.date || "",
+        event?.program || "",
+        String(event?.semester ?? ""),
+        String(event?.subjectId ?? ""),
+        event?.type || ""
+    ]);
+}
+
 function isEventInProgress(event) {
-    if (!event || event.date !== toISO(new Date())) return false;
-
-    const interval = getEventInterval(event);
-    if (!interval || !interval.start || !interval.end) return false;
-
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [startHour, startMinute] = interval.start.split(":").map(Number);
-    const [endHour, endMinute] = interval.end.split(":").map(Number);
-
-    return currentMinutes >= startHour * 60 + startMinute &&
-           currentMinutes < endHour * 60 + endMinute;
+    // The status is based only on started_at recorded in Supabase.
+    return !!event?.started_at;
 }
 
 function updateLectureStatuses() {
@@ -988,8 +992,58 @@ function updateLectureStatuses() {
         const event = events.find(e => String(e.id) === el.dataset.eventId);
         const active = isEventInProgress(event);
         el.style.display = active ? "block" : "none";
-        el.textContent = active ? "Наставата е во тек" : "";
+        el.textContent = active ? "Наставата е започната" : "";
     });
+}
+
+async function refreshStartedEvents() {
+    const ids = events.map(e => e.id).filter(id => id != null);
+    if (!ids.length) {
+        updateLectureStatuses();
+        return;
+    }
+
+    const { data, error } = await supabase
+        .from("events")
+        .select("id, started_at")
+        .in("id", ids);
+
+    if (error) {
+        console.error("Error refreshing started_at values:", error);
+        // Keep the values already loaded with the timetable if refresh fails.
+        updateLectureStatuses();
+        return;
+    }
+
+    const startedAtById = new Map(
+        (data || []).map(row => [String(row.id), row.started_at || null])
+    );
+
+    // First apply the real started_at values from Supabase to each loaded row.
+    events.forEach(e => {
+        e.started_at = startedAtById.get(String(e.id)) || null;
+    });
+
+    // If one row in a multi-hour class has started_at, mark every loaded row
+    // belonging to the same date/program/semester/subject/type as started.
+    const startedGroups = new Map();
+    events.forEach(e => {
+        if (e.started_at) {
+            const key = getStartedGroupKey(e);
+            if (!startedGroups.has(key)) {
+                startedGroups.set(key, e.started_at);
+            }
+        }
+    });
+
+    events.forEach(e => {
+        const groupStartedAt = startedGroups.get(getStartedGroupKey(e));
+        if (groupStartedAt) {
+            e.started_at = groupStartedAt;
+        }
+    });
+
+    updateLectureStatuses();
 }
 
 
@@ -1735,8 +1789,8 @@ document
     
 
 
-// Update only the status labels; no page refresh is needed.
-setInterval(updateLectureStatuses, 30 * 1000);
+// Recheck the events table so started_at changes appear without reloading the page.
+setInterval(refreshStartedEvents, 30 * 1000);
 
 </script>
 
