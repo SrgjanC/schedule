@@ -61,8 +61,8 @@ th {
     margin-top: 5px;
     padding: 5px 4px;
     border-radius: 4px;
-    background: #16a34a;
-    color: #fff;
+    background: #bbf7d0;
+    color: #166534;
     font-weight: bold;
     font-size: 11px;
     text-align: center;
@@ -983,16 +983,64 @@ function getStartedGroupKey(event) {
 }
 
 function isEventInProgress(event) {
-    // The status is based only on started_at recorded in Supabase.
+    // A class is considered started only when started_at exists in Supabase.
     return !!event?.started_at;
+}
+
+function getStartedGroupEnd(event) {
+    if (!event) return null;
+
+    const key = getStartedGroupKey(event);
+    const groupEvents = events.filter(e =>
+        getStartedGroupKey(e) === key && e.time
+    );
+
+    if (!groupEvents.length) return null;
+
+    // The final scheduled hourly entry determines when the class is finished.
+    const lastTime = groupEvents
+        .map(e => e.time.substring(0, 5))
+        .sort()
+        .at(-1);
+
+    const [hour, minute] = lastTime.split(":").map(Number);
+    const end = new Date(`${event.date}T${lastTime}:00`);
+    end.setHours(hour + 1, minute, 0, 0);
+    return end;
+}
+
+function getLectureStatus(event) {
+    if (!isEventInProgress(event)) return null;
+
+    const groupEnd = getStartedGroupEnd(event);
+    if (groupEnd && new Date() >= groupEnd) {
+        return "finished";
+    }
+
+    return "started";
 }
 
 function updateLectureStatuses() {
     document.querySelectorAll(".lecture-status[data-event-id]").forEach(el => {
         const event = events.find(e => String(e.id) === el.dataset.eventId);
-        const active = isEventInProgress(event);
-        el.style.display = active ? "block" : "none";
-        el.textContent = active ? "Наставата е започната" : "";
+        const status = getLectureStatus(event);
+
+        if (!status) {
+            el.style.display = "none";
+            el.textContent = "";
+            return;
+        }
+
+        el.style.display = "block";
+        if (status === "finished") {
+            el.style.background = "#bfdbfe";
+            el.style.color = "#1e3a8a";
+            el.textContent = "Наставата е завршена";
+        } else {
+            el.style.background = "#bbf7d0";
+            el.style.color = "#166534";
+            el.textContent = "Наставата е започната";
+        }
     });
 }
 
