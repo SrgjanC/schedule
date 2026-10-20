@@ -1032,9 +1032,15 @@ function updateLectureStatuses() {
         }
 
         el.style.display = "block";
-        el.style.background = "#bbf7d0";
-        el.style.color = "#166534";
-        el.textContent = "Наставата е во тек";
+        if (status === "finished") {
+            el.style.background = "#bfdbfe";
+            el.style.color = "#1e3a8a";
+            el.textContent = "Наставата е завршена";
+        } else {
+            el.style.background = "#bbf7d0";
+            el.style.color = "#166534";
+            el.textContent = "Наставата е во тек";
+        }
     });
 }
 
