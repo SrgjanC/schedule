@@ -102,22 +102,51 @@ function renderPost(){
 }
 async function loadNews(){
   try{
-    const results=await Promise.all(CATEGORY_SLUGS.map(([slug,label])=>fetchPostsForSlug(slug,label)));
-    const all=results.flat();
-    const unique=[...new Map(all.map(p=>[p.id,p])).values()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const response = await fetch('https://elmxwpwhyewgjlvoadtb.supabase.co/functions/v1/hall-news', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
+    if(!response.ok) throw new Error(`Supabase news feed returned HTTP ${response.status}`);
+    const data = await response.json();
+    if(!data.success || !Array.isArray(data.posts)) {
+      throw new Error(data.error || 'Неочекуван одговор од news feed.');
+    }
+
+    const unique = [...new Map(data.posts.map(p => [p.id, {
+      id: p.id,
+      title: plain(p.title) || 'Без наслов',
+      summary: plain(p.excerpt) || 'Отворете ја објавата за повеќе информации.',
+      url: p.link,
+      date: p.date,
+      category: p.categorySlug === 'students' ? 'Студенти' :
+                p.categorySlug === 'naslovna' ? 'Новости на факултетот' :
+                (p.category || 'Известување'),
+      modified: p.date,
+      image: p.image || ''
+    }])).values()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+
     if(unique.length){
-      const oldId=posts[current]?.id;posts=unique;
-      const idx=posts.findIndex(p=>p.id===oldId);current=idx>=0?idx:0;
-      renderLinks();renderPost();lastLoaded=new Date();
-      $('status').textContent=`Последно успешно освежување: ${lastLoaded.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'})}`;
+      const oldId=posts[current]?.id;
+      posts=unique;
+      const idx=posts.findIndex(p=>p.id===oldId);
+      current=idx>=0?idx:0;
+      renderLinks();
+      renderPost();
+      lastLoaded=new Date();
+      $('status').textContent=`Последно успешно освежување: ${lastLoaded.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'})} • ${posts.length} објави`;
     }else{
       $('headline').textContent='Во моментов нема достапни објави.';
       $('summary').textContent='Проверете ја веб-страницата на факултетот за најнови информации.';
       $('status').textContent='Нема објави за прикажување.';
     }
   }catch(e){
-    console.error(e);$('status').innerHTML=`<span class="error">Проблем со вчитување новости.</span> Последни податоци: ${lastLoaded?lastLoaded.toLocaleTimeString('mk-MK'):'нема'}`;
-    if(!posts.length){$('headline').textContent='Новости моментално не се достапни';$('summary').textContent='Проверете ја интернет-врската или отворете ја официјалната веб-страница.';}
+    console.error(e);
+    $('status').innerHTML=`<span class="error">Проблем со вчитување новости.</span> Последни податоци: ${lastLoaded?lastLoaded.toLocaleTimeString('mk-MK'):'нема'}`;
+    if(!posts.length){
+      $('headline').textContent='Новости моментално не се достапни';
+      $('summary').textContent='Проверете ја интернет-врската или отворете ја официјалната веб-страница.';
+    }
   }
 }
 function updateClock(){
