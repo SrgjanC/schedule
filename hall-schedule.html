@@ -99,12 +99,12 @@ async function loadEvents(){
    id,event_date,event_time,type,groups_text,
    subjects(id,name,semester,programs(name)),
    professors(name),
-   rooms(name)
+   rooms(id,name)
  `).eq('event_date',date).order('event_time',{ascending:true}).range(0,999);
  if(error)throw error;
  return (data||[]).map(e=>({
    id:e.id,subjectId:e.subjects?.id||null,date:e.event_date,time:e.event_time?String(e.event_time).substring(0,5):'',
-   room:e.rooms?.name||'—',subject:e.subjects?.name||'Предметот не е наведен',
+   roomId:e.rooms?.id??Number.MAX_SAFE_INTEGER,room:e.rooms?.name||'—',subject:e.subjects?.name||'Предметот не е наведен',
    program:e.subjects?.programs?.name||'',professor:e.professors?.name||'',
    type:e.type||'',groups:e.groups_text||''
  })).sort((a,b)=>a.time.localeCompare(b.time,'mk')||a.room.localeCompare(b.room,'mk'));
@@ -126,7 +126,7 @@ function buildClassBlocks(events){
    rows.forEach(row=>{const prev=segment[segment.length-1];if(prev&&minutesFromTime(row.time)!==minutesFromTime(prev.time)+60)flush();segment.push(row);});
    flush();
  }
- return blocks.sort((a,b)=>a.start.localeCompare(b.start,'mk')||a.room.localeCompare(b.room,'mk')||a.subject.localeCompare(b.subject,'mk'));
+ return blocks.sort((a,b)=>a.start.localeCompare(b.start,'mk')||Number(a.roomId)-Number(b.roomId)||a.subject.localeCompare(b.subject,'mk'));
 }
 function renderEvents(events){
  const body=$('scheduleBody');
