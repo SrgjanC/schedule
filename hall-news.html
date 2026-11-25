@@ -176,7 +176,7 @@ async function loadNews(){
   }
 }
 function updateClock(){
- const now=new Date();$('today').textContent=now.toLocaleDateString('mk-MK',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('clock').textContent=now.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'});
+ const now=new Date();const days=['недела','понеделник','вторник','среда','четврток','петок','сабота'];const months=['јануари','февруари','март','април','мај','јуни','јули','август','септември','октомври','ноември','декември'];$('today').textContent=`${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;$('clock').textContent=now.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit',hour12:false});
 }
 setInterval(()=>{updateClock();if(posts.length){const elapsed=Date.now()-startedAt;$('progress').style.width=`${Math.min(100,elapsed/postDuration*100)}%`;if(elapsed>=postDuration){if(pageIndex+1<announcementPages.length){pageIndex++;showAnnouncementPage();}else{current=(current+1)%posts.length;renderPost();}}}},500);
 setInterval(loadNews,REFRESH_MS);updateClock();loadNews();
