@@ -114,7 +114,7 @@ function splitAnnouncementIntoPages(html){
   if(page.length)pages.push(page);return pages.length?pages:[[document.createTextNode('Отворете ја објавата за повеќе информации.')]];
 }
 let announcementPages=[],pageIndex=0,postDuration=18000;
-function renderPost(){if(!posts.length)return;current=current%posts.length;const p=posts[current];announcementPages=splitAnnouncementIntoPages(p.content||p.excerpt||'');pageIndex=0;const words=(p.contentText||'').trim().split(/\s+/).filter(Boolean).length;postDuration=Math.max(12000,Math.min(42000,Math.round((words/155*60+7)*1000)));showAnnouncementPage();}
+function renderPost(){if(!posts.length)return;current=current%posts.length;const p=posts[current];announcementPages=splitAnnouncementIntoPages(p.content||p.excerpt||'');pageIndex=0;const words=(p.contentText||'').trim().split(/\\s+/).filter(Boolean).length;const totalDuration=Math.max(18000,Math.min(60000,Math.round((words/155*60+7)*1000)));postDuration=Math.max(9000,Math.min(22000,Math.round(totalDuration/announcementPages.length)));showAnnouncementPage();}
 function showAnnouncementPage(){
   const p=posts[current];if(!p)return;$('category').textContent=p.category.toUpperCase();$('headline').textContent=p.title;
   const summary=$('summary');summary.innerHTML='';(announcementPages[pageIndex]||[]).forEach(node=>summary.appendChild(node.cloneNode(true)));
