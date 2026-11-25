@@ -68,23 +68,12 @@ footer{height:42px;flex-shrink:0;background:#e2eaf2;padding:0 34px;display:flex;
 </main>
 <footer><span>Официјална веб-страница: ff.ukim.edu.mk</span><span>Информациите се освежуваат автоматски</span></footer>
 <script>
-const API='https://ff.ukim.edu.mk/wp-json/wp/v2';
-const CATEGORY_SLUGS=[['students','Студенти'],['naslovna','Новости на факултетот']];
 const ROTATE_MS=18000, REFRESH_MS=300000;
 let posts=[],current=0,startedAt=Date.now(),lastLoaded=null;
 const $=id=>document.getElementById(id);
 function escapeHTML(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function plain(html=''){const d=document.createElement('div');d.innerHTML=html;return (d.textContent||d.innerText||'').replace(/\s+/g,' ').trim();}
 function dateText(s){if(!s)return '';const d=new Date(s);return Number.isNaN(d.getTime())?s:d.toLocaleDateString('mk-MK',{day:'2-digit',month:'long',year:'numeric'});}
-async function fetchPostsForSlug(slug,label){
-  const catRes=await fetch(`${API}/categories?slug=${encodeURIComponent(slug)}&per_page=1`);
-  if(!catRes.ok)throw new Error(`WordPress категоријата "${slug}" не е достапна (${catRes.status})`);
-  const cats=await catRes.json();if(!cats.length)return [];
-  const url=`${API}/posts?categories=${cats[0].id}&per_page=10&orderby=date&order=desc&_embed=1`;
-  const r=await fetch(url);if(!r.ok)throw new Error(`Не може да се вчитаат објавите (${r.status})`);
-  const items=await r.json();
-  return items.map(p=>({id:p.id,title:plain(p.title?.rendered)||'Без наслов',summary:plain(p.excerpt?.rendered)||'Отворете ја објавата за повеќе информации.',url:p.link,date:p.date,category:label,modified:p.modified, image:p._embedded?.['wp:featuredmedia']?.[0]?.source_url||''}));
-}
 function renderLinks(){
   $('latestLinks').innerHTML=posts.slice(0,4).map((p,i)=>`<div class="link-item"><a href="${escapeHTML(p.url)}" target="_blank" rel="noopener">${escapeHTML(p.title)}</a><div style="font-size:12px;font-weight:400;color:#627d98;margin-top:4px">${escapeHTML(dateText(p.date))}</div></div>`).join('')||'<div class="link-item">Нема достапни објави.</div>';
 }
