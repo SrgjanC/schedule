@@ -50,7 +50,7 @@ footer{height:34px;flex-shrink:0;background:#e2eaf2;padding:0 22px;display:flex;
     <div class="panel-head"><h2>Денешна настава — сите простории</h2><div class="legend"><span><i class="dot green"></i>Во тек</span><span><i class="dot gold"></i>Следно</span></div></div>
     <div class="table-wrap" id="scheduleWrap">
       <table>
-        <thead><tr><th style="width:105px">Час</th><th style="width:95px">Просторија</th><th>Предмет</th><th style="width:150px">Програма</th><th style="width:125px">Проф./асс.</th><th style="width:95px">Групи</th></tr></thead>
+        <thead><tr><th style="width:125px">Време</th><th style="width:95px">Просторија</th><th>Предмет</th><th style="width:150px">Програма</th><th style="width:125px">Проф./асс.</th><th style="width:95px">Групи</th></tr></thead>
         <tbody id="scheduleBody"><tr><td colspan="6" class="empty">Се вчитува денешниот распоред…</td></tr></tbody>
       </table>
     </div>
@@ -72,8 +72,18 @@ let lastGoodEvents=null,lastGoodLogs=null,refreshBusy=false,scrollTimer=null,scr
 const REFRESH_MS=60000;
 function esc(v=''){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function updateClock(){const n=new Date();$('today').textContent=n.toLocaleDateString('mk-MK',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('clock').textContent=n.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit'});}
-function dateTime(v){if(!v)return '';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString('mk-MK',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
+function updateClock(){
+ const n=new Date();
+ const days=['недела','понеделник','вторник','среда','четврток','петок','сабота'];
+ const months=['јануари','февруари','март','април','мај','јуни','јули','август','септември','октомври','ноември','декември'];
+ $('today').textContent=days[n.getDay()]+', '+n.getDate()+' '+months[n.getMonth()]+' '+n.getFullYear();
+ $('clock').textContent=n.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+function dateTime(v){
+ if(!v)return '';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);
+ const months=['јан','фев','мар','апр','мај','јун','јул','авг','сеп','окт','ное','дек'];
+ return d.getDate()+' '+months[d.getMonth()]+' • '+d.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
 function minutesFromTime(v){if(!v)return null;const m=String(v).match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;}
 function classForEvent(e,nowMinutes,nextId){
  const start=minutesFromTime(e.time);if(start===null)return '';
@@ -86,29 +96,46 @@ async function loadEvents(){
  const date=todayISO();
  const {data,error}=await supabase.from('events').select(`
    id,event_date,event_time,type,groups_text,
-   subjects(name,semester,programs(name)),
+   subjects(id,name,semester,programs(name)),
    professors(name),
    rooms(name)
  `).eq('event_date',date).order('event_time',{ascending:true}).range(0,999);
  if(error)throw error;
  return (data||[]).map(e=>({
-   id:e.id,date:e.event_date,time:e.event_time?String(e.event_time).substring(0,5):'',
+   id:e.id,subjectId:e.subjects?.id||null,date:e.event_date,time:e.event_time?String(e.event_time).substring(0,5):'',
    room:e.rooms?.name||'—',subject:e.subjects?.name||'Предметот не е наведен',
    program:e.subjects?.programs?.name||'',professor:e.professors?.name||'',
    type:e.type||'',groups:e.groups_text||''
  })).sort((a,b)=>a.time.localeCompare(b.time,'mk')||a.room.localeCompare(b.room,'mk'));
 }
+function classKey(e){return JSON.stringify([e.date,e.subjectId??e.subject,e.room,e.type]);}
+function buildClassBlocks(events){
+ const buckets=new Map();
+ events.forEach(e=>{const key=classKey(e);if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(e);});
+ const blocks=[];
+ for(const rows of buckets.values()){
+   rows.sort((a,b)=>a.time.localeCompare(b.time));let segment=[];
+   const flush=()=>{
+     if(!segment.length)return;const first=segment[0],last=segment[segment.length-1];
+     const start=minutesFromTime(first.time),end=(minutesFromTime(last.time)??start)+60;
+     const unique=field=>[...new Set(segment.map(x=>x[field]).filter(Boolean))].join(', ');
+     blocks.push({...first,ids:segment.map(x=>x.id),start:first.time,end:String(Math.floor(end/60)).padStart(2,'0')+':'+String(end%60).padStart(2,'0'),startMinutes:start,endMinutes:end,groups:unique('groups')||first.groups,professor:unique('professor')||first.professor});
+     segment=[];
+   };
+   rows.forEach(row=>{const prev=segment[segment.length-1];if(prev&&minutesFromTime(row.time)!==minutesFromTime(prev.time)+60)flush();segment.push(row);});
+   flush();
+ }
+ return blocks.sort((a,b)=>a.start.localeCompare(b.start,'mk')||a.room.localeCompare(b.room,'mk')||a.subject.localeCompare(b.subject,'mk'));
+}
 function renderEvents(events){
  const body=$('scheduleBody');
  if(!events.length){body.innerHTML='<tr><td colspan="6" class="empty">Нема внесени часови за денес.</td></tr>';return;}
+ const blocks=buildClassBlocks(events);
  const now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes();
- const next=events.find(e=>{const t=minutesFromTime(e.time);return t!==null&&t>=nowMinutes;});
- body.innerHTML=events.map(e=>{
-   const t=minutesFromTime(e.time);
-   let cls='';
-   if(t!==null&&t<=nowMinutes&&nowMinutes<t+120)cls='current';
-   else if(next&&e.id===next.id)cls='next';
-   const timeLabel=e.time||'';
+ const nextStart=blocks.filter(b=>b.startMinutes>=nowMinutes).reduce((min,b)=>Math.min(min,b.startMinutes),Infinity);
+ body.innerHTML=blocks.map(e=>{
+   let cls='';if(nowMinutes>=e.startMinutes&&nowMinutes<e.endMinutes)cls='current';else if(e.startMinutes===nextStart)cls='next';
+   const timeLabel=e.start+' – '+e.end;
    return `<tr class="${cls}"><td class="time">${esc(timeLabel)}</td><td class="room">${esc(e.room)}</td><td><strong>${esc(e.subject)}</strong><div style="font-size:11px;color:#52667a;margin-top:3px">${esc(e.type)}</div></td><td>${esc(e.program)}</td><td>${esc(e.professor)}</td><td>${esc(e.groups)}</td></tr>`;
  }).join('');
 }
