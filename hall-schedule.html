@@ -84,6 +84,7 @@ function dateTime(v){
  const months=['јан','фев','мар','апр','мај','јун','јул','авг','сеп','окт','ное','дек'];
  return d.getDate()+' '+months[d.getMonth()]+' • '+d.toLocaleTimeString('mk-MK',{hour:'2-digit',minute:'2-digit',hour12:false});
 }
+function formatEventDate(v){if(!v)return '';const parts=String(v).substring(0,10).split('-').map(Number);if(parts.length!==3||parts.some(Number.isNaN))return String(v);const months=['јануари','февруари','март','април','мај','јуни','јули','август','септември','октомври','ноември','декември'];return parts[2]+' '+months[parts[1]-1]+' '+parts[0];}
 function minutesFromTime(v){if(!v)return null;const m=String(v).match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;}
 function classForEvent(e,nowMinutes,nextId){
  const start=minutesFromTime(e.time);if(start===null)return '';
@@ -145,7 +146,7 @@ function renderLogs(logs){
  list.innerHTML=logs.map(l=>{
    const action=String(l.action||'').toUpperCase();
    const label={ADD:'ДОДАДЕНО',UPDATE:'ИЗМЕНЕТО',DELETE:'ИЗБРИШАНО'}[action]||action||'ИЗМЕНА';
-   const details=[l.event_date,l.event_time,l.room_name].filter(Boolean).join(' · ');
+   const details=[formatEventDate(l.event_date),l.event_time?String(l.event_time).substring(0,5):'',l.room_name].filter(Boolean).join(' · ');
    const subject=l.subject_name||'Настан во распоредот';
    const prof=l.professor_name?`Професор: ${l.professor_name}`:'';
    const comment=l.comment||'';
