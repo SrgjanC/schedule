@@ -616,13 +616,33 @@ async function loadAll(){
 
     programs = p1 || [];
 
-    const { data: p2 } =
-        await supabase
-        .from('subjects')
-        .select('*')
-        .order('semester');
+    // Load ALL subjects in pages (Supabase may cap a single response at 1,000 rows).
+    // Stable ordering by id prevents rows from being skipped between pages.
+    subjects = [];
 
-    subjects = p2 || [];
+    const SUBJECTS_PAGE_SIZE = 1000;
+
+    for (let from = 0; ; from += SUBJECTS_PAGE_SIZE) {
+        const { data: subjectPage, error: subjectsError } = await supabase
+            .from('subjects')
+            .select('*')
+            .order('id', { ascending: true })
+            .range(from, from + SUBJECTS_PAGE_SIZE - 1);
+
+        if (subjectsError) {
+            console.error("Error loading subjects:", subjectsError);
+            alert("Грешка при вчитување на предметите: " + subjectsError.message);
+            throw subjectsError;
+        }
+
+        subjects.push(...(subjectPage || []));
+
+        if (!subjectPage || subjectPage.length < SUBJECTS_PAGE_SIZE) {
+            break;
+        }
+    }
+
+    console.log("TOTAL SUBJECTS LOADED:", subjects.length);
 
     const { data: p3 } =
         await supabase
